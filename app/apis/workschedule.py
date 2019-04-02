@@ -14,6 +14,7 @@ import logging
 
 from quart import Blueprint
 from quart import render_template, request
+from quart_cors import route_cors
 
 import app.util
 
@@ -26,6 +27,7 @@ bp = Blueprint(
 
 
 @bp.route('/upload', methods=['POST'])
+@route_cors()
 async def upload_work_schedule():
   """"Ref
   - https://gitlab.com/pgjones/quart/commit/483ba634c5c17b3e63b8a8096c590828866589df
@@ -39,5 +41,6 @@ async def upload_work_schedule():
 
 
 @bp.route('/schedule', methods=['GET'])
-def get_schedule():
+@route_cors()
+async def get_schedule():
   return "/static/work/work.jpg"
