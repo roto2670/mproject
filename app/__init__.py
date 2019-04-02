@@ -15,6 +15,9 @@ import logging.handlers
 from importlib import import_module
 
 from quart import Quart, url_for
+from quart_cors import cors
+
+import app.config
 
 
 def register_extensions(app):
@@ -65,12 +68,16 @@ class MyFlask(Quart):
   ))
 
 
-def create_app(config):
-  app = MyFlask(__name__, static_folder='static')
-  app.config.from_object(config)
-  register_blueprints(app)
-  #register_extensions(app)
-  #configure_database(app)
-  configure_logs(app)
-  return app
-
+def create_app(flag):
+  server_app = MyFlask(__name__, static_folder='static')
+  config = app.config.CONFIG_DICT[flag]
+  server_app.config.from_object(config)
+  register_blueprints(server_app)
+  #register_extensions(server_app)
+  #configure_database(server_app)
+  configure_logs(server_app)
+  if flag == app.config.DEBUG:
+    cors_wrapper_app = cors(server_app)
+    return cors_wrapper_app
+  else:
+    return server_app

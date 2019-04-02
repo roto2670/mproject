@@ -38,3 +38,10 @@ class ProductionConfig(Config):
   }
   LOG_PATH = os.path.join(os.path.expanduser('~'), 'log', 'mproject.log')
 
+
+CONFIG_DICT = {
+  "debug": DebugConfig,
+  "production": ProductionConfig
+}
+DEBUG = '''debug'''
+PRODUCTION = '''production'''
