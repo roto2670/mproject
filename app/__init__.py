@@ -22,7 +22,7 @@ def register_extensions(app):
 
 
 def register_blueprints(app):
-  for module_name in ['dashboard']:
+  for module_name in ['dashboard', 'workschedule']:
     module = import_module('app.apis.{}'.format(module_name))
     app.register_blueprint(module.bp)
 
