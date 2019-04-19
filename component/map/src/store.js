@@ -8,15 +8,14 @@ export default new Vuex.Store({
     hubs: []
   },
   getters: {
-    getScannerList: function(state) {
-      var list = []
-      state.hubs.forEach(function(hub) {
-        var object = {}
-        object.id = hub.id;
-        object.beacons = hub.beacons;
-        list.push(object);
-      })
-      return list;
+    getScannerList: function(data, id) {
+      var returnObject = [];
+      for (var key in data) {
+        if (key === id) {
+          returnObject[key] = data[key];
+        }
+      }
+      return returnObject;
     }
   },
   mutations: {

@@ -3,21 +3,21 @@ import axios from 'axios'
 // TODO: SERVER_BASE_URL
 const SERVER_BASE_URL = 'http://127.0.0.1:16000';
 export const setHubLocation = (hub) => {
-  console.log('data: ', hub);
+  //console.log('hub: ', hub);
   // let formData = new FormData();
   // for(var i in hub) {
   //     formData.append('hub',hub);
   // }
   // console.log("formdata1", formData);
   axios
-    .post(SERVER_BASE_URL + '/dash/hubs/location', hub, {
+    .post(SERVER_BASE_URL + '/dash/hubs/location', {'hub': hub}, {
       headers: {
         'Content-Type': 'application/json'
       }
     })
     .then(e => {
       console.log('SUCCESS!!')
-      console.log(hub);
+      //console.log(hub);
     })
     .catch(e => {
       console.log('FAILURE!!')
@@ -26,7 +26,7 @@ export const setHubLocation = (hub) => {
 
 }
 export const getHubs = (successCallback, errorCallback) => {
-  var returnObject = [];
+  /*var returnObject = [];
   var hubList = [{
       "id": "799b9f874bc1c50775233d2a0c00e388",
       "uuid": "240ac4a64c9e",
@@ -157,28 +157,9 @@ export const getHubs = (successCallback, errorCallback) => {
     }
   ];
 
-  successCallback(hubList);
-  // var hubListDiv = {};
-  // var returnObject = {};
-  // hubListDiv = hubList.slice();
-  // function getListFilter(data, id) {
-  //   var returnObject = [];
-  //   for (var key in data) {
-  //     if (key === id) {
-  //       returnObject[key] = data[key];
-  //     }
-  //   }
-  //   return returnObject;
-  // };
-  // for (var _i in hubListDiv) {
-  //   returnObject[_i] = getListFilter(hubListDiv[_i], "name");
-  // };
-  // console.log(returnObject);
-  // return returnObject;
+  successCallback(hubList);*/
 
-
-  /*var hubList = [],
-      returnObject = [];
+  var hubList = [];
   axios({
     url: SERVER_BASE_URL + '/dash/scanner/list',
     method: 'GET',
@@ -188,33 +169,12 @@ export const getHubs = (successCallback, errorCallback) => {
       //console.log('rs: ', response);
       //hubList.push(response.data[0]);
       hubList = response.data;
-      for (var _i in hubList) {
-        returnObject[_i] = getListFilter(hubList[_i], "id");
-      }
-      successCallback();
+
+      successCallback(hubList);
     } else {
       console.log('File is not exist')
     }
   });
-  return returnObject;
-  function errorCallback() {
-    console.log("Failed to Get Hub List");
-  };
-
-  function successCallback() {
-    console.log("Success to Get Hub List");
-  };
-
-  function getListFilter(data, id) {
-    var returnObject = [];
-    for (var key in data) {
-      //console.log(data[id]);
-      if (key === id) {
-        returnObject[key] = data[key];
-      }
-    }
-    return returnObject;
-}*/
 }
 export const getBeacons = () => {
   var beaconList = [],
@@ -240,11 +200,11 @@ export const getBeacons = () => {
   return returnObject;
 
   function errorCallback() {
-    console.log("Failed to Get Hub List");
+    console.log("Failed to Get Beacon List");
   };
 
   function successCallback() {
-    console.log("Success to Get Hub List");
+    console.log("Success to Get Beacon List");
   };
 
   function getListFilter(data, id) {
@@ -258,10 +218,8 @@ export const getBeacons = () => {
     return returnObject;
   }
 }
-export const detectBeaconList = (hubId) => {
-    var detbeaconList = {},
-        slicedbeaconList = {},
-        returnObject = {};
+export const detectBeaconList = (hubId, successCallback, failCallback) => {
+    var detbeaconList = {};
     axios({
       url: SERVER_BASE_URL + '/dash/beacons/detected/' + hubId,
       method: 'GET',
@@ -271,37 +229,11 @@ export const detectBeaconList = (hubId) => {
         //console.log('rs: ', response);
         //hubList.push(response.data[0]);
         detbeaconList = response.data;
-        console.log(detbeaconList);
+        console.log("aa",detbeaconList['data']);
         //slicedbeaconList = detbeaconList.slice();
-        console.log("detectBeaconList", slicedbeaconList);
-        for (var _i in slicedbeaconList) {
-          console.log("_i",_i);
-          returnObject[_i] = getListFilter(slicedbeaconList[_i], "_t");
-          console.log()
-        }
-        successCallback();
+        successCallback(detbeaconList['data']);
       } else {
-        console.log('File is not exist')
+        failedCallback(console.log("Failed to Get detBeacons List"))
       }
     });
-    return returnObject;
-
-    function errorCallback() {
-      console.log("Failed to Get Hub List");
-    };
-
-    function successCallback() {
-      console.log("Success to Get Hub List");
-    };
-
-    function getListFilter(data, id) {
-      var returnObject = [];
-      for (var key in data) {
-        //console.log(data[id]);
-        if (key === id) {
-          returnObject[key] = data[key];
-        }
-      }
-      return returnObject;
-    }
 }

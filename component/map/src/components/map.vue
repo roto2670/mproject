@@ -1,8 +1,7 @@
 <template>
+<div :id="id" v-if="isEmptyUrl" class="container">
 
-  <div :id="id" v-if="isEmptyUrl" class="container">
-
-  </div>
+</div>
 </template>
 <script>
 import * as maptalks from 'maptalks'
@@ -33,7 +32,14 @@ export default {
       hubSelectMenu: null,
       sethubListOption: null,
       hubs: null,
-      options: {items: []},
+      bcns: {},
+      options: {
+        items: []
+      },
+      contentOptions: {
+        content: '',
+        width: ''
+      },
       markerMap: {
         hubs: {},
         gadgets: {},
@@ -48,10 +54,10 @@ export default {
         center: [127.113049, 37.498568],
         zoom: 14,
         minZoom: 8,
-        maxZoom: 18,
+        maxZoom: 16,
         baseLayer: new maptalks.TileLayer("base", {
           urlTemplate: 'http://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}.png',
-          subdomains: ['a', 'b', 'c']
+          subdomains: ['a','b','c','d'],
         })
       });
       this.layer = new maptalks.VectorLayer('vector').addTo(this.map);
@@ -62,7 +68,6 @@ export default {
             this.addMenu(param);
         });*/
       this.initContextMenu();
-      this.setWorker();
       this.setIpcam();
     },
     initContextMenu() {
@@ -104,7 +109,7 @@ export default {
     },
     handleAddHub(e) {
       // show hub List
-console.log(e)
+      //console.log(e);
       this.showhubList((selectedId) => {
         this.map.closeMenu(selectedId);
         this.drawHub(selectedId, this.contextCoordinate);
@@ -115,11 +120,11 @@ console.log(e)
       this.map.closeMenu();
       // TODO
       services.getHubs((hubList) => {
-            this.$store.commit('addHubs', hubList);
-            /*for (var _i in hubList) {
+          this.$store.commit('addHubs', hubList);
+          /*for (var _i in hubList) {
           hubIdList[_i] = getListFilter(hubList[_i], "name");
       };*/
-            /*this.sethubListOption = {
+          /*this.sethubListOption = {
               'items': [
                 {
                   item: 'item1',
@@ -141,31 +146,34 @@ console.log(e)
             console.log('hubList', hubs[i]);
         }*/
             hubList.forEach((hub, index) => {
-                var itemObj = {
-                    item: hub.name,
-                    click: () => {
-                        var location = {'x': this.contextCoordinate.x, 'y': this.contextCoordinate.y};
-                        if (hubList[index]['custom'] === null) {
-                            hubList[index]['custom'] = location;
-                        } else {
-                            hubList[index]['custom']['x'] = location['x'];
-                            hubList[index]['custom']['y'] = location['y'];
-                        }
-                        //hubList[index]['custom']['location'] = this.contextCoordinate.x;
-                        //hubList[index]['y'] = this.contextCoordinate.y;
-                        //Array.prototype.push.apply(hubList[index], {'x': this.contextCoordinate.x, 'y':this.contextCoordinate.y});
-                        console.log("1241",hubList[index]);
-                        selectedCallback(hubList[index].name);
-                        this.postHubLocation(hubList[index]);
-                    }
+              var itemObj = {
+                item: hub.name,
+                click: () => {
+                  var location = {
+                    'x': this.contextCoordinate.x,
+                    'y': this.contextCoordinate.y
+                  };
+                  if (hubList[index]['custom'] === null) {
+                    hubList[index]['custom'] = location;
+                  } else {
+                    hubList[index]['custom']['x'] = location['x'];
+                    hubList[index]['custom']['y'] = location['y'];
+                  }
+                  //hubList[index]['custom']['location'] = this.contextCoordinate.x;
+                  //hubList[index]['y'] = this.contextCoordinate.y;
+                  //Array.prototype.push.apply(hubList[index], {'x': this.contextCoordinate.x, 'y':this.contextCoordinate.y});
+                  //console.log("1241",hubList[index]);
+                  selectedCallback(hubList[index].id);
+                  this.postHubLocation(hubList[index]);
                 }
-                if(hubList.length - index > 1) {
-                    this.options.items.push(itemObj, '-');
-                } else{
-                    this.options.items.push(itemObj);
-                }
+              }
+              if (hubList.length - index > 1) {
+                this.options.items.push(itemObj, '-');
+              } else {
+                this.options.items.push(itemObj);
+              }
             });
-            console.log("options",this.options);
+            //console.log("options",this.options);
             /*var options = {
                 'items': [{
                     item: hubList[0].name,
@@ -195,104 +203,186 @@ console.log(e)
           console.warn('Failed to load hub list.');
         });
 
-  },
-  /*
-     hubDataList = {id: String, coordinate: Coordonate}
-  */
-  drawHubs(hubDataList) {
-    if (Array.isArray(hubDataList)) {
-      hubIds.forEach(function(hubData) {
-        this.drawHub(hubData.id, hubData.coordinate);
+    },
+    /*
+       hubDataList = {id: String, coordinate: Coordonate}
+    */
+    drawHubs(hubDataList) {
+      if (Array.isArray(hubDataList)) {
+        hubIds.forEach(function(hubData) {
+          this.drawHub(hubData.id, hubData.coordinate);
+        });
+      } else {
+        console.warn('Failed to draw hubs by given id is empty or null.');
+      }
+    },
+    drawHub(hubId, coordinate) {
+      console.debug('Try draw hub, id: ', hubId);
+      let marker = new maptalks.Marker(
+        [coordinate.x, coordinate.y], {
+          'symbol': {
+            'markerFile': 'icon-hub.png',
+            'markerWidth': 40,
+            'markerHeight': 40
+          }
+        }
+      ).addTo(this.hubLayer); // TODO: hub layer
+      this.setWorker(hubId); // 허브 추가 시 비콘들을 주위에 뿌린다.
+      marker.on('click', () => {
+        this.setMarkerWindow(hubId, marker);
+      })
+      this.markerMap.hubs[hubId] = marker;
+    },
+    setMarkerWindow(hubId, marker) {
+      var context = '';
+      services.detectBeaconList(hubId, (bcnList) => {
+          console.log("baba", bcnList)
+          if (bcnList) {
+              bcnList.forEach((bcnlist, index) => {
+                  context += '<li>';
+                  context += bcnlist['gid'].slice(1, 10);
+                  context += '</li>';
+              })
+              console.log("context",context);
+              marker.setInfoWindow({
+                  'content': '<ul class="worker_menu">' +
+                    '<div class="worker"><div class="workerId"><div class="workerkey">SCANNER</div>'+ hubId.slice(1,4)+'</div>' +
+                    '<div class="workerCount"><div class="workerkey">WORKER</div>' + bcnList.length + '</div></div>' +
+                    '<ul class="workerInfo">' +
+                    context +
+                    '</ul></ul>',
+                  'width': 350
+              });
+              marker.openInfoWindow();
+            /*var title = '<ul class="worker_menu>';
+            this.contentOptions.content += title;
+            bcnList.forEach((hub, index) => {
+              var contentObj = '<li class="worker-content">'
+              if (bcnList.length - index > 1) {
+                this.contentOptions.content += contentObj;
+                this.contentOptions.content += bcnList[index]['gid'];
+                this.contentOptions.content += '</li>';
+              } else {
+                this.contentOptions.content += contentObj;
+                this.contentOptions.content += '</li></ul>';
+                this.contentOptions.width += 300;
+              }
+          })*/
+          } else {
+            alert("There's no beaconData to load");
+          }
+        }, () => {
+          console.log("Failed")
       });
-    } else {
-      console.warn('Failed to draw hubs by given id is empty or null.');
+        /*marker.setInfoWindow({
+      'content': '<ul class="worker_menu">' +
+        '<li class="worker-content" onload="video()"><img class="exampleimg" src="raspberrypi.svg"/></li>' +
+        '<li class="worker"></li>' +
+        '</ul>',
+      'width': 300
+  });*/
+    },
+    postHubLocation(hub) {
+      services.setHubLocation(hub);
+      //this.marker.remove();
+      //this.services.getGadget();
+    },
+    setWorker(hubId) {
+        services.detectBeaconList(hubId, (bcnList) => {
+            console.log("15151515",Math.random() / 100);
+            console.log("qrqrsdsds", bcnList);
+            if (bcnList) {
+                bcnList.forEach((hubId, index) => {
+                    this.bcns[index] = new maptalks.Marker(
+                        [this.contextCoordinate.x + (Math.random() / 60), this.contextCoordinate.y +  (Math.random() / 60)], {
+                            'symbol': {
+                              'markerFile': 'icon-worker' + Math.ceil(Math.random() * 4) + '.svg',
+                              'markerWidth': 50,
+                              'markerHeight': 50
+                            }
+                        }
+                    ).addTo(this.workerLayer);
+                    this.bcns[index].on('click', () => {
+                        this.setWorkerWindow(bcnList[index], this.bcns[index]);
+                        console.log("afafafaf",bcnList[index]);
+                    });
+                });
+                console.log("arybcn", this.bcns);
+              /*var title = '<ul class="worker_menu>';
+              this.contentOptions.content += title;
+              bcnList.forEach((hub, index) => {
+                var contentObj = '<li class="worker-content">'
+                if (bcnList.length - index > 1) {
+                  this.contentOptions.content += contentObj;
+                  this.contentOptions.content += bcnList[index]['gid'];
+                  this.contentOptions.content += '</li>';
+                } else {
+                  this.contentOptions.content += contentObj;
+                  this.contentOptions.content += '</li></ul>';
+                  this.contentOptions.width += 300;
+                }
+            })*/
+            } else {
+              alert("There's no beaconData to load");
+            }
+          }, () => {
+            console.log("Failed")
+        });
+
+      /*const beacons = getBeacons();
+      console.log('beacons',beacons);*/
+      //const beacons = services.detectBeaconList("799b9f874bc1c50775233d2a0c00e388");
+      /*this.worker = new maptalks.Marker(
+        [127.109049, 37.486568], {
+          'symbol': {
+            'markerFile': 'icon-worker1.svg',
+            'markerWidth': 50,
+            'markerHeight': 50
+          }
+        }
+      ).addTo(this.layer);
+      this.worker.on('click', () => {
+        this.setWorkerWindow();
+    })*/
+    },
+    setWorkerWindow(bcnList, bcns) {
+        console.log("aaffqq", bcnList);
+        console.log("afafafaf", bcns);
+      bcns.setInfoWindow({
+        'content': '<div class="bcns">' +
+        '<div class="bcnsInfo"><div class="bcnskey">DUMP TRUCK</div>' + bcnList.gid.slice(1, 10) + '</div>'+
+        '<img class="bcnsImg" src="item.png"></img>' +
+        '</div>',
+        'width': 400
+      });
+      bcns.openInfoWindow();
+    },
+    setIpcam() {
+      this.ipcam = new maptalks.Marker(
+        [127.113049, 37.498568], {
+          'symbol': {
+            'markerFile': 'icon-ipcam.svg',
+            'markerWidth': 50,
+            'markerHeight': 50
+          }
+        }
+      ).addTo(this.layer);
+      this.ipcam.on('click', () => {
+        this.setIpcamWindow();
+      })
+    },
+    setIpcamWindow() {
+      this.ipcam.setInfoWindow({
+          'content': '<div class="bcns">' +
+          '<div class="bcnsInfo"><div class="bcnskey">IPCAM</div></div>'+
+          '<img class="bcnsImg" src="item.png"></img>' +
+          '</div>',
+          'width': 400
+      });
+      this.ipcam.openInfoWindow();
     }
   },
-  drawHub(hubId, coordinate) {
-    console.debug('Try draw hub, id: ', hubId);
-    let marker = new maptalks.Marker(
-      [coordinate.x, coordinate.y], {
-        'symbol': {
-          'markerFile': 'icon-hub.png',
-          'markerWidth': 40,
-          'markerHeight': 40
-        }
-      }
-    ).addTo(this.hubLayer); // TODO: hub layer
-    marker.on('click', () => {
-      this.setMarkerWindow(hubId, marker);
-    })
-    this.markerMap.hubs[hubId] = marker;
-  },
-  setMarkerWindow(hubId, marker) {
-    marker.setInfoWindow({
-      'content': '<ul class="worker_menu">' +
-        '<li class="worker-content" onload="video()"><img class="exampleimg" src="raspberrypi.svg"/></li>' +
-        '<li class="worker"></li>' +
-        '</ul>',
-      'width': 300
-    });
-    marker.openInfoWindow();
-  },
-  postHubLocation(hub) {
-    services.setHubLocation(hub);
-    //this.marker.remove();
-    //this.services.getGadget();
-  },
-  setWorker() {
-    /*const beacons = getBeacons();
-    console.log('beacons',beacons);*/
-    const beacons = services.detectBeaconList("799b9f874bc1c50775233d2a0c00e388");
-    //console.log("beacons",beacons);
-    this.worker = new maptalks.Marker(
-      [127.109049, 37.486568], {
-        'symbol': {
-          'markerFile': 'icon-worker1.svg',
-          'markerWidth': 50,
-          'markerHeight': 50
-        }
-      }
-    ).addTo(this.layer);
-    this.worker.on('click', () => {
-      this.setWorkerWindow();
-    })
-  },
-  setWorkerWindow() {
-    this.worker.setInfoWindow({
-      'content': '<ul class="worker_menu">' +
-        '<li class="worker-content" onload="video()"><img class="exampleimg" src="raspberrypi.svg"/></li>' +
-        '<li class="worker"></li>' +
-        '</ul>',
-      'width': 300
-    });
-    this.worker.openInfoWindow();
-  },
-  setIpcam() {
-    this.ipcam = new maptalks.Marker(
-      [127.113049, 37.498568], {
-        'symbol': {
-          'markerFile': 'icon-ipcam.svg',
-          'markerWidth': 50,
-          'markerHeight': 50
-        }
-      }
-    ).addTo(this.layer);
-    this.ipcam.on('click', () => {
-      this.setIpcamWindow();
-    })
-  },
-  setIpcamWindow() {
-    this.ipcam.setInfoWindow({
-      'content': '<ul class="ipcam_menu">' +
-        '<li class="ipcam-content" onload="video()"><img class="exampleimg" src="raspberrypi.svg"/></li>' +
-        '<li class="ipcam"></li>' +
-        '</ul>',
-      'width': 300
-    });
-    this.ipcam.openInfoWindow();
-  }
-},
-computed: {
+  computed: {
     isEmptyUrl() {
       return !!!this.url
     }

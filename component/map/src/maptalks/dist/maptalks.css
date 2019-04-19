@@ -270,12 +270,12 @@
 }
 
 .maptalks-msgBox {
-  background: rgb(42 147 240);
+  background: rgb(57 178 255);
   border: 1px solid #b4b3b3;
   border-radius: 15px;
   box-shadow: 5px 5px 3px #aaaaaa;
-  padding-top: 15px;
-  overflow: hidden
+  overflow: hidden;
+  height: 250px
 }
 
 .maptalks-msgBox em.maptalks-ico {
