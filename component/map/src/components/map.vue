@@ -52,12 +52,14 @@ export default {
     initloadMap() {
       this.map = new maptalks.Map(this.id, {
         center: [127.113049, 37.498568],
-        zoom: 14,
+        zoom: 20,
         minZoom: 8,
         maxZoom: 16,
         baseLayer: new maptalks.TileLayer("base", {
-          urlTemplate: 'http://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}.png',
-          subdomains: ['a','b','c','d'],
+          urlTemplate: 'icon-hub.png',
+          // urlTemplate: 'http://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}.png',
+          // tileSize: [1024, 1024],
+          // subdomains: ['a','b','c','d']
         })
       });
       this.layer = new maptalks.VectorLayer('vector').addTo(this.map);
@@ -68,6 +70,7 @@ export default {
             this.addMenu(param);
         });*/
       this.initContextMenu();
+      this.loadHubs();
       this.setIpcam();
     },
     initContextMenu() {
@@ -107,6 +110,22 @@ export default {
       document.getElementsByClassName('item1')[0].addEventListener('click', this.clickItem1);
       document.getElementsByClassName('item2')[0].addEventListener('click', this.clickItem2);*/
     },
+    loadHubs() {
+      console.debug('Try load hubs');
+      let hubs = services.getHubs((hubList) => {
+        console.debug('Load hubs.', hubList);
+        // Store hubs.
+        this.$store.commit('addHubs', hubList); // TODO; move to services?
+
+        // draw hub if has location data.
+        hubList.forEach((hub) => {
+          let location = hub.custom && hub.custom.map_location;
+          if (!!location) {
+            this.drawHub(hub.id, location);
+          }
+        });
+      });
+    },
     handleAddHub(e) {
       // show hub List
       //console.log(e);
@@ -121,6 +140,9 @@ export default {
       // TODO
       services.getHubs((hubList) => {
           this.$store.commit('addHubs', hubList);
+          // Clear old hub list view
+          this.options.items = []; // TODO: destory for GC?
+
           /*for (var _i in hubList) {
           hubIdList[_i] = getListFilter(hubList[_i], "name");
       };*/
@@ -146,6 +168,12 @@ export default {
             console.log('hubList', hubs[i]);
         }*/
             hubList.forEach((hub, index) => {
+              // draw only no location hubs.
+              if (!!hub.custom && !!hub.custom.map_location) {
+                console.deub('The ${hub.name} hub has location data. so skip');
+                return;
+              }
+
               var itemObj = {
                 item: hub.name,
                 click: () => {
@@ -226,12 +254,15 @@ export default {
             'markerHeight': 40
           }
         }
-      ).addTo(this.hubLayer); // TODO: hub layer
+      ).addTo(this.hubLayer);
       this.setWorker(hubId); // 허브 추가 시 비콘들을 주위에 뿌린다.
       marker.on('click', () => {
         this.setMarkerWindow(hubId, marker);
       })
       this.markerMap.hubs[hubId] = marker;
+
+      // Store hub location to server.
+      this._updateHubLocation(hubId, coordinate.x, coordinate.y);
     },
     setMarkerWindow(hubId, marker) {
       var context = '';
@@ -380,6 +411,23 @@ export default {
           'width': 400
       });
       this.ipcam.openInfoWindow();
+    },
+    _updateHubLocation(hubId, x, y) {
+      let hub = this.$store.getters.getHub(hubId);
+      if (!!hub && !!x && !!y) {
+        if (!!!hub.custom) {
+          hub.custom = {};
+        }
+        hub.custom.map_location = {
+          x: x,
+          y: y
+        };
+
+        // send to server.
+        services.setHubLocation(hub);
+      } else {
+        console.warn('Failed to update hub location, given parms cannot be null.', hub, x, y);
+      }
     }
   },
   computed: {

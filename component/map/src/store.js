@@ -5,7 +5,7 @@ Vue.use(Vuex)
 
 export default new Vuex.Store({
   state: {
-    hubs: []
+    hubs: {}
   },
   getters: {
     getScannerList: function(data, id) {
@@ -16,11 +16,16 @@ export default new Vuex.Store({
         }
       }
       return returnObject;
+    },
+    getHub: (state) => (id) => {
+      return state.hubs[id];
     }
   },
   mutations: {
     addHubs(state, payload) {
-      state.hubs.concat(payload);
+      payload.forEach(hub => {
+        state.hubs[hub.id] = hub;
+      });
     }
   },
   actions: {

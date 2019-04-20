@@ -65,3 +65,6 @@ maint/prota_addr
 *.idea/
 
 .vscode
+
+# For npm
+node_modules
