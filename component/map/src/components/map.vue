@@ -6,6 +6,7 @@
 <script>
 import * as maptalks from 'maptalks'
 import * as services from '@/services/services'
+import * as beaconDetector from '@/services/beacon-detector';
 //import {CustomTool} from 'maptalks'
 //import image from '@/assets/raspberrypi.svg'
 export default {
@@ -56,10 +57,10 @@ export default {
         minZoom: 8,
         maxZoom: 16,
         baseLayer: new maptalks.TileLayer("base", {
-          urlTemplate: 'icon-hub.png',
-          // urlTemplate: 'http://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}.png',
+          // urlTemplate: 'icon-hub.png',
+          urlTemplate: 'http://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}.png',
           // tileSize: [1024, 1024],
-          // subdomains: ['a','b','c','d']
+          subdomains: ['a','b','c','d']
         })
       });
       this.layer = new maptalks.VectorLayer('vector').addTo(this.map);
@@ -69,9 +70,19 @@ export default {
       /*this.map.on('click', (param) => {
             this.addMenu(param);
         });*/
+      this.initBeaconLocationHandler();
       this.initContextMenu();
       this.loadHubs();
       this.setIpcam();
+    },
+    initBeaconLocationHandler() {
+      // run beacon detector.
+      this.beaconDetector = new beaconDetector.BeaconDetector((beacons) => {
+        
+      });
+
+      // start
+      this.beaconDetector.start();
     },
     initContextMenu() {
       this.contextMenuOption = {
@@ -170,29 +181,29 @@ export default {
             hubList.forEach((hub, index) => {
               // draw only no location hubs.
               if (!!hub.custom && !!hub.custom.map_location) {
-                console.deub('The ${hub.name} hub has location data. so skip');
+                console.debug('The ${hub.name} hub has location data. so skip');
                 return;
               }
 
               var itemObj = {
                 item: hub.name,
                 click: () => {
-                  var location = {
-                    'x': this.contextCoordinate.x,
-                    'y': this.contextCoordinate.y
-                  };
-                  if (hubList[index]['custom'] === null) {
-                    hubList[index]['custom'] = location;
-                  } else {
-                    hubList[index]['custom']['x'] = location['x'];
-                    hubList[index]['custom']['y'] = location['y'];
-                  }
+                  // var location = {
+                  //   'x': this.contextCoordinate.x,
+                  //   'y': this.contextCoordinate.y
+                  // };
+                  // if (hubList[index]['custom'] === null) {
+                  //   hubList[index]['custom'] = location;
+                  // } else {
+                  //   hubList[index]['custom']['x'] = location['x'];
+                  //   hubList[index]['custom']['y'] = location['y'];
+                  // }
                   //hubList[index]['custom']['location'] = this.contextCoordinate.x;
                   //hubList[index]['y'] = this.contextCoordinate.y;
                   //Array.prototype.push.apply(hubList[index], {'x': this.contextCoordinate.x, 'y':this.contextCoordinate.y});
                   //console.log("1241",hubList[index]);
-                  selectedCallback(hubList[index].id);
-                  this.postHubLocation(hubList[index]);
+                  selectedCallback(hub.id);
+                  // this.postHubLocation(hubList[index]);
                 }
               }
               if (hubList.length - index > 1) {
@@ -255,16 +266,16 @@ export default {
           }
         }
       ).addTo(this.hubLayer);
-      this.setWorker(hubId); // 허브 추가 시 비콘들을 주위에 뿌린다.
+      this.drawWorkers(hubId); // 허브 추가 시 비콘들을 주위에 뿌린다.
       marker.on('click', () => {
-        this.setMarkerWindow(hubId, marker);
+        this.showHubInfoWindow(hubId, marker);
       })
       this.markerMap.hubs[hubId] = marker;
 
       // Store hub location to server.
       this._updateHubLocation(hubId, coordinate.x, coordinate.y);
     },
-    setMarkerWindow(hubId, marker) {
+    showHubInfoWindow(hubId, marker) {
       var context = '';
       services.detectBeaconList(hubId, (bcnList) => {
           console.log("baba", bcnList)
@@ -313,12 +324,7 @@ export default {
       'width': 300
   });*/
     },
-    postHubLocation(hub) {
-      services.setHubLocation(hub);
-      //this.marker.remove();
-      //this.services.getGadget();
-    },
-    setWorker(hubId) {
+    drawWorkers(hubId) {
         services.detectBeaconList(hubId, (bcnList) => {
             console.log("15151515",Math.random() / 100);
             console.log("qrqrsdsds", bcnList);
@@ -526,7 +532,6 @@ export default {
   width: 250px;
   margin-left: 100px;
   background-color: rgb(42 160 240);
-  position: absolute;
   padding-inline-start: 0;
   overflow: scroll;
   overflow-x: hidden

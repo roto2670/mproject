@@ -5,9 +5,11 @@ import axios from 'axios'
 import 'maptalks/dist/maptalks.css'
 import store from './store'
 import * as services from '@/services/services.js';
+import * as beaconDetector from '@/services/beacon-detector.js';
 
 Vue.prototype.$http = axios;
 Vue.prototype.services = services;
+Vue.prototype.beaconDetector = beaconDetector;
 Vue.config.productionTip = false
 
 new Vue({
