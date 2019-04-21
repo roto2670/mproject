@@ -78,7 +78,7 @@ export default {
     initBeaconLocationHandler() {
       // run beacon detector.
       this.beaconDetector = new beaconDetector.BeaconDetector((beacons) => {
-        
+
       });
 
       // start
@@ -266,7 +266,7 @@ export default {
           }
         }
       ).addTo(this.hubLayer);
-      this.drawWorkers(hubId); // 허브 추가 시 비콘들을 주위에 뿌린다.
+      this.drawWorkers(hubId, coordinate); // 허브 추가 시 비콘들을 주위에 뿌린다.
       marker.on('click', () => {
         this.showHubInfoWindow(hubId, marker);
       })
@@ -275,44 +275,97 @@ export default {
       // Store hub location to server.
       this._updateHubLocation(hubId, coordinate.x, coordinate.y);
     },
+    removeHubMarker(hubId) {
+      console.debug('Try remove hub marker, id: $hubId');
+
+      let hubMarker = this.markerMap.hubs[hubId];
+      if (!!hubMarker) {
+        // remove location in hub model
+        let hub = this.$store.getters.getHub(hubId);
+        if (!!hub) {
+          delete hub.custom.map_location;
+          services.setHubLocation(hub);
+        } else {
+          console.warn('Failed to clear hub location, cannot found hub model by given id: $hubId');
+        }
+
+        hubMarker.remove(); 
+      } else {
+        console.warn('Failed to remove hub marker, cannot find marker by ginve id: $hubId');
+      }
+
+      // remove children markers
+      this.removeGadgetMakers(hubId);
+
+      // delete in cahces
+      delete this.markerMap.hubs[hubId];
+    },
+    removeGadgetMakers(hubId) {
+      console.log('Try remove hub markers for id: ${hubId}');
+      let gadgetMarkers = this.markerMap.gadgets[hubId];
+      if (!!gadgetMarkers) {
+        gadgetMarkers.forEach((marker) => {
+          marker.remove();
+        })
+      } else {
+        console.warn('Failed to remove gadget markers by given id: ${hubId}');
+      }
+
+      // clear in cache.
+      delete this.markerMap.gadgets[hubId];
+    },
     showHubInfoWindow(hubId, marker) {
-      var context = '';
-      services.detectBeaconList(hubId, (bcnList) => {
-          console.log("baba", bcnList)
-          if (bcnList) {
-              bcnList.forEach((bcnlist, index) => {
-                  context += '<li>';
-                  context += bcnlist['gid'].slice(1, 10);
-                  context += '</li>';
-              })
-              console.log("context",context);
-              marker.setInfoWindow({
-                  'content': '<ul class="worker_menu">' +
-                    '<div class="worker"><div class="workerId"><div class="workerkey">SCANNER</div>'+ hubId.slice(1,4)+'</div>' +
-                    '<div class="workerCount"><div class="workerkey">WORKER</div>' + bcnList.length + '</div></div>' +
+      let context = '';
+      let hub = this.$store.getters.getHub(hubId);
+      services.detectBeaconList(hubId, (beacons) => { // TODO: deferred
+        if (beacons) {
+            let gadgetIds = 
+            services.getGadgets(beacons.map(beacon => {
+                return beacon.gid;
+            }), (gadgets) => {
+                gadgets.forEach((gadget) => {
+                    context += '<li>';
+                    context += gadget.name || 'no name';
+                    context += '</li>';
+                })
+                marker.setInfoWindow({ // TODO: vue component
+                content: '<ul class="worker_menu">' +
+                    '<div class="worker"><div class="workerId"><div class="workerkey">SCANNER</div>'+ hub.name +'</div>' +
+                    '<div class="workerCount"><div class="workerkey">WORKER</div>' + gadgets.length + '</div>' +
+                    '<button class="hub-remove-button">Remove</button></div>' +
                     '<ul class="workerInfo">' +
                     context +
                     '</ul></ul>',
-                  'width': 350
-              });
-              marker.openInfoWindow();
-            /*var title = '<ul class="worker_menu>';
-            this.contentOptions.content += title;
-            bcnList.forEach((hub, index) => {
-              var contentObj = '<li class="worker-content">'
-              if (bcnList.length - index > 1) {
-                this.contentOptions.content += contentObj;
-                this.contentOptions.content += bcnList[index]['gid'];
-                this.contentOptions.content += '</li>';
-              } else {
-                this.contentOptions.content += contentObj;
-                this.contentOptions.content += '</li></ul>';
-                this.contentOptions.width += 300;
-              }
-          })*/
-          } else {
-            alert("There's no beaconData to load");
-          }
+                'width': 350
+                });
+                marker.openInfoWindow();
+
+                let vm = this;
+                document.getElementsByClassName('hub-remove-button')[0].onclick = function() { // TODO: suck
+                    vm.removeHubMarker(hubId);
+                }
+            }, () => {
+                // TODO:
+                console.warn('Failed to load gadgets for hub id: $hubId');
+            })
+
+          /*var title = '<ul class="worker_menu>';
+          this.contentOptions.content += title;
+          bcnList.forEach((hub, index) => {
+            var contentObj = '<li class="worker-content">'
+            if (bcnList.length - index > 1) {
+              this.contentOptions.content += contentObj;
+              this.contentOptions.content += bcnList[index]['gid'];
+              this.contentOptions.content += '</li>';
+            } else {
+              this.contentOptions.content += contentObj;
+              this.contentOptions.content += '</li></ul>';
+              this.contentOptions.width += 300;
+            }
+        })*/
+        } else {
+          alert("There's no beaconData to load");
+        }
         }, () => {
           console.log("Failed")
       });
@@ -324,14 +377,12 @@ export default {
       'width': 300
   });*/
     },
-    drawWorkers(hubId) {
-        services.detectBeaconList(hubId, (bcnList) => {
-            console.log("15151515",Math.random() / 100);
-            console.log("qrqrsdsds", bcnList);
-            if (bcnList) {
-                bcnList.forEach((hubId, index) => {
-                    this.bcns[index] = new maptalks.Marker(
-                        [this.contextCoordinate.x + (Math.random() / 60), this.contextCoordinate.y +  (Math.random() / 60)], {
+    drawWorkers(hubId, coordinate) {
+        services.detectBeaconList(hubId, (beacons) => {
+            if (beacons) {
+                beacons.forEach((beacon, index) => {
+                    let marker = new maptalks.Marker(
+                        [coordinate.x + (Math.random() / 60), coordinate.y +  (Math.random() / 60)], {
                             'symbol': {
                               'markerFile': 'icon-worker' + Math.ceil(Math.random() * 4) + '.svg',
                               'markerWidth': 50,
@@ -339,12 +390,20 @@ export default {
                             }
                         }
                     ).addTo(this.workerLayer);
-                    this.bcns[index].on('click', () => {
-                        this.setWorkerWindow(bcnList[index], this.bcns[index]);
-                        console.log("afafafaf",bcnList[index]);
+                    marker.on('click', () => {
+                        this.showGadgetInFoWindow(beacon.gid, this.bcns[index]);
                     });
+                    this.bcns[index] = marker;
+
+                    // add in cache
+                    var markerCache = this.markerMap.gadgets[hubId];
+                    if (!markerCache) {
+                        markerCache = [];
+                        this.markerMap.gadgets[hubId] = markerCache;
+                    }
+                    markerCache.push(marker);
                 });
-                console.log("arybcn", this.bcns);
+
               /*var title = '<ul class="worker_menu>';
               this.contentOptions.content += title;
               bcnList.forEach((hub, index) => {
@@ -382,31 +441,34 @@ export default {
         this.setWorkerWindow();
     })*/
     },
-    setWorkerWindow(bcnList, bcns) {
-        console.log("aaffqq", bcnList);
-        console.log("afafafaf", bcns);
-      bcns.setInfoWindow({
-        'content': '<div class="bcns">' +
-        '<div class="bcnsInfo"><div class="bcnskey">DUMP TRUCK</div>' + bcnList.gid.slice(1, 10) + '</div>'+
-        '<img class="bcnsImg" src="item.png"></img>' +
-        '</div>',
-        'width': 400
-      });
-      bcns.openInfoWindow();
+    showGadgetInFoWindow(gadgetId, marker) {
+        services.getGadget(gadgetId, (gadget) => {
+            marker.setInfoWindow({
+                'content': '<div class="bcns">' +
+                '<div class="bcnsInfo"><div class="bcnskey">DUMP TRUCK</div>' + (gadget.name || 'no name') + '</div>'+
+                '<img class="bcnsImg" src="item.png"></img>' +
+                '</div>',
+                'width': 400
+            });
+            marker.openInfoWindow();
+        }, (error) => {
+            console.warn('Failed to show gadget info window, no gadget by given id: ${gadgetId}');
+        });
     },
     setIpcam() {
-      this.ipcam = new maptalks.Marker(
-        [127.113049, 37.498568], {
-          'symbol': {
-            'markerFile': 'icon-ipcam.svg',
-            'markerWidth': 50,
-            'markerHeight': 50
-          }
-        }
-      ).addTo(this.layer);
-      this.ipcam.on('click', () => {
-        this.setIpcamWindow();
-      })
+        return; // TODO: impl.
+        this.ipcam = new maptalks.Marker(
+            [127.113049, 37.498568], {
+            'symbol': {
+                'markerFile': 'icon-ipcam.svg',
+                'markerWidth': 50,
+                'markerHeight': 50
+            }
+            }
+        ).addTo(this.layer);
+        this.ipcam.on('click', () => {
+            this.setIpcamWindow();
+        })
     },
     setIpcamWindow() {
       this.ipcam.setInfoWindow({
@@ -604,13 +666,13 @@ export default {
 
 .bcnsImg {
   height: 250px;
-  width: 300px;
+  width: 280px;
   margin-left: 100px;
 }
 
 .bcnsInfo {
   width: 100px;
-  height: 250px;
+  height: 200px;
   color: white;
   background-color: rgb(93 224 219);
   padding-top: 50px;

@@ -2,7 +2,9 @@ import axios from 'axios'
 
 // TODO: SERVER_BASE_URL
 const SERVER_BASE_URL = 'http://127.0.0.1:16000';
-export const setHubLocation = (hub) => {
+export const setHubLocation = (hub, successCallback, errorCallback) => {
+  // TODO: deferred
+
   //console.log('hub: ', hub);
   // let formData = new FormData();
   // for(var i in hub) {
@@ -23,7 +25,6 @@ export const setHubLocation = (hub) => {
       console.log('FAILURE!!')
       console.log(hub);
     })
-
 }
 export const getHubs = (successCallback, errorCallback) => {
   /*var returnObject = [];
@@ -236,4 +237,39 @@ export const detectBeaconList = (hubId, successCallback, failCallback) => {
         failedCallback(console.log("Failed to Get detBeacons List"))
       }
     });
+}
+
+export const getGadgets = (gadgetIds, successCallback, failCallback) => {
+    let gadgets = [];
+    _getGadgets(gadgetIds, gadgets, () => {
+        successCallback(gadgets);
+    });
+}
+
+export const getGadget = (gadgetId, successCallback, failCallback) => { // TODO: force reload?
+    axios({
+      url: SERVER_BASE_URL + '/dash/beacons/' + gadgetId,
+      method: 'GET',
+      responseType: 'text'
+    }).then(response => {
+      if (response.data) {
+        successCallback(response.data);
+      } else {
+        failCallback("Failed to get gadget, id: ${gadgetId}"); // TODO: server error
+      }
+    });
+}
+
+function _getGadgets(gadgetIds, gadgets, doneCallback) {
+    let id = gadgetIds.shift();
+    if (id) {
+        getGadget(id, (gadget) => {
+            gadgets.push(gadget);
+            _getGadgets(gadgetIds, gadgets, doneCallback);
+        }, () => {
+            _getGadgets(gadgetIds, gadgets, doneCallback);
+        });
+    } else {
+        doneCallback();
+    }
 }
