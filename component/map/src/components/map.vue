@@ -53,7 +53,7 @@ export default {
     initloadMap() {
       this.map = new maptalks.Map(this.id, {
         center: [90, 50],
-        zoom: 4,
+        zoom: 6,
         minZoom: 4,
         maxZoom: 6,
         maxExtent: new maptalks.Extent(5, 5, 170, 80),
@@ -276,10 +276,10 @@ export default {
       let marker = new maptalks.Marker(
         [coordinate.x, coordinate.y], {
           'symbol': {
-            'markerFile': 'icon-hub.png',
-            'markerWidth': 40,
-            'markerHeight': 40
-          }
+              markerFile: 'icon-hub.png',
+              markerWidth: 40,
+              markerHeight: 40,
+            }
         }
       ).addTo(this.hubLayer);
       this.drawWorkers(hubId, coordinate); // 허브 추가 시 비콘들을 주위에 뿌린다.
@@ -398,7 +398,7 @@ export default {
             if (beacons) {
                 beacons.forEach((beacon, index) => {
                     let marker = new maptalks.Marker(
-                        [coordinate.x + (Math.random() / 60), coordinate.y +  (Math.random() / 60)], {
+                        [coordinate.x + (Math.random() * 6), coordinate.y +  (Math.random() * 6)], {
                             'symbol': {
                               'markerFile': 'icon-worker' + Math.ceil(Math.random() * 4) + '.svg',
                               'markerWidth': 50,
