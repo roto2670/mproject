@@ -1,5 +1,5 @@
 <template>
-<div id="App">
+<div id="locationTracking">
   <Map @select-button="handleSelectedButton"></Map>
 </div>
 </template>
@@ -17,7 +17,7 @@ export default {
 }
 </script>
 <style>
-#App {
+#locationTracking {
   margin: 0px;
   height: 100%;
   width: 100%;
