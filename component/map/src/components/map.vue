@@ -52,17 +52,32 @@ export default {
   methods: {
     initloadMap() {
       this.map = new maptalks.Map(this.id, {
-        center: [127.113049, 37.498568],
-        zoom: 20,
-        minZoom: 8,
-        maxZoom: 16,
-        baseLayer: new maptalks.TileLayer("base", {
-          // urlTemplate: 'icon-hub.png',
-          urlTemplate: 'http://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}.png',
-          // tileSize: [1024, 1024],
-          subdomains: ['a','b','c','d']
+        center: [90, 50],
+        zoom: 4,
+        minZoom: 4,
+        maxZoom: 6,
+        maxExtent: new maptalks.Extent(5, 5, 170, 80),
+        baseLayer: new maptalks.ImageLayer("base", [{
+          url: 'map.png',
+          extent: [0, 0, 180, 85],
+          opactiy: 1
+        }], {
+          opactiy: 1
         })
       });
+      // #### Worldmap code
+      // this.map = new maptalks.Map(this.id, {
+      //   center: [127.113049, 37.498568],
+      //   //center: [0, 0],
+      //   zoom: 20,
+      //   minZoom: 8,
+      //   maxZoom: 16,
+      //   baseLayer: new maptalks.TileLayer("base", {
+      //     // urlTemplate: 'icon-hub.png',
+      //     urlTemplate: 'http://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}.png',
+      //     subdomains: ['a','b','c','d']
+      //   })
+      // });
       this.layer = new maptalks.VectorLayer('vector').addTo(this.map);
       this.hubLayer = new maptalks.VectorLayer('vector1').addTo(this.map);
       this.workerLayer = new maptalks.VectorLayer('vector2').addTo(this.map);
@@ -107,6 +122,7 @@ export default {
       this.map.on('contextmenu', (e) => {
         this.contextCoordinate = e.coordinate;
         this.map.openMenu(e.coordinate);
+        console.log("x : " + e.coordinate.x + ", y : " + e.coordinate.y);
       });
       // this.contextMenu.on('showend', (data) => {
       //   this.contextCoordinate = data.coordinate;
