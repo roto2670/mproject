@@ -1,16 +1,11 @@
 import axios from 'axios'
 
 // TODO: SERVER_BASE_URL
-const SERVER_BASE_URL = 'http://127.0.0.1:16000';
+const SERVER_BASE_URL = 'http://127.0.0.1:5000';
+//const SERVER_BASE_URL = '';
 export const setHubLocation = (hub, successCallback, errorCallback) => {
   // TODO: deferred
 
-  //console.log('hub: ', hub);
-  // let formData = new FormData();
-  // for(var i in hub) {
-  //     formData.append('hub',hub);
-  // }
-  // console.log("formdata1", formData);
   axios
     .post(SERVER_BASE_URL + '/dash/hubs/location', {'hub': hub}, {
       headers: {
@@ -27,139 +22,6 @@ export const setHubLocation = (hub, successCallback, errorCallback) => {
     })
 }
 export const getHubs = (successCallback, errorCallback) => {
-  /*var returnObject = [];
-  var hubList = [{
-      "id": "799b9f874bc1c50775233d2a0c00e388",
-      "uuid": "240ac4a64c9e",
-      "account_id": "cfb95812a3f3a92996bc5a0c922fd249",
-      "status": 1,
-      "ftl": null,
-      "name": "mibh(4c9e)",
-      "kind": "com.thenaran.rtos.m",
-      "app_version": "0.1.18",
-      "platform": "rtos",
-      "model": "hubm",
-      "locale": "locale",
-      "system_version": "v4.0-dev-91-gb7b5c3a8c",
-      "msg_token": "id/799b9f874bc1c50775233d2a0c00e388",
-      "gadget_ids": [
-        "2f7ce57203915d7c9505f71c8f4b1555"
-      ],
-      "latest_version": "0.1.19",
-      "beacons": [{
-          "uuid": "fab50d95-70bd-ffff-ffff-ffffffffffff",
-          "major": -1,
-          "minor": -1,
-          "interval": 3
-        },
-        {
-          "uuid": "gbb95812-a3f3-a929-96bc-5a0c922fd249",
-          "major": -1,
-          "minor": -1,
-          "interval": 5
-        },
-        {
-          "uuid": "fab50d95-70bd-ffff-ffff-ffffffddffff",
-          "major": -1,
-          "minor": -1,
-          "interval": 3
-        },
-        {
-          "uuid": "cfb95812-a3f3-a929-96bc-5a0c922fd249",
-          "major": -1,
-          "minor": -1,
-          "interval": 3
-        },
-        {
-          "uuid": "gfb95812-a3f3-a929-96bc-5a0c922fd249",
-          "major": -1,
-          "minor": -1,
-          "interval": 5
-        },
-        {
-          "uuid": "fab50d95-7dbd-ffff-ffff-ffffffddffff",
-          "major": -1,
-          "minor": -1,
-          "interval": 3
-        },
-        {
-          "uuid": "fab50d95-70db-ffff-ffff-ffffffffffff",
-          "major": -1,
-          "minor": -1,
-          "interval": 3
-        }
-      ],
-      "custom": null,
-      "tags": null
-    },
-    {
-      "id": "124534653233d2a0c00e388",
-      "uuid": "240ac4a64c9e",
-      "account_id": "cfb95812a3f3a92996bc5a0c922fd249",
-      "status": 1,
-      "ftl": null,
-      "name": "mibh(4c9e)",
-      "kind": "com.thenaran.rtos.m",
-      "app_version": "0.1.18",
-      "platform": "rtos",
-      "model": "hubm",
-      "locale": "locale",
-      "system_version": "v4.0-dev-91-gb7b5c3a8c",
-      "msg_token": "id/799b9f874bc1c50775233d2a0c00e388",
-      "gadget_ids": [
-        "2f7ce57203915d7c9505f71c8f4b1555"
-      ],
-      "latest_version": "0.1.19",
-      "beacons": [{
-          "uuid": "fab50d95-70bd-ffff-ffff-ffffffffffff",
-          "major": -1,
-          "minor": -1,
-          "interval": 3
-        },
-        {
-          "uuid": "gbb95812-a3f3-a929-96bc-5a0c922fd249",
-          "major": -1,
-          "minor": -1,
-          "interval": 5
-        },
-        {
-          "uuid": "fab50d95-70bd-ffff-ffff-ffffffddffff",
-          "major": -1,
-          "minor": -1,
-          "interval": 3
-        },
-        {
-          "uuid": "cfb95812-a3f3-a929-96bc-5a0c922fd249",
-          "major": -1,
-          "minor": -1,
-          "interval": 3
-        },
-        {
-          "uuid": "gfb95812-a3f3-a929-96bc-5a0c922fd249",
-          "major": -1,
-          "minor": -1,
-          "interval": 5
-        },
-        {
-          "uuid": "fab50d95-7dbd-ffff-ffff-ffffffddffff",
-          "major": -1,
-          "minor": -1,
-          "interval": 3
-        },
-        {
-          "uuid": "fab50d95-70db-ffff-ffff-ffffffffffff",
-          "major": -1,
-          "minor": -1,
-          "interval": 3
-        }
-      ],
-      "custom": null,
-      "tags": null
-    }
-  ];
-
-  successCallback(hubList);*/
-
   var hubList = [];
   axios({
     url: SERVER_BASE_URL + '/dash/scanner/list',
@@ -167,8 +29,6 @@ export const getHubs = (successCallback, errorCallback) => {
     responseType: 'text' // important
   }).then(response => {
     if (!!response.data) {
-      //console.log('rs: ', response);
-      //hubList.push(response.data[0]);
       hubList = response.data;
 
       successCallback(hubList);
@@ -186,8 +46,6 @@ export const getBeacons = () => {
     responseType: 'text' // important
   }).then(response => {
     if (!!response.data) {
-      //console.log('rs: ', response);
-      //hubList.push(response.data[0]);
       beaconList = response.data;
       console.log("beaconList", beaconList);
       for (var _i in beaconList) {
@@ -211,7 +69,6 @@ export const getBeacons = () => {
   function getListFilter(data, id) {
     var returnObject = [];
     for (var key in data) {
-      //console.log(data[id]);
       if (key === id) {
         returnObject[key] = data[key];
       }
@@ -227,14 +84,11 @@ export const detectBeaconList = (hubId, successCallback, failCallback) => {
       responseType: 'text' // important
     }).then(response => {
       if (!!response.data) {
-        //console.log('rs: ', response);
-        //hubList.push(response.data[0]);
         detbeaconList = response.data;
         console.log("aa",detbeaconList['data']);
-        //slicedbeaconList = detbeaconList.slice();
         successCallback(detbeaconList['data']);
       } else {
-        failedCallback(console.log("Failed to Get detBeacons List"))
+        failCallback(console.log("Failed to Get detBeacons List"))
       }
     });
 }
