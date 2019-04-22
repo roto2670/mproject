@@ -49,12 +49,30 @@ export default {
   },
   methods: {
     initloadMap() {
+      // Options
+      // http://maptalks.org/maptalks.js/api/0.x/Map.html#options
       this.map = new maptalks.Map(this.id, {
         center: [90, 50],
         zoom: 6,
-        minZoom: 4,
         maxZoom: 6,
+        minZoom: 4,
+        // Extent
+        // http://maptalks.org/maptalks.js/api/0.x/Extent.html
         maxExtent: new maptalks.Extent(5, 5, 170, 80),
+        zoomAnimation: false,
+        zoomInCenter: true,
+        panAnimation: false,
+        dragRotate: false,
+        dragPitch: false,
+        drgaRotatePitch: false,
+        touchGesture: false,
+        touchZoom: false,
+        touchRotate: false,
+        touchPitch: false,
+        touchZoomRotate: false,
+        doubleClickZoom: false,
+        // Image Layer
+        // http://maptalks.org/maptalks.js/api/0.x/ImageLayer.html
         baseLayer: new maptalks.ImageLayer("base", [{
           url: 'map.png',
           extent: [0, 0, 180, 85],
