@@ -13,12 +13,11 @@ export const setHubLocation = (hub, successCallback, errorCallback) => {
       }
     })
     .then(e => {
-      console.log('SUCCESS!!')
-      //console.log(hub);
+      // Success
+      // console.log('SUCCESS!!', e)
     })
     .catch(e => {
-      console.log('FAILURE!!')
-      console.log(hub);
+      console.log('FAILURE!!', e)
     })
 }
 export const getHubs = (successCallback, errorCallback) => {
@@ -30,7 +29,6 @@ export const getHubs = (successCallback, errorCallback) => {
   }).then(response => {
     if (!!response.data) {
       hubList = response.data;
-
       successCallback(hubList);
     } else {
       console.log('File is not exist')
@@ -85,7 +83,8 @@ export const detectBeaconList = (hubId, successCallback, failCallback) => {
     }).then(response => {
       if (!!response.data) {
         detbeaconList = response.data;
-        console.log("aa",detbeaconList['data']);
+        // Beacon list
+        // console.log("Beacon List. ",detbeaconList['data']);
         successCallback(detbeaconList['data']);
       } else {
         failCallback(console.log("Failed to Get detBeacons List"))

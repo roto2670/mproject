@@ -7,8 +7,6 @@
 import * as maptalks from 'maptalks'
 import * as services from '@/services/services'
 import * as beaconDetector from '@/services/beacon-detector';
-//import {CustomTool} from 'maptalks'
-//import image from '@/assets/raspberrypi.svg'
 export default {
   name: 'Map',
   data() {
@@ -82,9 +80,6 @@ export default {
       this.hubLayer = new maptalks.VectorLayer('vector1').addTo(this.map);
       this.workerLayer = new maptalks.VectorLayer('vector2').addTo(this.map);
       this.camLayer = new maptalks.VectorLayer('vector3').addTo(this.map);
-      /*this.map.on('click', (param) => {
-            this.addMenu(param);
-        });*/
       this.initBeaconLocationHandler();
       this.initContextMenu();
       this.loadHubs();
@@ -105,13 +100,6 @@ export default {
           item: 'Add Scanner',
           click: this.handleAddHub
         }]
-        /*'items': '<img class="hub" src="icon-hub.png"></img>' +
-        '<div class="menu-content">' +
-        '<ul class="custom_menu">' +
-        '<li class="item1">Move Scanner</li>' +
-        '<li class="item2">Add Scanner</li>' +
-        '</ul>' +
-        '</div>'*/
       };
       // Create context menu
       this.contextMenu = this.map.setMenu(this.contextMenuOption).openMenu();
@@ -122,20 +110,7 @@ export default {
       this.map.on('contextmenu', (e) => {
         this.contextCoordinate = e.coordinate;
         this.map.openMenu(e.coordinate);
-        console.log("x : " + e.coordinate.x + ", y : " + e.coordinate.y);
       });
-      // this.contextMenu.on('showend', (data) => {
-      //   this.contextCoordinate = data.coordinate;
-      // });
-      // this.contextMenu   .on('hide remove', (data) => {
-      //   this.contextCoordinate = null;
-      // });
-      /*console.log("{'x':" + param.coordinate.toFixed(5).x + ", 'y':" + param.coordinate.toFixed(5).y + "}");
-      this._x = param.coordinate.toFixed(5).x;
-      this._y = param.coordinate.toFixed(5).y;*/
-      /*this.marker.openInfoWindow();
-      document.getElementsByClassName('item1')[0].addEventListener('click', this.clickItem1);
-      document.getElementsByClassName('item2')[0].addEventListener('click', this.clickItem2);*/
     },
     loadHubs() {
       console.debug('Try load hubs');
@@ -155,7 +130,6 @@ export default {
     },
     handleAddHub(e) {
       // show hub List
-      //console.log(e);
       this.showhubList((selectedId) => {
         this.map.closeMenu(selectedId);
         this.drawHub(selectedId, this.contextCoordinate);
@@ -170,30 +144,9 @@ export default {
           // Clear old hub list view
           this.options.items = []; // TODO: destory for GC?
 
-          /*for (var _i in hubList) {
-          hubIdList[_i] = getListFilter(hubList[_i], "name");
-      };*/
-          /*this.sethubListOption = {
-              'items': [
-                {
-                  item: 'item1',
-                  click: ''
-                },
-                '-', {
-                  item: 'item2',
-                  click: ''
-                }
-            ]
-          };
-
-          this.map.setMenu(this.sethubListOption).openMenu();*/
           if (hubList) {
             var geometry = new maptalks.Marker([this.contextCoordinate.x, this.contextCoordinate.y]).addTo(this.hubLayer);
             geometry.hide();
-            /*for (var i in hubIdList) {
-            hubs[i] = hubIdList[i].id;
-            console.log('hubList', hubs[i]);
-        }*/
             hubList.forEach((hub, index) => {
               // draw only no location hubs.
               if (!!hub.custom && !!hub.custom.map_location) {
@@ -204,22 +157,7 @@ export default {
               var itemObj = {
                 item: hub.name,
                 click: () => {
-                  // var location = {
-                  //   'x': this.contextCoordinate.x,
-                  //   'y': this.contextCoordinate.y
-                  // };
-                  // if (hubList[index]['custom'] === null) {
-                  //   hubList[index]['custom'] = location;
-                  // } else {
-                  //   hubList[index]['custom']['x'] = location['x'];
-                  //   hubList[index]['custom']['y'] = location['y'];
-                  // }
-                  //hubList[index]['custom']['location'] = this.contextCoordinate.x;
-                  //hubList[index]['y'] = this.contextCoordinate.y;
-                  //Array.prototype.push.apply(hubList[index], {'x': this.contextCoordinate.x, 'y':this.contextCoordinate.y});
-                  //console.log("1241",hubList[index]);
                   selectedCallback(hub.id);
-                  // this.postHubLocation(hubList[index]);
                 }
               }
               if (hubList.length - index > 1) {
@@ -228,28 +166,7 @@ export default {
                 this.options.items.push(itemObj);
               }
             });
-            //console.log("options",this.options);
-            /*var options = {
-                'items': [{
-                    item: hubList[0].name,
-                    click: () => {
-                        this.postHubLocation(hubList[0])
-                    }
-                  },
-                  '-',
-                  {
-                    item: hubList[1].name,
-                    click: () => {
-                        this.postHubLocation(hubList[1])
-                    }
-                  }
-                ]
-            };*/
             geometry.setMenu(this.options).openMenu();
-            // document.getElementsByClassName('item1')[0].addEventListener('click', this.postHubLocation(hubList));
-            /*this.$store.commit('addHubs', hubs);
-            this.$store.getters.getScannerList();*/
-            //selectedCallback(hubs)
           } else {
 
           }
@@ -305,7 +222,7 @@ export default {
           console.warn('Failed to clear hub location, cannot found hub model by given id: $hubId');
         }
 
-        hubMarker.remove(); 
+        hubMarker.remove();
       } else {
         console.warn('Failed to remove hub marker, cannot find marker by ginve id: $hubId');
       }
@@ -335,7 +252,7 @@ export default {
       let hub = this.$store.getters.getHub(hubId);
       services.detectBeaconList(hubId, (beacons) => { // TODO: deferred
         if (beacons) {
-            let gadgetIds = 
+            let gadgetIds =
             services.getGadgets(beacons.map(beacon => {
                 return beacon.gid;
             }), (gadgets) => {
@@ -364,34 +281,12 @@ export default {
                 // TODO:
                 console.warn('Failed to load gadgets for hub id: $hubId');
             })
-
-          /*var title = '<ul class="worker_menu>';
-          this.contentOptions.content += title;
-          bcnList.forEach((hub, index) => {
-            var contentObj = '<li class="worker-content">'
-            if (bcnList.length - index > 1) {
-              this.contentOptions.content += contentObj;
-              this.contentOptions.content += bcnList[index]['gid'];
-              this.contentOptions.content += '</li>';
-            } else {
-              this.contentOptions.content += contentObj;
-              this.contentOptions.content += '</li></ul>';
-              this.contentOptions.width += 300;
-            }
-        })*/
         } else {
           alert("There's no beaconData to load");
         }
         }, () => {
           console.log("Failed")
       });
-        /*marker.setInfoWindow({
-      'content': '<ul class="worker_menu">' +
-        '<li class="worker-content" onload="video()"><img class="exampleimg" src="raspberrypi.svg"/></li>' +
-        '<li class="worker"></li>' +
-        '</ul>',
-      'width': 300
-  });*/
     },
     drawWorkers(hubId, coordinate) {
         services.detectBeaconList(hubId, (beacons) => {
@@ -419,52 +314,23 @@ export default {
                     }
                     markerCache.push(marker);
                 });
-
-              /*var title = '<ul class="worker_menu>';
-              this.contentOptions.content += title;
-              bcnList.forEach((hub, index) => {
-                var contentObj = '<li class="worker-content">'
-                if (bcnList.length - index > 1) {
-                  this.contentOptions.content += contentObj;
-                  this.contentOptions.content += bcnList[index]['gid'];
-                  this.contentOptions.content += '</li>';
-                } else {
-                  this.contentOptions.content += contentObj;
-                  this.contentOptions.content += '</li></ul>';
-                  this.contentOptions.width += 300;
-                }
-            })*/
             } else {
               alert("There's no beaconData to load");
             }
           }, () => {
             console.log("Failed")
         });
-
-      /*const beacons = getBeacons();
-      console.log('beacons',beacons);*/
-      //const beacons = services.detectBeaconList("799b9f874bc1c50775233d2a0c00e388");
-      /*this.worker = new maptalks.Marker(
-        [127.109049, 37.486568], {
-          'symbol': {
-            'markerFile': 'icon-worker1.svg',
-            'markerWidth': 50,
-            'markerHeight': 50
-          }
-        }
-      ).addTo(this.layer);
-      this.worker.on('click', () => {
-        this.setWorkerWindow();
-    })*/
     },
     showGadgetInFoWindow(gadgetId, marker) {
         services.getGadget(gadgetId, (gadget) => {
             marker.setInfoWindow({
                 'content': '<div class="bcns">' +
-                '<div class="bcnsInfo"><div class="bcnskey">DUMP TRUCK</div>' + (gadget.name || 'no name') + '</div>'+
-                '<img class="bcnsImg" src="item.png"></img>' +
+                '<div class="bcnsInfo"><div class="bcnskey">Name</div>' +
+                '<div class="bcnName">' + (gadget.name || 'no name') + '</div>' +
+                '</div>' + '<img class="bcnsImg" src="item.png"></img>' +
                 '</div>',
-                'width': 400
+                'width': 400,
+                'bottom': 11
             });
             marker.openInfoWindow();
         }, (error) => {
@@ -560,38 +426,67 @@ export default {
   padding-top: 40px;
 }
 
-.menu-content {
+.maptalks-menu {
   width: 100%;
-  background-color: rgb(42 147 240);
-  border-radius: 15px;
-  overflow: hidden
+  background: rgb(42 147 240) !important;
+  border-radius: 10px;
+  overflow: hidden;
+  border : none !important;
 }
 
-.custom_menu {
+.maptalks-menu .maptalks-menu-items {
   width: 100%;
-  color: white;
-  background-color: rgb(42 147 240);
+  color: white !important;
+  font-weight: bold;
+  background: rgb(42 147 240);
   list-style: none;
   padding: 0;
   text-align: center;
   margin-block-end: 0
 }
 
-.custom_menu li {
+.maptalks-menu .maptalks-menu-items li {
   background: rgb(73 169 243);
   font-size: 13px;
   line-height: 24px;
-  width: 200px;
-  height: 26px
 }
 
-.custom_menu li:hover {
+.maptalks-menu .maptalks-menu-items li:hover {
   background: rgb(42 147 240);
   cursor: pointer
 }
 
-.custom_menu li+li {
+.maptalks-menu .maptalks-menu-items li+li {
   border-top: 1px solid rgb(42 147 240);
+}
+
+.maptalks-menu .maptalks-menu-items li.maptalks-menu-splitter {
+  height: 1px !important;
+}
+
+.maptalks-msgBox {
+  border: none !important;
+  border-radius: 10px !important;
+  background: none !important;
+}
+
+.maptalks-msgBox a.maptalks-close {
+  width: 30px !important;
+  height: 30px !important;
+  background-size: 30px !important;
+  top: -8px !important;
+  background-color: rgba(255, 87, 87, 1) !important;
+  border-radius: 4px !important;
+}
+.maptalks-msgBox a.maptalks-close.hover {
+}
+
+.maptalks-msgBox .maptalks-msgContent {
+  padding: 0 !important;
+}
+
+.maptalks-msgBox em.maptalks-ico {
+  display: none !important;
 }
 
 .worker_menu {
@@ -612,7 +507,8 @@ export default {
   background-color: rgb(42 160 240);
   padding-inline-start: 0;
   overflow: scroll;
-  overflow-x: hidden
+  overflow-x: hidden;
+  border-top-right-radius: 10px;
 }
 
 .workerId {
@@ -673,27 +569,49 @@ export default {
   margin-right: 230px;
   position: absolute;
   background-color: rgb(57 178 255);
-
+  border-bottom-left-radius: 10px;
+  border-top-left-radius: 10px;
 }
 
 .bcnskey {
-  font-size: x-small
+  font-size: 14px;
+  padding-top: 10px;
+  padding-left: 10px;
+}
+
+.hub-remove-button {
+  color: #ffffff;
+  background-color: #87CEEB;
+  border: solid 1px #00BFFF;
+  text-decoration: none;
+  display: inline-block;
+  cursor: pointer;
+  margin-top:10px
+}
+
+.bcnName {
+  font-size: 20px;
+  padding-top: 10px;
+  padding-left: 10px;
 }
 
 .bcnsImg {
   height: 250px;
-  width: 280px;
-  margin-left: 100px;
+  width: 260px;
+  margin-left: 120px;
+  border-top-right-radius: 10px;
+  border-bottom-right-radius: 10px;
 }
 
 .bcnsInfo {
-  width: 100px;
-  height: 200px;
+  width: 120px;
+  height: 250px;
   color: white;
   background-color: rgb(93 224 219);
-  padding-top: 50px;
   font-size: large;
   position: absolute;
+  border-top-left-radius: 10px;
+  border-bottom-left-radius: 10px;
 }
 
 .ipcam_menu {
