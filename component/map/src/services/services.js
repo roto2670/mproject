@@ -35,6 +35,7 @@ export const getHubs = (successCallback, errorCallback) => {
     }
   });
 }
+
 export const getBeacons = () => {
   var beaconList = [],
     returnObject = [];
@@ -84,7 +85,7 @@ export const detectBeaconList = (hubId, successCallback, failCallback) => {
       if (!!response.data) {
         detbeaconList = response.data;
         // Beacon list
-        // console.log("Beacon List. ",detbeaconList['data']);
+        //console.log("Beacon List. ",detbeaconList);
         successCallback(detbeaconList['data']);
       } else {
         failCallback(console.log("Failed to Get detBeacons List"))
@@ -111,6 +112,41 @@ export const getGadget = (gadgetId, successCallback, failCallback) => { // TODO:
         failCallback("Failed to get gadget, id: ${gadgetId}"); // TODO: server error
       }
     });
+}
+
+export const getMapFiles = (successCallback, failCallback) => {
+    axios({
+        url: SERVER_BASE_URL + '/dashboard/location/view',
+        method: 'GET',
+        responseType: 'text'
+    }).then(response => {
+        if(response.data) {
+            console.log('Success to Get map image file')
+            successCallback('http://' + window.location.host + response.data);
+        } else {
+            console.log('Sorry, Img file does not exist');
+        }
+    })
+}
+
+export const postMapFile = (file, successCallback, failCallback) => {
+    let formData = new FormData()
+    if(file) {
+        formData.append('file', file)
+        axios
+            .post(SERVER_BASE_URL + '/dashboard/location/upload', formData, {
+                headers: {
+                    'Content-Type': 'multiart/form-data'
+                }
+            })
+            .then(e => {
+                console.log('Success to Upload map image file')
+                successCallback('http://' + window.location.host + e.data)
+            })
+            .catch(e => {
+                console.log('Fail to Upload map image file')
+            })
+    }
 }
 
 function _getGadgets(gadgetIds, gadgets, doneCallback) {

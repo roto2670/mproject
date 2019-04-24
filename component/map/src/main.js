@@ -1,6 +1,7 @@
 import Vue from 'vue'
 import App from './App.vue'
 import Map from './components/map'
+import UPLOAD from './components/upload'
 import axios from 'axios'
 import 'maptalks/dist/maptalks.css'
 import store from './store'

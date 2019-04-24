@@ -1,13 +1,15 @@
 <template>
 <div id="locationTracking">
+  <Upload></Upload>
   <Map @select-button="handleSelectedButton"></Map>
 </div>
 </template>
 <script>
 import Map from '@/components/map';
+import Upload from '@/components/upload';
 export default {
   components: {
-    Map
+    Map, Upload
   },
   methods: {
     handleSelectedButton() {
