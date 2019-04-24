@@ -9,7 +9,8 @@ import Map from '@/components/map';
 import Upload from '@/components/upload';
 export default {
   components: {
-    Map, Upload
+    Map,
+    Upload
   },
   methods: {
     handleSelectedButton() {

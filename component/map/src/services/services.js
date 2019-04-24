@@ -85,7 +85,6 @@ export const detectBeaconList = (hubId, successCallback, failCallback) => {
       if (!!response.data) {
         detbeaconList = response.data;
         // Beacon list
-        //console.log("Beacon List. ",detbeaconList);
         successCallback(detbeaconList['data']);
       } else {
         failCallback(console.log("Failed to Get detBeacons List"))
@@ -108,7 +107,7 @@ export const getGadget = (gadgetId, successCallback, failCallback) => { // TODO:
     }).then(response => {
       if (response.data) {
         successCallback(response.data);
-      } else {
+    } else {
         failCallback("Failed to get gadget, id: ${gadgetId}"); // TODO: server error
       }
     });

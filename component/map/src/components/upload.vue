@@ -8,16 +8,12 @@
 </template>
 <script>
 import * as maptalks from 'maptalks'
-import * as mapvue from '@/components/map'
-import * as services from '@/services/services'
-import * as beaconDetector from '@/services/beacon-detector'
+import mapvue from '@/components/map'
 export default {
     name: 'Upload',
     data() {
         return {
-            id: 'upload',
-            file: '',
-            url: '',
+            id: 'upload'
         }
     },
     methods: {
@@ -26,14 +22,14 @@ export default {
             this.submitFile()
         },
         getMapFile(successCallback) {
-            services.getMapFile
+            this.services.getMapFile
             /*services.getMapFiles((url) => {
                 console.log("afaf", url)
                 successCallback(url)
             })*/
         },
         submitFile() {
-            services.postMapFile(this.file, (url) => {
+            this.services.postMapFile(this.file, (url) => {
                 console.log("adadada",url)
             })
         },
@@ -80,7 +76,6 @@ input[type='file'] {
 }
 
 #clickbtn:hover {
-    ;
     border-radius: 15px;
     display: inline-block;
     box-shadow: 2px 2px 0.5px #aaaaaa;

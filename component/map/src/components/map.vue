@@ -6,7 +6,6 @@
 <script>
 import * as maptalks from 'maptalks'
 import * as uploadMap from '@/components/upload'
-import * as services from '@/services/services'
 import * as beaconDetector from '@/services/beacon-detector';
 export default {
     name: 'Map',
@@ -20,7 +19,6 @@ export default {
             workerLayer: '',
             camLayer: '',
             worker: '',
-            workers: [],
             ipcam: '',
             ipcams: [],
             _x: '',
@@ -49,7 +47,7 @@ export default {
     },
     methods: {
         initloadMap() {
-            services.getMapFiles((url) => {
+            this.services.getMapFiles((url) => {
                 console.log(url)
                 this.url = url
             })
@@ -110,7 +108,7 @@ export default {
         },
         initBeaconLocationHandler() {
             // run beacon detector.
-            this.beaconDetector = new beaconDetector.BeaconDetector((beacons) => {
+            this.beaconDetector = new beaconDetector.BeaconDetector(this, (beacons) => {
 
             });
 
@@ -137,7 +135,7 @@ export default {
         },
         loadHubs() {
             console.debug('Try load hubs');
-            let hubs = services.getHubs((hubList) => {
+            let hubs = this.services.getHubs((hubList) => {
                 console.debug('Load hubs.', hubList);
                 // Store hubs.
                 this.$store.commit('addHubs', hubList); // TODO; move to services?
@@ -162,42 +160,41 @@ export default {
         showhubList(selectedCallback) {
             this.map.closeMenu();
             // TODO
-            services.getHubs((hubList) => {
-                    this.$store.commit('addHubs', hubList);
-                    // Clear old hub list view
-                    this.options.items = []; // TODO: destory for GC?
+            this.services.getHubs((hubList) => {
+                this.$store.commit('addHubs', hubList);
+                // Clear old hub list view
+                this.options.items = []; // TODO: destory for GC?
 
-                    if (hubList) {
-                        var geometry = new maptalks.Marker([this.contextCoordinate.x, this.contextCoordinate.y]).addTo(this.hubLayer);
-                        geometry.hide();
-                        hubList.forEach((hub, index) => {
-                            // draw only no location hubs.
-                            if (!!hub.custom && !!hub.custom.map_location) {
-                                console.debug('The ${hub.name} hub has location data. so skip');
-                                return;
+                if (hubList) {
+                    var geometry = new maptalks.Marker([this.contextCoordinate.x, this.contextCoordinate.y]).addTo(this.hubLayer);
+                    geometry.hide();
+                    hubList.forEach((hub, index) => {
+                        // draw only no location hubs.
+                        if (!!hub.custom && !!hub.custom.map_location) {
+                            console.debug('The ${hub.name} hub has location data. so skip');
+                            return;
+                        }
+
+                        var itemObj = {
+                            item: hub.name,
+                            click: () => {
+                                selectedCallback(hub.id);
                             }
+                        }
+                        if (hubList.length - index > 1) {
+                            this.options.items.push(itemObj, '-');
+                        } else {
+                            this.options.items.push(itemObj);
+                        }
+                    });
+                    geometry.setMenu(this.options).openMenu();
+                } else {
 
-                            var itemObj = {
-                                item: hub.name,
-                                click: () => {
-                                    selectedCallback(hub.id);
-                                }
-                            }
-                            if (hubList.length - index > 1) {
-                                this.options.items.push(itemObj, '-');
-                            } else {
-                                this.options.items.push(itemObj);
-                            }
-                        });
-                        geometry.setMenu(this.options).openMenu();
-                    } else {
-
-                    }
-                },
-                function(error) {
-                    console.warn('Failed to load hub list.');
-                });
-
+                }
+            },
+            function(error) {
+                console.warn('Failed to load hub list.');
+            });
         },
         /*
            hubDataList = {id: String, coordinate: Coordonate}
@@ -240,7 +237,7 @@ export default {
                 let hub = this.$store.getters.getHub(hubId);
                 if (!!hub) {
                     delete hub.custom.map_location;
-                    services.setHubLocation(hub);
+                    this.services.setHubLocation(hub);
                 } else {
                     console.warn('Failed to clear hub location, cannot found hub model by given id: $hubId');
                 }
@@ -272,49 +269,46 @@ export default {
         },
         showHubInfoWindow(hubId, marker) {
             let context = '';
-            let hub = this.$store.getters.getHub(hubId);
-            services.detectBeaconList(hubId, (beacons) => { // TODO: deferred
-                if (beacons) {
-                    let gadgetIds =
-                        services.getGadgets(beacons.map(beacon => {
-                            return beacon.gid;
-                        }), (gadgets) => {
-                            gadgets.forEach((gadget) => {
-                                context += '<li>';
-                                context += gadget.name || 'no name';
-                                context += '</li>';
-                            })
-                            marker.setInfoWindow({ // TODO: vue component
-                                content: '<ul class="worker_menu">' +
-                                    '<div class="worker"><div class="workerId"><div class="workerkey">SCANNER</div>' + hub.name + '</div>' +
-                                    '<div class="workerCount"><div class="workerkey">WORKER</div>' + gadgets.length + '</div>' +
-                                    '<button class="hub-remove-button">Remove</button></div>' +
-                                    '<ul class="workerInfo">' +
-                                    context +
-                                    '</ul></ul>',
-                                'width': 350
-                            });
-                            marker.openInfoWindow();
-
-                            let vm = this;
-                            document.getElementsByClassName('hub-remove-button')[0].onclick = function() { // TODO: suck
-                                vm.removeHubMarker(hubId);
-                            }
-                        }, () => {
-                            // TODO:
-                            console.warn('Failed to load gadgets for hub id: $hubId');
-                        })
-                } else {
-                    alert("There's no beaconData to load");
-                }
-            }, () => {
-                console.log("Failed")
+            let length = null;
+            const gadgets = this.$store.getters.getGadgets(hubId);
+            const hub = this.$store.getters.getHub(hubId);
+            if (gadgets) {
+                gadgets.forEach((gadget) => {
+                    context += `<li>${gadget.name}</li>`;
+                })
+                length += gadgets.length;
+            } else {
+                context += '<li>Theres no gadget to load</li>';
+                length += 0;
+            }
+            marker.setInfoWindow({ // TODO: vue component
+                content: '<ul class="worker_menu">' +
+                    '<div class="worker"><div class="workerId"><div class="workerkey">SCANNER</div>' + hub.name + '</div>' +
+                    '<div class="workerCount"><div class="workerkey">WORKER</div>' + length + '</div>' +
+                    '<button class="hub-remove-button">Remove</button></div>' +
+                    '<ul class="workerInfo">' +
+                    context +
+                    '</ul></ul>',
+                'width': 350
             });
+            marker.openInfoWindow();
+
+            let vm = this;
+            document.getElementsByClassName('hub-remove-button')[0].onclick = function() { // TODO: suck
+                vm.removeHubMarker(hubId);
+            }
         },
         drawWorkers(hubId, coordinate) {
-            services.detectBeaconList(hubId, (beacons) => {
+            this.services.detectBeaconList(hubId, (beacons) => {
                 if (beacons) {
-                    beacons.forEach((beacon, index) => {
+                    beacons.forEach((beacon, index) => { //TODO getGadget(services.js) 하
+                        this.services.getGadget(beacon.gid, (gadget) => {
+                            console.log("get gadget : ", gadget);
+                            this.$store.commit('addGadget', {
+                                hub_id: hubId,
+                                gadget: gadget
+                            });
+                        });
                         let marker = new maptalks.Marker(
                             [coordinate.x + (Math.random() * 6), coordinate.y + (Math.random() * 6)], {
                                 'symbol': {
@@ -325,7 +319,7 @@ export default {
                             }
                         ).addTo(this.workerLayer);
                         marker.on('click', () => {
-                            this.showGadgetInFoWindow(beacon.gid, this.bcns[index]);
+                            this.showGadgetInFoWindow(hubId, beacon.gid, this.bcns[index]);
                         });
                         this.bcns[index] = marker;
 
@@ -344,21 +338,19 @@ export default {
                 console.log("Failed")
             });
         },
-        showGadgetInFoWindow(gadgetId, marker) {
-            services.getGadget(gadgetId, (gadget) => {
-                marker.setInfoWindow({
-                    'content': '<div class="bcns">' +
-                        '<div class="bcnsInfo"><div class="bcnskey">Name</div>' +
-                        '<div class="bcnName">' + (gadget.name || 'no name') + '</div>' +
-                        '</div>' + '<img class="bcnsImg" src="item.png"></img>' +
-                        '</div>',
-                    'width': 400,
-                    'bottom': 11
-                });
-                marker.openInfoWindow();
-            }, (error) => {
-                console.warn('Failed to show gadget info window, no gadget by given id: ${gadgetId}');
+        showGadgetInFoWindow(hubId, gadgetId, marker) {
+            let gadget = this.$store.getters.getGadget(hubId, gadgetId);
+            marker.setInfoWindow({
+                'content': '<div class="bcns">' +
+                    '<div class="bcnsInfo"><div class="bcnskey">Name</div>' +
+                    '<div class="bcnName">' + (gadget.name || 'no name') + '</div>' +
+                    '</div>' + '<img class="bcnsImg" src="item.png"></img>' +
+                    '</div>',
+                'width': 400,
+                'bottom': 11
             });
+            marker.openInfoWindow();
+
         },
         setIpcam() {
             return; // TODO: impl.
@@ -397,7 +389,7 @@ export default {
                 };
 
                 // send to server.
-                services.setHubLocation(hub);
+                this.services.setHubLocation(hub);
             } else {
                 console.warn('Failed to update hub location, given parms cannot be null.', hub, x, y);
             }
