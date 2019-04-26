@@ -1,10 +1,9 @@
 import * as services from '@/services/services'
 import Vue from 'vue'
-const CHECK_THRESOLD_TIME = 10 * 1000; //10 sec
-                            //600 * 1000; // 10 min
+const CHECK_THRESOLD_TIME = 10000 * 1000; 
+//600 * 1000; // 10 min
 
 let instance = null;
-const vm = new Vue({});
 export class BeaconDetector {
     constructor(vm, detectedCallback) {
         if (instance) {
@@ -21,11 +20,11 @@ export class BeaconDetector {
     }
 
     start() {
-        if (!this.isRunning) {
+        if (this.isRunning) {
             this.isRunning = true;
         }
         this._timers.push(setInterval(() => {
-            //this._refreshBeacons();
+            this._refreshBeacons();
         }, CHECK_THRESOLD_TIME));
 
         console.info('Beacon detector started');
@@ -39,21 +38,19 @@ export class BeaconDetector {
     }
 
     _refreshBeacons() {
-        this._vm.$store.getters.getHubs((hubList) => {
-            hubList.forEach((hub) => {
-                services.detectBeaconList(hub.id, (result) => {
-                    //console.log(this._vm.$store);
-                    this._vm.$store.commit('addGadget', result);
-                    this._detectedCallback(result); // TODO: brush up result.
-                }, (error) => {
-                    console.warn('Failed to refresh beacons.', error);
-                });
-            })
-        })
+        let hubList = this._vm.$store.getters.getHubs;
+        this._vm._.forEach(hubList, (hub) => {
+            services.getDetectBeaconList(hub.id, (result) => {
+                this._vm.$store.commit('addGadget', result);
+                this._detectedCallback(result); // TODO: brush up result.
+            }, (error) => {
+                console.warn('Failed to refresh beacons.', error);
+            });
+        });
     }
 
     _clearTimer() {
-        this._timers.forEach((timer) => {
+        this._.forEach(this._timers, (timer) => {
             try {
                 clearInterval(timer);
             } catch (error) {

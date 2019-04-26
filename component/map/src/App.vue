@@ -1,21 +1,22 @@
 <template>
 <div id="locationTracking">
+  <Zoom></Zoom>
   <Upload></Upload>
-  <Map @select-button="handleSelectedButton"></Map>
+  <Map></Map>
 </div>
 </template>
 <script>
 import Map from '@/components/map';
 import Upload from '@/components/upload';
+import Zoom from '@/components/zoom';
 export default {
   components: {
     Map,
-    Upload
+    Upload,
+    Zoom
   },
   methods: {
-    handleSelectedButton() {
-      //TODO: remove
-    }
+
   }
 }
 </script>

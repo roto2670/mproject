@@ -1,5 +1,5 @@
 <template>
-<div :id="id" class="container">
+<div id="upload" class="container">
     <button id="clickbtn" @click="$refs.file.click()">
         <p id="btntitle">Upload<i class="fa fa-upload"></i></p>
     </button>
@@ -8,14 +8,8 @@
 </template>
 <script>
 import * as maptalks from 'maptalks'
-import mapvue from '@/components/map'
 export default {
     name: 'Upload',
-    data() {
-        return {
-            id: 'upload'
-        }
-    },
     methods: {
         onFileChange(e) {
             this.file = e.target.files[0]

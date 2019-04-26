@@ -1,54 +1,43 @@
 <template>
 <div :id="id" v-if="isEmptyUrl" class="container">
-
 </div>
 </template>
 <script>
 import * as maptalks from 'maptalks'
-import * as uploadMap from '@/components/upload'
 import * as beaconDetector from '@/services/beacon-detector';
+import util from '@/services/util';
+import { EventBus } from "../main";
 export default {
     name: 'Map',
     data() {
         return {
             id: 'map',
+            map: null,
             point: null,
             url: '',
             layer: '',
             hubLayer: '',
             workerLayer: '',
             camLayer: '',
-            worker: '',
             ipcam: '',
             ipcams: [],
-            _x: '',
-            _y: '',
-            hubs: '',
             contextCoordinate: null,
             contextMenu: null,
-            hubSelectMenu: null,
-            sethubListOption: null,
-            hubs: null,
             bcns: {},
             options: {
                 items: []
-            },
-            contentOptions: {
-                content: '',
-                width: ''
             },
             markerMap: {
                 hubs: {},
                 gadgets: {},
                 cams: {}
-            },
-            i: 0
+            }
         }
     },
     methods: {
         initloadMap() {
             this.services.getMapFiles((url) => {
-                console.log(url)
+                // console.log(url)
                 this.url = url
             })
             // Options
@@ -56,7 +45,7 @@ export default {
             this.map = new maptalks.Map(this.id, {
                 center: [90, 50],
                 zoom: 6,
-                maxZoom: 6,
+                maxZoom: 7,
                 minZoom: 4,
                 // Extent
                 // http://maptalks.org/maptalks.js/api/0.x/Extent.html
@@ -125,7 +114,7 @@ export default {
             // Create context menu
             this.contextMenu = this.map.setMenu(this.contextMenuOption).openMenu();
             // Default option is show, so hide here
-            this.map.closeMenu()
+            this.map.closeMenu();
 
             // Init EventHandler
             this.map.on('contextmenu', (e) => {
@@ -136,17 +125,18 @@ export default {
         loadHubs() {
             console.debug('Try load hubs');
             let hubs = this.services.getHubs((hubList) => {
-                console.debug('Load hubs.', hubList);
+                console.log('Load hubs.', hubList);
                 // Store hubs.
                 this.$store.commit('addHubs', hubList); // TODO; move to services?
 
                 // draw hub if has location data.
-                hubList.forEach((hub) => {
+                this._.forEach(hubList, (hub) => {
                     let location = hub.custom && hub.custom.map_location;
-                    if (!!location) {
+                    if (!this._.isEmpty(location)) {
                         this.drawHub(hub.id, location);
                     }
-                });
+                })
+                this.hasSameGadget(hubList);
             });
         },
         handleAddHub(e) {
@@ -165,26 +155,27 @@ export default {
                 // Clear old hub list view
                 this.options.items = []; // TODO: destory for GC?
 
-                if (hubList) {
-                    var geometry = new maptalks.Marker([this.contextCoordinate.x, this.contextCoordinate.y]).addTo(this.hubLayer);
+                if (!this._.isEmpty(hubList)) {
+                    const geometry = new maptalks.Marker([this.contextCoordinate.x, this.contextCoordinate.y]).addTo(this.hubLayer);
                     geometry.hide();
-                    hubList.forEach((hub, index) => {
-                        // draw only no location hubs.
-                        if (!!hub.custom && !!hub.custom.map_location) {
-                            console.debug('The ${hub.name} hub has location data. so skip');
-                            return;
-                        }
-
-                        var itemObj = {
-                            item: hub.name,
-                            click: () => {
-                                selectedCallback(hub.id);
+                    this._.forEach(hubList, (hub, index) => {
+                        if (!_.has(this.markerMap.hubs, hub.id)) {
+                            // draw only no location hubs.
+                            if (!!!hub.custom || !!!hub.custom.map_location) {
+                                const itemObj = {
+                                    item: hub.name,
+                                    click: () => {
+                                        selectedCallback(hub.id);
+                                    }
+                                }
+                                if (hubList.length - index > 1) {
+                                    this.options.items.push(itemObj, '-');
+                                } else {
+                                    this.options.items.push(itemObj);
+                                }
+                            } else {
+                                console.debug(`The ${hub.name} hub has location data. so skip`);
                             }
-                        }
-                        if (hubList.length - index > 1) {
-                            this.options.items.push(itemObj, '-');
-                        } else {
-                            this.options.items.push(itemObj);
                         }
                     });
                     geometry.setMenu(this.options).openMenu();
@@ -197,11 +188,11 @@ export default {
             });
         },
         /*
-           hubDataList = {id: String, coordinate: Coordonate}
+        hubDataList = {id: String, coordinate: Coordonate}
         */
         drawHubs(hubDataList) {
-            if (Array.isArray(hubDataList)) {
-                hubIds.forEach(function(hubData) {
+            if (this._.isArray(hubDataList)) {
+                this._.forEach(hubDataList, function(hubData) {
                     this.drawHub(hubData.id, hubData.coordinate);
                 });
             } else {
@@ -213,38 +204,57 @@ export default {
             let marker = new maptalks.Marker(
                 [coordinate.x, coordinate.y], {
                     'symbol': {
-                        markerFile: 'icon-hub.png',
-                        markerWidth: 40,
-                        markerHeight: 40,
+                        markerFile: 'icon-hub.svg',
+                        markerWidth: 50,
+                        markerHeight: 50,
                     }
                 }
             ).addTo(this.hubLayer);
             this.drawWorkers(hubId, coordinate); // 허브 추가 시 비콘들을 주위에 뿌린다.
             marker.on('click', () => {
+                marker.updateSymbol({
+                    markerFile: 'icon-hub-tab.svg'
+                })
                 this.showHubInfoWindow(hubId, marker);
             })
             this.markerMap.hubs[hubId] = marker;
 
             // Store hub location to server.
             this._updateHubLocation(hubId, coordinate.x, coordinate.y);
+            this.startInterval(hubId);
+
+            marker.on('dragend', (coordinate) => {
+                console.log("location", coordinate);
+                var str = document.getElementsByClassName('hub-move-button')[0].innerHTML;
+                var text = str.replace("Move", "SetLocation");
+                document.getElementsByClassName('hub-move-button')[0].innerHTML = text;
+
+                document.getElementsByClassName('hub-move-button')[0].onclick = () => {
+                    marker.closeInfoWindow();
+                    marker.updateSymbol({
+                        markerFile: 'icon-hub.svg'
+                    })
+                    marker.config('draggable', false);
+                }
+            })
         },
         removeHubMarker(hubId) {
-            console.debug('Try remove hub marker, id: $hubId');
+            console.debug(`Try remove hub marker, id: ${hubId}`);
 
             let hubMarker = this.markerMap.hubs[hubId];
-            if (!!hubMarker) {
+            if (!this._.isEmpty(hubMarker)) {
                 // remove location in hub model
                 let hub = this.$store.getters.getHub(hubId);
-                if (!!hub) {
+                if (!this._.isEmpty(hub)) {
                     delete hub.custom.map_location;
                     this.services.setHubLocation(hub);
                 } else {
-                    console.warn('Failed to clear hub location, cannot found hub model by given id: $hubId');
+                    console.warn(`Failed to clear hub location, cannot found hub model by given id: ${hubId}`);
                 }
 
                 hubMarker.remove();
             } else {
-                console.warn('Failed to remove hub marker, cannot find marker by ginve id: $hubId');
+                console.warn(`Failed to remove hub marker, cannot find marker by given id: ${hubId}`);
             }
 
             // remove children markers
@@ -254,14 +264,14 @@ export default {
             delete this.markerMap.hubs[hubId];
         },
         removeGadgetMakers(hubId) {
-            console.log('Try remove hub markers for id: ${hubId}');
+            console.log(`Try remove hub markers for id: ${hubId}`);
             let gadgetMarkers = this.markerMap.gadgets[hubId];
-            if (!!gadgetMarkers) {
-                gadgetMarkers.forEach((marker) => {
+            if (!this._.isEmpty(gadgetMarkers)) {
+                this._.forEach(gadgetMarkers, (marker) => {
                     marker.remove();
                 })
             } else {
-                console.warn('Failed to remove gadget markers by given id: ${hubId}');
+                console.warn(`Failed to remove gadget markers by given id: ${hubId}`);
             }
 
             // clear in cache.
@@ -272,8 +282,8 @@ export default {
             let length = null;
             const gadgets = this.$store.getters.getGadgets(hubId);
             const hub = this.$store.getters.getHub(hubId);
-            if (gadgets) {
-                gadgets.forEach((gadget) => {
+            if (!this._.isEmpty(gadgets)) {
+                this._.forEach(gadgets, (gadget) => {
                     context += `<li>${gadget.name}</li>`;
                 })
                 length += gadgets.length;
@@ -285,6 +295,7 @@ export default {
                 content: '<ul class="worker_menu">' +
                     '<div class="worker"><div class="workerId"><div class="workerkey">SCANNER</div>' + hub.name + '</div>' +
                     '<div class="workerCount"><div class="workerkey">WORKER</div>' + length + '</div>' +
+                    '<button class="hub-move-button">Move</button>' +
                     '<button class="hub-remove-button">Remove</button></div>' +
                     '<ul class="workerInfo">' +
                     context +
@@ -293,49 +304,63 @@ export default {
             });
             marker.openInfoWindow();
 
-            let vm = this;
-            document.getElementsByClassName('hub-remove-button')[0].onclick = function() { // TODO: suck
-                vm.removeHubMarker(hubId);
+            document.getElementsByClassName('hub-move-button')[0].onclick = () => {
+                marker.config('draggable', true);
             }
+
+            document.getElementsByClassName('hub-remove-button')[0].onclick = () => {
+                this.removeHubMarker(hubId);
+            } // TODO: suck
+
+            document.getElementsByClassName('maptalks-close')[0].onclick = () => {
+                marker.updateSymbol({
+                    markerFile: 'icon-hub.svg'
+                })
+                marker.config('draggable', false);
+            }
+
         },
         drawWorkers(hubId, coordinate) {
-            this.services.detectBeaconList(hubId, (beacons) => {
-                if (beacons) {
-                    beacons.forEach((beacon, index) => { //TODO getGadget(services.js) 하
+            this.services.getDetectBeaconList(hubId, (beacons) => {
+                if (!this._.isEmpty(beacons)) {
+                    this._.forEach(beacons, (beacon, index) => { //TODO getGadget(services.js) 하
                         this.services.getGadget(beacon.gid, (gadget) => {
-                            console.log("get gadget : ", gadget);
-                            this.$store.commit('addGadget', {
-                                hub_id: hubId,
-                                gadget: gadget
-                            });
+                            if (!this.$store.getters.hasGadget(hubId, gadget.id)) {
+                                this.$store.commit('addGadget', {
+                                    hub_id: hubId,
+                                    gadget: gadget
+                                });
+                            }
                         });
                         let marker = new maptalks.Marker(
                             [coordinate.x + (Math.random() * 6), coordinate.y + (Math.random() * 6)], {
                                 'symbol': {
-                                    'markerFile': 'icon-worker' + Math.ceil(Math.random() * 4) + '.svg',
+                                    'markerFile': 'icon-worker' + Math.ceil(Math.random() * 16) + '.svg',
                                     'markerWidth': 50,
                                     'markerHeight': 50
                                 }
                             }
                         ).addTo(this.workerLayer);
                         marker.on('click', () => {
+                            marker.updateSymbol({
+                                markerFile: 'icon-worker' + Math.ceil(Math.random() * 16) + '-tab.svg'
+                            })
                             this.showGadgetInFoWindow(hubId, beacon.gid, this.bcns[index]);
                         });
                         this.bcns[index] = marker;
 
                         // add in cache
-                        var markerCache = this.markerMap.gadgets[hubId];
-                        if (!markerCache) {
+                        let markerCache = this.markerMap.gadgets[hubId];
+                        if (!!!markerCache) {
                             markerCache = [];
                             this.markerMap.gadgets[hubId] = markerCache;
                         }
                         markerCache.push(marker);
                     });
                 } else {
-                    alert("There's no beaconData to load");
                 }
             }, () => {
-                console.log("Failed")
+                console.log("Failed to Get detBeacons List");
             });
         },
         showGadgetInFoWindow(hubId, gadgetId, marker) {
@@ -351,6 +376,11 @@ export default {
             });
             marker.openInfoWindow();
 
+            document.getElementsByClassName('maptalks-close')[0].onclick = () => {
+                marker.updateSymbol({
+                    markerFile: 'icon-worker' + Math.ceil(Math.random() * 16) + '.svg'
+                })
+            }
         },
         setIpcam() {
             return; // TODO: impl.
@@ -380,32 +410,128 @@ export default {
         _updateHubLocation(hubId, x, y) {
             let hub = this.$store.getters.getHub(hubId);
             if (!!hub && !!x && !!y) {
-                if (!!!hub.custom) {
-                    hub.custom = {};
-                }
-                hub.custom.map_location = {
-                    x: x,
-                    y: y
-                };
-
+                this._.extend(hub, {
+                    custom: {
+                        map_location: {
+                            x: x,
+                            y: y
+                        }
+                    }
+                });
                 // send to server.
                 this.services.setHubLocation(hub);
             } else {
                 console.warn('Failed to update hub location, given parms cannot be null.', hub, x, y);
             }
+        },
+        startInterval(hubId) {
+            const CHECK_THRESOLD_TIME = 10000 * 1000;
+            setInterval(() => {
+                this.$store.commit('removeGadgets');
+                const hub = this.$store.getters.getHub(hubId);
+                this.removeGadgetMakers(hub.id);
+                if (!_.isEmpty(hub.id)) {
+                    this.drawWorkers(hub.id, hub.custom.map_location);
+                } else {
+                    console.warn(`There is no hub id, so we cannot update hub data`);
+                }
+            }, CHECK_THRESOLD_TIME)
+        },
+        setGadgetLocation(hubList) { // 중복된 가젯들이 들어있는 허브 리스트 목록 받아 위치 값 설정
+            let hubLocation = {},
+                gadgetLocation = {},
+                x = 0,
+                y = 0,
+                gid = null;
+            console.log("gadgggg", hubList);
+            this._.forEach(hubList, (hub) => {
+                const hub2 = this.$store.getters.getHub(hub.hid); //TODO: name change
+                gid = hub.gid;
+                if (!!hub2 && !this._.isEmpty(hub2.custom)) {
+                    hubLocation[hub.hid] = hub2.custom.map_location;
+                    hubLocation[hub.hid].dist = hub.dist;
+                    // console.log("aqrr", hub.hid, this.$store.getters.getHub(hub.hid).custom.map_location);
+                } else {
+                    console.warn(`There is empty custom in hubid: ${hub.hid}`);
+                }
+            });
+            this._.forEach(hubLocation, (hub) => {
+                if (this.isNumber(hub.dist)) {
+                    if (hub.dist < 0) {
+                        hub.x = hub.x - (hub.x * (Math.abs(hub.dist) / 200));
+                        hub.y = hub.y - (hub.y * (Math.abs(hub.dist) / 200));
+                    } else {
+                        hub.x = hub.x + (hub.x * (Math.abs(hub.dist) / 200));
+                        hub.y = hub.y + (hub.y * (Math.abs(hub.dist) / 200));
+                    }
+
+                    x += hub.x;
+                    y += hub.y;
+                } else {
+                    console.warn(`There is no dist data in hubId: ${hub.hid}`);
+                }
+            })
+            this._.forEach(hubList, (hub) => {
+                gadgetLocation = {
+                    hid: hub.hid,
+                    gid: gid,
+                    x: x / this._.size(hubLocation),
+                    y: y / this._.size(hubLocation)
+                }
+            })
+            console.log("gadgetLocation", gadgetLocation);
+            this.$store.commit('addGadgetLocation', gadgetLocation);
+        },
+        hasSameGadget(hubList) { // 비콘이 여러 허브에 들어있을 경우에 그 허브들의 리스트를 받아옴
+            let gadgetList = [],
+                sameGadgetList = [];
+            this._.forEach(hubList, (hub, index) => {
+                if (!this._.isEmpty(hub.beacons)) {
+                    this._.forEach(hub.beacons, (beacon) => {
+                        if (!!!gadgetList[beacon.uuid]) {
+                            gadgetList[beacon.uuid] = [];
+                        }
+                        gadgetList[beacon.uuid].push(hub.id);
+                        if (gadgetList[beacon.uuid].length > 1) {
+                            sameGadgetList.push(beacon.uuid);
+                        }
+                    });
+                }
+            });
+            console.log("sameGadgetList", sameGadgetList);
+
+            this.services.getHubListConnectedToGadget("897d4536-ad17-eb35-7c12-6cfeef2b6c4b", (hubList) => {
+                console.log("qrqrqrqr", hubList);
+                if (!_.isEmpty(hubList)) {
+                    this.setGadgetLocation(hubList.data);
+                }
+            })
+            return true;
+            // this._.forEach(sameGadgetList, (gadget) => {
+            //     // this.services.getHubListConnectedToGadget(gadget, (hubList) => {
+            //         this.setGadgetLocation(hubList.data);
+            //     })
+            // });
         }
     },
     computed: {
         isEmptyUrl() {
-            return !!!this.mapUrl
+            return this._.isEmpty(this.mapUrl);
         }
     },
     created() {
         this.$emit('select-button');
+        EventBus.$on('zoomIn', () => {
+            this.map.zoomIn(7);
+        });
+        EventBus.$on('zoomOut', () => {
+            this.map.zoomOut(6);
+        });
     },
     mounted() {
-        this.initloadMap()
-    }
+        this.initloadMap();
+    },
+    mixins: [util]
 }
 </script>
 <style>
@@ -477,6 +603,7 @@ export default {
 }
 
 .maptalks-msgBox {
+    overflow: visible !important;
     border: none !important;
     border-radius: 10px !important;
     background: none !important;
@@ -488,11 +615,12 @@ export default {
     background-size: 30px !important;
     background-color: rgba(255, 87, 87, 1) !important;
     border-radius: 4px !important;
-    z-index: 1
+    z-index: 1;
+    top: -20px !important;
 }
 
 .maptalks-msgBox a.maptalks-close:hover {
-    background-color: red !important;
+    background-color: rgb(93 130 166) !important;
 }
 
 .maptalks-msgBox .maptalks-msgContent {
@@ -508,20 +636,19 @@ export default {
     list-style: none;
     padding: 0;
     text-align: center;
-    margin-block-end: 0;
+    margin-block-start: 0px !important;
+    margin-block-end: 0 !important;
     border-radius: 10px;
     overflow: hidden;
-    padding-top: 10px
 }
 
 .workerInfo {
-    height: 240px;
+    height: 250px;
     width: 250px;
     margin-left: 100px;
     background-color: rgb(42 160 240);
     padding-inline-start: 0;
     overflow: scroll;
-    overflow-x: hidden;
     border-top-right-radius: 10px;
 }
 
@@ -529,7 +656,7 @@ export default {
     width: 80px;
     height: 80px;
     margin-left: 10px;
-    margin-top: 20px;
+    margin-top: 30px;
     color: white;
     text-align: center;
     overflow: hidden;
@@ -545,7 +672,7 @@ export default {
     text-align: center;
     overflow: hidden;
     font-weight: 900;
-    font-size: large
+    font-size: large;
 }
 
 .workerkey {
@@ -578,7 +705,7 @@ export default {
 }
 
 .worker {
-    height: 240px;
+    height: 250px;
     width: 100px;
     margin-right: 230px;
     position: absolute;
@@ -589,7 +716,7 @@ export default {
 
 .bcnskey {
     font-size: 14px;
-    padding-top: 10px;
+    padding-top: 20px;
     padding-left: 10px;
 }
 
@@ -600,7 +727,7 @@ export default {
     text-decoration: none;
     display: inline-block;
     cursor: pointer;
-    margin-top: 10px;
+    margin-top: 15px;
     border-radius: 15px
 }
 
@@ -611,13 +738,35 @@ export default {
     text-decoration: none;
     display: inline-block;
     cursor: pointer;
-    margin-top: 10px;
+    margin-top: 15px;
     border-radius: 15px
+}
+
+.hub-move-button {
+    color: #ffffff;
+    background-color: #87CEEB;
+    border: solid 1px #00BFFF;
+    text-decoration: none;
+    display: inline-block;
+    cursor: pointer;
+    margin-top: 20px;
+    border-radius: 15px;
+}
+
+.hub-move-button:hover {
+    color: #ffffff;
+    background-color: rgb(42 147 240);
+    border: solid 1px #00BFFF;
+    text-decoration: none;
+    display: inline-block;
+    cursor: pointer;
+    margin-top: 20px;
+    border-radius: 15px;
 }
 
 .bcnName {
     font-size: 20px;
-    padding-top: 10px;
+    padding-top: 20px;
     padding-left: 10px;
 }
 
@@ -656,7 +805,7 @@ export default {
 
 .ipcam {
     height: 60px;
-    background-color: rgb(93 224 219)
+    background-color: rgb(93 224 219);
 }
 
 .exampleimg {

@@ -36,6 +36,23 @@ export const getHubs = (successCallback, errorCallback) => {
   });
 }
 
+export const getHubListConnectedToGadget = (gadgetuuid, successCallback, errorCallback) => {
+    let hubList = {};
+    axios({
+        url: SERVER_BASE_URL + '/dash/hubs/detected/' + gadgetuuid,
+        method: 'GET',
+        responseType: 'text' // important
+    }).then(response => {
+        let dataObj = response.data;
+        if (!!dataObj && _.isArray(dataObj.data)) {
+            hubList = dataObj;
+            successCallback(hubList);
+        } else {
+            console.log("fail to load connectedGadget");
+        }
+    });
+}
+
 export const getBeacons = () => {
   var beaconList = [],
     returnObject = [];
@@ -50,7 +67,7 @@ export const getBeacons = () => {
       for (var _i in beaconList) {
         returnObject[_i] = getListFilter(beaconList[_i], "id");
       }
-      successCallback();
+      successCallback(beaconList);
     } else {
       console.log('File is not exist')
     }
@@ -75,21 +92,21 @@ export const getBeacons = () => {
     return returnObject;
   }
 }
-export const detectBeaconList = (hubId, successCallback, failCallback) => {
-    var detbeaconList = {};
+export const getDetectBeaconList = (hubId, successCallback, failCallback) => {
+    let beaconList = {};
     axios({
       url: SERVER_BASE_URL + '/dash/beacons/detected/' + hubId,
       method: 'GET',
       responseType: 'text' // important
     }).then(response => {
-      if (!!response.data) {
-        detbeaconList = response.data;
-        // Beacon list
-        successCallback(detbeaconList['data']);
+      let dataObj = response.data;
+      if (!!dataObj && _.isArray(dataObj.data)) {
+        beaconList = dataObj.data;
+        successCallback(beaconList);
       } else {
-        failCallback(console.log("Failed to Get detBeacons List"))
+        failCallback();
       }
-    });
+  });
 }
 
 export const getGadgets = (gadgetIds, successCallback, failCallback) => {
@@ -108,7 +125,7 @@ export const getGadget = (gadgetId, successCallback, failCallback) => { // TODO:
       if (response.data) {
         successCallback(response.data);
     } else {
-        failCallback("Failed to get gadget, id: ${gadgetId}"); // TODO: server error
+        failCallback(`Failed to get gadget, id: ${gadgetId}`); // TODO: server error
       }
     });
 }
