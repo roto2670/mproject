@@ -6,7 +6,8 @@ Vue.use(Vuex)
 export default new Vuex.Store({
     state: {
         hubs: {},
-        gadgets: {}
+        gadgets: {},
+        detectedgadgets: {}
     },
     getters: {
         getScannerList: function(data, id) {
@@ -25,10 +26,12 @@ export default new Vuex.Store({
             return state.hubs[id];
         },
         getGadget: (state) => (hid, gid) => {
-            console.log("stategadget", state.gadgets);
             return state.gadgets[hid].find((gadget) => gadget.id === gid);
         },
         getGadgets: (state) => (hid) => {
+            return state.gadgets[hid]; 
+        },
+        getGadgetList: (state) => (hid) => {
             return state.gadgets[hid];
         },
         hasGadget: (state) => (hid, gid) => {
@@ -39,7 +42,7 @@ export default new Vuex.Store({
     mutations: {
         addHubs(state, payload) {
             _.forEach(payload, hub => {
-                state.hubs[hub.id] = hub;
+                state.hubs[hub.id] = hub; 
             });
         },
         addHub(state, payload) {
@@ -48,29 +51,44 @@ export default new Vuex.Store({
             }
             state.hubs[payload.hub_id].push(payload.hub);
         },
-        addGadget(state, payload) {
-            if (!!!state.gadgets[payload.hub_id]) {
-                state.gadgets[payload.hub_id] = [];
-            }
-            state.gadgets[payload.hub_id].push(payload.gadget);
+        adddetectedGadget(state, payload) {
+            var hubId = null;
+            _.forEach(payload, hub => {
+                // if (!!!state.gadgets['64598ab247e597fcb3cc44839d9ad63c']) {
+                //     state.gadgets['64598ab247e597fcb3cc44839d9ad63c'] = [];
+                //     state.gadgets['64598ab247e597fcb3cc44839d9ad63c'].push(hub); 
+                //     state.detectedgadgets['64598ab247e597fcb3cc44839d9ad63c'] = [];
+                //     state.detectedgadgets['64598ab247e597fcb3cc44839d9ad63c'].hid = hub.hid;
+                //     state.detectedgadgets['64598ab247e597fcb3cc44839d9ad63c'].gid = hub.gid;
+                    
+                // }
+                if(!!!state.gadgets[hub.hid]) { // TODO: exchange source when data is set. 
+                    state.gadgets[hub.hid] = [];
+                    state.gadgets[hub.hid].push(hub);
+                }
+            })
+            console.log("stategadget", state.gadgets);
         },
         addGadgets(state, payload) {
             _.forEach(payload, gadget => {
-                state.gadgets[gadget.gid] = gadget;
+                state.gadgets[gadget.beacon_spec.uuid] = gadget;
             });
         },
+        addHubLocation(state, payload) {
+            const hubList = state.hubs[payload.id];
+            if (!_.isEmpty(hubList)) {
+                hubList.custom.map_location = payload.custom.map_location;
+            }
+        },
         addGadgetLocation(state, payload) {
-            const gadgetList = state.gadgets[payload.hid];
-            console.log("ttqq", gadgetList);
-            console.log("stategadget", state.gadgets);
+            _.forEach(payload, gadget => {
+                state.gadgets[payload.hid] = gadget;
+            });
+            // console.log("stategadgList", state.detectedgadgets);
+            const gadgetList = state.detectedgadgets[payload.hid];
             if (!_.isEmpty(gadgetList)) {
-                let gadget = _.find(gadgetList, (gadget) => gadget.id === "822c5303bcb71f54e891e5c493537aae"); // TODO: Test Code
-                console.log("gadgetg", gadget);
-                if (!_.isObject(gadget.custom)) {
-                    gadget.custom = {};
-                } else {
-                    console.warn(`Gadgets custom is empty ins gadget id: ${gadget.gid}`);
-                }
+                let gadget = _.find(gadgetList, (gadget) => gadget.id === payload.gid); // TODO: Test Code
+                console.log("gadget", gadget);
                 gadget.custom.map_location = _.pick(payload, ['x', 'y']);
             } else {
                 console.warn(`GadgetList is Empty`);

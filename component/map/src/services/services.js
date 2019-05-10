@@ -53,44 +53,22 @@ export const getHubListConnectedToGadget = (gadgetuuid, successCallback, errorCa
     });
 }
 
-export const getBeacons = () => {
+export const getBeacons = (successCallback, failCallback) => {
   var beaconList = [],
     returnObject = [];
   axios({
-    url: SERVER_BASE_URL + '/dash/beacons/list',
+    url: SERVER_BASE_URL + '/dash/beacons/list/mibs',
     method: 'GET',
     responseType: 'text' // important
   }).then(response => {
     if (!!response.data) {
       beaconList = response.data;
       console.log("beaconList", beaconList);
-      for (var _i in beaconList) {
-        returnObject[_i] = getListFilter(beaconList[_i], "id");
-      }
       successCallback(beaconList);
     } else {
       console.log('File is not exist')
     }
   });
-  return returnObject;
-
-  function errorCallback() {
-    console.log("Failed to Get Beacon List");
-  };
-
-  function successCallback() {
-    console.log("Success to Get Beacon List");
-  };
-
-  function getListFilter(data, id) {
-    var returnObject = [];
-    for (var key in data) {
-      if (key === id) {
-        returnObject[key] = data[key];
-      }
-    }
-    return returnObject;
-  }
 }
 export const getDetectBeaconList = (hubId, successCallback, failCallback) => {
     let beaconList = {};
