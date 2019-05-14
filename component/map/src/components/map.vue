@@ -130,13 +130,35 @@ export default {
                 this.$store.commit('addHubs', hubList); // TODO; move to services?
 
                 // draw hub if has location data.
-                this._.forEach(hubList, (hub) => {
-                    let location = hub.custom && hub.custom.map_location;
-                    if (!this._.isEmpty(location)) {
-                        this.drawHub(hub.id, location);
+                const haslocationHubs = this.$store.getters.getHubs;
+                this._.forEach(haslocationHubs, (hub) => { 
+                    if (!_.isEmpty(hub.custom)) {
+                        this.drawHub(hub.id, hub.custom.map_location);
                     }
-                })
-                this.hasSameGadget(hubList);
+                });
+                this.handleAddGadget(); 
+            });
+        },
+        handleAddGadget() {
+            const hubList = this.$store.getters.getHubs;
+            this._.forEach(hubList, (hub) => {
+                this.loadGadgets(hub.id, () => {
+                    if (!_.isEmpty(hub.custom)) {
+                        // this.hasSameGadget();
+                        this.drawWorkers(hub.id, hub.custom.map_location);
+                    }
+                }, () => {
+                    console.log("Failed to load detected beacon list");
+                });
+            })
+        },
+        loadGadgets(hubId, successCallback, failCallback) {
+            this.services.getDetectBeaconList(hubId, (beacons) => {
+                console.log("getdetectedbcns", beacons);
+                this.$store.commit('adddetectedGadget', beacons);
+                successCallback();
+            }, () => {
+                failCallback();
             });
         },
         handleAddHub(e) {
@@ -210,7 +232,7 @@ export default {
                     }
                 }
             ).addTo(this.hubLayer);
-            this.drawWorkers(hubId, coordinate); // 허브 추가 시 비콘들을 주위에 뿌린다.
+
             marker.on('click', () => {
                 marker.updateSymbol({
                     markerFile: 'icon-hub-tab.svg'
@@ -223,8 +245,7 @@ export default {
             this._updateHubLocation(hubId, coordinate.x, coordinate.y);
             this.startInterval(hubId);
 
-            marker.on('dragend', (coordinate) => {
-                console.log("location", coordinate);
+            marker.on('dragstart draaging dragend', (coordinate) => {
                 var str = document.getElementsByClassName('hub-move-button')[0].innerHTML;
                 var text = str.replace("Move", "SetLocation");
                 document.getElementsByClassName('hub-move-button')[0].innerHTML = text;
@@ -235,6 +256,8 @@ export default {
                         markerFile: 'icon-hub.svg'
                     })
                     marker.config('draggable', false);
+                    this.removeGadgetMarkers(hubId);
+                    this.drawWorkers(hubId, marker._coordinates);
                 }
             })
         },
@@ -258,12 +281,12 @@ export default {
             }
 
             // remove children markers
-            this.removeGadgetMakers(hubId);
+            this.removeGadgetMarkers(hubId);
 
             // delete in cahces
             delete this.markerMap.hubs[hubId];
         },
-        removeGadgetMakers(hubId) {
+        removeGadgetMarkers(hubId) {
             console.log(`Try remove hub markers for id: ${hubId}`);
             let gadgetMarkers = this.markerMap.gadgets[hubId];
             if (!this._.isEmpty(gadgetMarkers)) {
@@ -282,6 +305,7 @@ export default {
             let length = null;
             const gadgets = this.$store.getters.getGadgets(hubId);
             const hub = this.$store.getters.getHub(hubId);
+            console.log("hub", hub);
             if (!this._.isEmpty(gadgets)) {
                 this._.forEach(gadgets, (gadget) => {
                     context += `<li>${gadget.name}</li>`;
@@ -321,50 +345,37 @@ export default {
 
         },
         drawWorkers(hubId, coordinate) {
-            this.services.getDetectBeaconList(hubId, (beacons) => {
-                if (!this._.isEmpty(beacons)) {
-                    this._.forEach(beacons, (beacon, index) => { //TODO getGadget(services.js) 하
-                        this.services.getGadget(beacon.gid, (gadget) => {
-                            if (!this.$store.getters.hasGadget(hubId, gadget.id)) {
-                                this.$store.commit('addGadget', {
-                                    hub_id: hubId,
-                                    gadget: gadget
-                                });
-                            }
-                        });
-                        let marker = new maptalks.Marker(
-                            [coordinate.x + (Math.random() * 6), coordinate.y + (Math.random() * 6)], {
-                                'symbol': {
-                                    'markerFile': 'icon-worker' + Math.ceil(Math.random() * 16) + '.svg',
-                                    'markerWidth': 50,
-                                    'markerHeight': 50
-                                }
-                            }
-                        ).addTo(this.workerLayer);
-                        marker.on('click', () => {
-                            marker.updateSymbol({
-                                markerFile: 'icon-worker' + Math.ceil(Math.random() * 16) + '-tab.svg'
-                            })
-                            this.showGadgetInFoWindow(hubId, beacon.gid, this.bcns[index]);
-                        });
-                        this.bcns[index] = marker;
-
-                        // add in cache
-                        let markerCache = this.markerMap.gadgets[hubId];
-                        if (!!!markerCache) {
-                            markerCache = [];
-                            this.markerMap.gadgets[hubId] = markerCache;
-                        }
-                        markerCache.push(marker);
-                    });
-                } else {
+            const bcns = this.$store.getters.getGadgetList(hubId);
+            this._.forEach(bcns, (beacon, index) => {
+                let marker = new maptalks.Marker(
+                [coordinate.x + index + 1.5, coordinate.y], {
+                'symbol': {
+                    'markerFile': 'icon-worker' + Math.ceil(Math.random() * 16) + '.svg',
+                    'markerWidth': 50,
+                    'markerHeight': 50
+                    }
                 }
-            }, () => {
-                console.log("Failed to Get detBeacons List");
+                ).addTo(this.workerLayer);
+                marker.on('click', () => {
+                    marker.updateSymbol({
+                    markerFile: 'icon-worker' + Math.ceil(Math.random() * 16) + '-tab.svg'
+                    })
+                this.showGadgetInFoWindow(hubId, beacon.gid, this.bcns[index]);
+                });
+                this.bcns[index] = marker;
+
+                // add in cache
+                let markerCache = this.markerMap.gadgets[hubId];
+                if (!!!markerCache) {
+                    markerCache = [];
+                    this.markerMap.gadgets[hubId] = markerCache;
+                }
+                markerCache.push(marker); 
             });
         },
         showGadgetInFoWindow(hubId, gadgetId, marker) {
             let gadget = this.$store.getters.getGadget(hubId, gadgetId);
+            console.log("gadget", gadget);
             marker.setInfoWindow({
                 'content': '<div class="bcns">' +
                     '<div class="bcnsInfo"><div class="bcnskey">Name</div>' +
@@ -419,7 +430,9 @@ export default {
                     }
                 });
                 // send to server.
+                this.$store.commit('addHubLocation', hub);
                 this.services.setHubLocation(hub);
+                console.log("success to set hub location");
             } else {
                 console.warn('Failed to update hub location, given parms cannot be null.', hub, x, y);
             }
@@ -429,7 +442,7 @@ export default {
             setInterval(() => {
                 this.$store.commit('removeGadgets');
                 const hub = this.$store.getters.getHub(hubId);
-                this.removeGadgetMakers(hub.id);
+                this.removeGadgetMarkers(hub.id);
                 if (!_.isEmpty(hub.id)) {
                     this.drawWorkers(hub.id, hub.custom.map_location);
                 } else {
@@ -443,7 +456,6 @@ export default {
                 x = 0,
                 y = 0,
                 gid = null;
-            console.log("gadgggg", hubList);
             this._.forEach(hubList, (hub) => {
                 const hub2 = this.$store.getters.getHub(hub.hid); //TODO: name change
                 gid = hub.gid;
@@ -479,13 +491,15 @@ export default {
                     y: y / this._.size(hubLocation)
                 }
             })
-            console.log("gadgetLocation", gadgetLocation);
+            console.log("addGadgetLocation", gadgetLocation);
             this.$store.commit('addGadgetLocation', gadgetLocation);
         },
-        hasSameGadget(hubList) { // 비콘이 여러 허브에 들어있을 경우에 그 허브들의 리스트를 받아옴
+        hasSameGadget() { // 비콘이 여러 허브에 들어있을 경우에 그 허브들의 리스트를 받아옴
             let gadgetList = [],
                 sameGadgetList = [];
-            this._.forEach(hubList, (hub, index) => {
+            const hub = this.$store.getters.getHubs;
+            console.log("hub", hub);
+            this._.forEach((hub, index) => {
                 if (!this._.isEmpty(hub.beacons)) {
                     this._.forEach(hub.beacons, (beacon) => {
                         if (!!!gadgetList[beacon.uuid]) {
@@ -498,15 +512,14 @@ export default {
                     });
                 }
             });
-            console.log("sameGadgetList", sameGadgetList);
+          
 
             this.services.getHubListConnectedToGadget("897d4536-ad17-eb35-7c12-6cfeef2b6c4b", (hubList) => {
-                console.log("qrqrqrqr", hubList);
                 if (!_.isEmpty(hubList)) {
+                    console.log("getHubListConnectedToGadget", hubList);
                     this.setGadgetLocation(hubList.data);
                 }
             })
-            return true;
             // this._.forEach(sameGadgetList, (gadget) => {
             //     // this.services.getHubListConnectedToGadget(gadget, (hubList) => {
             //         this.setGadgetLocation(hubList.data);
