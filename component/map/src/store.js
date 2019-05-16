@@ -7,36 +7,39 @@ export default new Vuex.Store({
     state: {
         hubs: {},
         gadgets: {},
-        detectedgadgets: {}
+        detectedgadgets: {},
+        forInfohubs: [],
+        drawgadget: {}
     },
     getters: {
-        getScannerList: function(data, id) {
-            var returnObject = [];
-            for (var key in data) {
-                if (key === id) {
-                    returnObject[key] = data[key];
-                }
-            }
-            return returnObject;
-        },
         getHubs: (state) => {
             return _.values(state.hubs);
         },
         getHub: (state) => (id) => {
             return state.hubs[id];
         },
+        getBeaconWithHubs: (state) => (hid) => {
+            return state.forInfohubs[hid];
+        },
         getGadget: (state) => (hid, gid) => {
             return state.gadgets[hid].find((gadget) => gadget.id === gid);
         },
-        getGadgets: (state) => (hid) => {
-            return state.gadgets[hid]; 
+        getGadgetsWithHub: (state) => {
+            return state.gadgets; 
         },
-        getGadgetList: (state) => (hid) => {
-            return state.gadgets[hid];
+        getdetectedGadgetList: (state) => {
+            return state.detectedgadgets;
         },
-        hasGadget: (state) => (hid, gid) => {
-            return !!state.gadgets[hid] &&
-                   !!state.gadgets[hid].find((gadget) => gadget.id === gid);
+        getdetectedGadgetName: (state) => (gid) => {
+            return state.detectedgadgets[gid].name
+        },
+        getgadgetmanyhubs: (state) => {
+            let returnObject = {};
+            _.forEach(state.detectedgadgets, (gadget) => {
+                returnObject[gadget.gid] = {};
+                returnObject[gadget.gid] = gadget.hid;
+            })
+            return returnObject
         }
     },
     mutations: {
@@ -46,32 +49,43 @@ export default new Vuex.Store({
             });
         },
         addHub(state, payload) {
-            if (!!_.isEmpty(state.hubs[payload.hub_id])) {
+            if (_.isEmpty(state.hubs[payload.hub_id])) {
                 state.hubs[payload.hub_id] = [];
             }
             state.hubs[payload.hub_id].push(payload.hub);
         },
-        adddetectedGadget(state, payload) {
-            var hubId = null;
-            _.forEach(payload, hub => {
-                // if (!!!state.gadgets['64598ab247e597fcb3cc44839d9ad63c']) {
-                //     state.gadgets['64598ab247e597fcb3cc44839d9ad63c'] = [];
-                //     state.gadgets['64598ab247e597fcb3cc44839d9ad63c'].push(hub); 
-                //     state.detectedgadgets['64598ab247e597fcb3cc44839d9ad63c'] = [];
-                //     state.detectedgadgets['64598ab247e597fcb3cc44839d9ad63c'].hid = hub.hid;
-                //     state.detectedgadgets['64598ab247e597fcb3cc44839d9ad63c'].gid = hub.gid;
+        addDetectedGadget(state, payload) {
+            _.forEach(payload, bcn => {
+                state.gadgets[bcn.id] = bcn;
+            })
+        },
+        addDetectedHubGadget(state, payload) {
+            _.forEach(payload, gadget => {
+                if (_.has(state.gadgets, gadget.gid)) {
+                    let data = state.gadgets[gadget.gid];
+                    if (_.isEmpty(state.detectedgadgets[gadget.gid])) {
+                        state.detectedgadgets[gadget.gid] = {
+                            gid: data.id,
+                            hid: [],
+                            name: data.name,
+                            dist: gadget.dist,
+                            uuid: data.beacon_spec.uuid,
+                            major: data.beacon_spec.major,
+                            minor: data.beacon_spec.minor,
+                            custom: {}
+                        }
+                    }
                     
-                // }
-                if(!!!state.gadgets[hub.hid]) { // TODO: exchange source when data is set. 
-                    state.gadgets[hub.hid] = [];
-                    state.gadgets[hub.hid].push(hub);
+                    state.forInfohubs[gadget.hid] = payload;
+                    if (_.isEmpty(state.detectedgadgets[gadget.gid].hid.find((hub) => hub === gadget.hid))) {
+                        state.detectedgadgets[gadget.gid].hid.push(gadget.hid);
+                    }
                 }
             })
-            console.log("stategadget", state.gadgets);
         },
         addGadgets(state, payload) {
             _.forEach(payload, gadget => {
-                state.gadgets[gadget.beacon_spec.uuid] = gadget;
+                state.gadgets[gadget.id] = gadget;
             });
         },
         addHubLocation(state, payload) {
@@ -81,25 +95,20 @@ export default new Vuex.Store({
             }
         },
         addGadgetLocation(state, payload) {
-            _.forEach(payload, gadget => {
-                state.gadgets[payload.hid] = gadget;
-            });
-            // console.log("stategadgList", state.detectedgadgets);
-            const gadgetList = state.detectedgadgets[payload.hid];
+            const gadgetList = state.gadgets[payload.gid],
+                  detectedgadgetList = state.detectedgadgets[payload.gid];
             if (!_.isEmpty(gadgetList)) {
-                let gadget = _.find(gadgetList, (gadget) => gadget.id === payload.gid); // TODO: Test Code
-                console.log("gadget", gadget);
-                gadget.custom.map_location = _.pick(payload, ['x', 'y']);
+                gadgetList.custom = _.pick(payload, ['x', 'y']);
+                detectedgadgetList.custom = _.pick(payload, ['x', 'y']);
             } else {
                 console.warn(`GadgetList is Empty`);
             }
-            // state.gadgets[gadget.custom.map_location] = payload;
         },
         removeGadgets(state) {
             state.gadgets = {};
         }
     },
     actions: {
-        //비동기 함수만 사용, dispatch사용
+        
     }
 })
