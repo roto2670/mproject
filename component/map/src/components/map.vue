@@ -23,6 +23,7 @@ export default {
             ipcams: [],
             contextCoordinate: null,
             contextMenu: null,
+            filtercontextMenu: null,
             bcns: {},
             options: {
                 items: []
@@ -124,41 +125,50 @@ export default {
         },
         loadHubs() {
             console.debug('Try load hubs');
-            let hubs = this.services.getHubs((hubList) => {
-                console.log('Load hubs.', hubList);
-                // Store hubs.
-                this.$store.commit('addHubs', hubList); // TODO; move to services?
-
-                // draw hub if has location data.
-                const haslocationHubs = this.$store.getters.getHubs;
-                this._.forEach(haslocationHubs, (hub) => { 
-                    if (!_.isEmpty(hub.custom)) {
-                        this.drawHub(hub.id, hub.custom.map_location);
-                    }
-                });
-                this.handleAddGadget(); 
+            this.services.getProductId((productId) => {
+                this.services.getBeacons(productId.product_id, (bcndata) => {
+                    this.$store.commit('addDetectedGadget', bcndata);
+                    this._loadHubs();
+                })
             });
         },
-        handleAddGadget() {
-            const hubList = this.$store.getters.getHubs;
-            this._.forEach(hubList, (hub) => {
-                this.loadGadgets(hub.id, () => {
-                    if (!_.isEmpty(hub.custom)) {
-                        // this.hasSameGadget();
-                        this.drawWorkers(hub.id, hub.custom.map_location);
-                    }
-                }, () => {
-                    console.log("Failed to load detected beacon list");
-                });
-            })
+        _loadHubs() {
+           let hubs = this.services.getHubs((hubList) => {
+                    console.log('Load hubs.', hubList);
+                    // Store hubs.
+                    this.$store.commit('addHubs', hubList); // TODO; move to services?
+
+                    // draw hub if has location data.
+                    const haslocationHubs = this.$store.getters.getHubs;
+                    this._.forEach(haslocationHubs, (hub) => { 
+                        if (!_.isEmpty(hub.custom)) {
+                            this.drawHub(hub.id, hub.custom.map_location);
+                        } 
+                    });
+                    // this.handleAddGadget(); 
+                }); 
         },
+        // handleAddGadget() {
+        //     const hubList = this.$store.getters.getHubs;
+        //     this._.forEach(hubList, (hub) => {
+        //         this.loadGadgets(hub.id, () => {
+        //             if (!_.isEmpty(hub.custom)) {
+        //                 this.drawWorkers(hub.id, hub.custom.map_location);
+        //             } else {
+        //                 console.debug(`Custom data is empty in hubid: ${hub.id}`)
+        //             }
+        //         }, () => {
+        //             // console.log("Failed to load detected beacon list");
+        //         });
+        //     })
+        // },
         loadGadgets(hubId, successCallback, failCallback) {
             this.services.getDetectBeaconList(hubId, (beacons) => {
-                console.log("getdetectedbcns", beacons);
-                this.$store.commit('adddetectedGadget', beacons);
-                successCallback();
-            }, () => {
-                failCallback();
+                this.$store.commit('addDetectedHubGadget', beacons);
+                this.hasSameGadget(successCallback);
+                //successCallback();
+            }, (err) => {
+                failCallback(err);
             });
         },
         handleAddHub(e) {
@@ -240,26 +250,29 @@ export default {
                 this.showHubInfoWindow(hubId, marker);
             })
             this.markerMap.hubs[hubId] = marker;
+            this.loadGadgets(hubId, () => {
+                this.drawWorkers(hubId, coordinate);
+                // Store hub location to server.
+                this._updateHubLocation(hubId, coordinate.x, coordinate.y);
+                this.startInterval(hubId);
+                marker.on('dragstart draaging dragend', (coordinate) => {
+                    var str = document.getElementsByClassName('hub-move-button')[0].innerHTML;
+                    var text = str.replace("Move", "SetLocation");
+                    document.getElementsByClassName('hub-move-button')[0].innerHTML = text;
 
-            // Store hub location to server.
-            this._updateHubLocation(hubId, coordinate.x, coordinate.y);
-            this.startInterval(hubId);
-
-            marker.on('dragstart draaging dragend', (coordinate) => {
-                var str = document.getElementsByClassName('hub-move-button')[0].innerHTML;
-                var text = str.replace("Move", "SetLocation");
-                document.getElementsByClassName('hub-move-button')[0].innerHTML = text;
-
-                document.getElementsByClassName('hub-move-button')[0].onclick = () => {
-                    marker.closeInfoWindow();
-                    marker.updateSymbol({
-                        markerFile: 'icon-hub.svg'
-                    })
-                    marker.config('draggable', false);
-                    this.removeGadgetMarkers(hubId);
-                    this.drawWorkers(hubId, marker._coordinates);
-                }
-            })
+                    document.getElementsByClassName('hub-move-button')[0].onclick = () => {
+                        marker.closeInfoWindow();
+                        marker.updateSymbol({
+                            markerFile: 'icon-hub.svg'
+                        })
+                        marker.config('draggable', false);
+                        this.removeGadgetMarkers(hubId);
+                        this.drawWorkers(hubId, marker._coordinates);
+                    }
+                })
+            }, (err) => {
+                console.log("load gadgets failed", err);
+            });
         },
         removeHubMarker(hubId) {
             console.debug(`Try remove hub marker, id: ${hubId}`);
@@ -301,16 +314,22 @@ export default {
             delete this.markerMap.gadgets[hubId];
         },
         showHubInfoWindow(hubId, marker) {
-            let context = '';
-            let length = null;
-            const gadgets = this.$store.getters.getGadgets(hubId);
-            const hub = this.$store.getters.getHub(hubId);
-            console.log("hub", hub);
+            let context = '',
+                length = null,
+                gadgetList = {};
+            const gadgets = this.$store.getters.getBeaconWithHubs(hubId),
+                  hub = this.$store.getters.getHub(hubId);
             if (!this._.isEmpty(gadgets)) {
                 this._.forEach(gadgets, (gadget) => {
-                    context += `<li>${gadget.name}</li>`;
+                    if (!gadgetList[gadget.gid]) {
+                        gadgetList[gadget.gid] = {};
+                        var name = this.$store.getters.getdetectedGadgetName(gadget.gid);
+                            context += `<li>${name}</li>`;
+                    } else {
+
+                    }
+                    length = _.keys(gadgetList).length;
                 })
-                length += gadgets.length;
             } else {
                 context += '<li>Theres no gadget to load</li>';
                 length += 0;
@@ -345,17 +364,31 @@ export default {
 
         },
         drawWorkers(hubId, coordinate) {
-            const bcns = this.$store.getters.getGadgetList(hubId);
+            let bcns = _.values(this.$store.getters.getdetectedGadgetList);
             this._.forEach(bcns, (beacon, index) => {
-                let marker = new maptalks.Marker(
-                [coordinate.x + index + 1.5, coordinate.y], {
-                'symbol': {
-                    'markerFile': 'icon-worker' + Math.ceil(Math.random() * 16) + '.svg',
-                    'markerWidth': 50,
-                    'markerHeight': 50
+                let marker = null;
+                if (!this._.isEmpty(beacon.custom)) {
+                    console.log("beaconsvcustom", beacon.hid, beacon.custom);
+                    marker = new maptalks.Marker(
+                    [beacon.custom.x , beacon.custom.y], {
+                    'symbol': {
+                        'markerFile': 'icon-worker' + Math.ceil(Math.random() * 16) + '.svg',
+                        'markerWidth': 50,
+                        'markerHeight': 50
+                        }
                     }
+                    ).addTo(this.workerLayer);
+                } else {
+                    marker = new maptalks.Marker(
+                    [coordinate.x + index + 1.5, coordinate.y], {
+                    'symbol': {
+                        'markerFile': 'icon-worker' + Math.ceil(Math.random() * 16) + '.svg',
+                        'markerWidth': 50,
+                        'markerHeight': 50
+                        }
+                    }
+                    ).addTo(this.workerLayer);
                 }
-                ).addTo(this.workerLayer);
                 marker.on('click', () => {
                     marker.updateSymbol({
                     markerFile: 'icon-worker' + Math.ceil(Math.random() * 16) + '-tab.svg'
@@ -374,12 +407,11 @@ export default {
             });
         },
         showGadgetInFoWindow(hubId, gadgetId, marker) {
-            let gadget = this.$store.getters.getGadget(hubId, gadgetId);
-            console.log("gadget", gadget);
+            let info = this.$store.getters.getdetectedGadgetList[gadgetId];
             marker.setInfoWindow({
                 'content': '<div class="bcns">' +
                     '<div class="bcnsInfo"><div class="bcnskey">Name</div>' +
-                    '<div class="bcnName">' + (gadget.name || 'no name') + '</div>' +
+                    '<div class="bcnName">' + (info.name || 'no name') + '</div>' +
                     '</div>' + '<img class="bcnsImg" src="item.png"></img>' +
                     '</div>',
                 'width': 400,
@@ -457,74 +489,115 @@ export default {
                 y = 0,
                 gid = null;
             this._.forEach(hubList, (hub) => {
-                const hub2 = this.$store.getters.getHub(hub.hid); //TODO: name change
+                const hubInfo = this.$store.getters.getHub(hub.hid); //TODO: name change
                 gid = hub.gid;
-                if (!!hub2 && !this._.isEmpty(hub2.custom)) {
-                    hubLocation[hub.hid] = hub2.custom.map_location;
+                if (!!hubInfo && !this._.isEmpty(hubInfo.custom)) {
+                    hubLocation[hub.hid] = hubInfo.custom.map_location;
                     hubLocation[hub.hid].dist = hub.dist;
                     // console.log("aqrr", hub.hid, this.$store.getters.getHub(hub.hid).custom.map_location);
                 } else {
                     console.warn(`There is empty custom in hubid: ${hub.hid}`);
                 }
             });
-            this._.forEach(hubLocation, (hub) => {
+
+            this._.forEach(hubLocation, (hub, hubid) => {
                 if (this.isNumber(hub.dist)) {
-                    if (hub.dist < 0) {
-                        hub.x = hub.x - (hub.x * (Math.abs(hub.dist) / 200));
-                        hub.y = hub.y - (hub.y * (Math.abs(hub.dist) / 200));
-                    } else {
-                        hub.x = hub.x + (hub.x * (Math.abs(hub.dist) / 200));
-                        hub.y = hub.y + (hub.y * (Math.abs(hub.dist) / 200));
-                    }
+                    let datax = hub.x,
+                        datay = hub.y;
+                    datax = datax + (datax * (Math.abs(hub.dist) / 200));
+                    datay = datay + (datay * (Math.abs(hub.dist) / 200)); 
 
-                    x += hub.x;
-                    y += hub.y;
+                    x += datax;
+                    y += datay;
                 } else {
-                    console.warn(`There is no dist data in hubId: ${hub.hid}`);
+                    console.warn(`There is no dist data in hubId: ${hubid}`);
                 }
             })
-            this._.forEach(hubList, (hub) => {
-                gadgetLocation = {
-                    hid: hub.hid,
-                    gid: gid,
-                    x: x / this._.size(hubLocation),
-                    y: y / this._.size(hubLocation)
-                }
-            })
-            console.log("addGadgetLocation", gadgetLocation);
-            this.$store.commit('addGadgetLocation', gadgetLocation);
+            if (!this._.isEmpty(hubLocation)) {
+                this._.forEach(hubList, (hub) => {
+                    this._.forEach(hub, (hubid) => {
+                        gadgetLocation = {
+                            hid: hubid,
+                            gid: gid,
+                            x: x / this._.size(hubLocation),
+                            y: y / this._.size(hubLocation)
+                        }
+                    })
+                })
+                this.$store.commit('addGadgetLocation', gadgetLocation);
+            }
         },
-        hasSameGadget() { // 비콘이 여러 허브에 들어있을 경우에 그 허브들의 리스트를 받아옴
-            let gadgetList = [],
-                sameGadgetList = [];
-            const hub = this.$store.getters.getHubs;
-            console.log("hub", hub);
-            this._.forEach((hub, index) => {
-                if (!this._.isEmpty(hub.beacons)) {
-                    this._.forEach(hub.beacons, (beacon) => {
-                        if (!!!gadgetList[beacon.uuid]) {
-                            gadgetList[beacon.uuid] = [];
-                        }
-                        gadgetList[beacon.uuid].push(hub.id);
-                        if (gadgetList[beacon.uuid].length > 1) {
-                            sameGadgetList.push(beacon.uuid);
-                        }
-                    });
-                }
-            });
-          
-
-            this.services.getHubListConnectedToGadget("897d4536-ad17-eb35-7c12-6cfeef2b6c4b", (hubList) => {
-                if (!_.isEmpty(hubList)) {
-                    console.log("getHubListConnectedToGadget", hubList);
-                    this.setGadgetLocation(hubList.data);
+        hasSameGadget(successCallback) { // 비콘이 여러 허브에 들어있을 경우에 그 허브들의 리스트를 받아옴
+            const gadgetData = this.$store.getters.getgadgetmanyhubs;
+            let sameGadgetList = {};
+            this._.forEach(gadgetData, (hub, gadgetId) => {
+                if (hub.length > 1) {
+                    sameGadgetList[gadgetId] = {};
+                    sameGadgetList[gadgetId] = hub;
                 }
             })
-            // this._.forEach(sameGadgetList, (gadget) => {
-            //     // this.services.getHubListConnectedToGadget(gadget, (hubList) => {
-            //         this.setGadgetLocation(hubList.data);
-            //     })
+            let sameGadgetListSize = _.keys(sameGadgetList).length;
+            let gadgetCount = 1;
+
+            console.log("samegadgetlsit", sameGadgetList);
+            // this._.forEach((hub, index) => {
+            //     if (!this._.isEmpty(hub.beacons)) {
+            //         this._.forEach(hub.beacons, (beacon) => {
+            //             if (!!!gadgetList[beacon.uuid]) {
+            //                 gadgetList[beacon.uuid] = [];
+            //             }
+            //             gadgetList[beacon.uuid].push(hub.id);
+            //             if (gadgetList[beacon.uuid].length > 1) {
+            //                 sameGadgetList.push(beacon.uuid);
+            //             }
+            //         });
+            //     }
             // });
+
+            // TODO: change source when data is set.
+            // this._.forEach(sameGadgetList, (gadget, gadgetid) => {
+            //     this.services.getHubListConnectedToGadget(gadgetid, (hubList) => {
+            //         if (!_.isEmpty(hubList)) {
+            //             this.setGadgetLocation(hubList.data);
+            //         }
+            //     })
+            // })
+
+            // this.services.getHubListConnectedToGadget("897d4536-ad17-eb35-7c12-6cfeef2b6c4b", (hubList) => {
+            //     if (!_.isEmpty(hubList)) {
+            //         console.log("getHubListConnectedToGadget", hubList);
+            //         this.setGadgetLocation(hubList.data);
+            //     }
+            // })
+            if (sameGadgetListSize == 0) {
+                successCallback();
+            } else {
+                this._.forEach(sameGadgetList, (gadget, gadgetid) => {
+                     this.services.getHubListConnectedToGadget(gadgetid, (hubList) => {
+                        this.setGadgetLocation(hubList.data);
+                        if (sameGadgetListSize == gadgetCount) {
+                            successCallback();
+                        } else {
+                            gadgetCount++;
+                        }
+                    })
+                });
+            }
+        },
+        filterBeacons() {
+            const beaconList= this.$store.getters.getdetectedGadgetList;
+            
+            this.filtercontextMenu = {
+                'custom' : true,
+                'items' : '<ul class="custom_menu">' +
+                          
+                          '</ul>'
+            };
+            this.filtercontextMenu = this.map.setMenu(this.filtercontextMenu).openMenu();
+
+            this.map.on('contextmenu', (e) => {
+                this.map.openMenu(e.coordinate);
+            })
         }
     },
     computed: {
@@ -540,6 +613,9 @@ export default {
         EventBus.$on('zoomOut', () => {
             this.map.zoomOut(6);
         });
+        EventBus.$on('filter', () => {
+            this.filterBeacons();
+        })
     },
     mounted() {
         this.initloadMap();

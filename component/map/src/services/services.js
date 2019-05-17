@@ -20,6 +20,23 @@ export const setHubLocation = (hub, successCallback, errorCallback) => {
       console.log('FAILURE!!', e)
     })
 }
+
+export const getProductId = (successCallback, errorCallback) => {
+  var product_id = null;
+  axios({
+    url: SERVER_BASE_URL + '/dash/info',
+    method: 'GET',
+    responseType: 'text' // important
+  }).then(response => {
+    if (!!response.data) {
+      product_id = response.data;
+      successCallback(product_id);
+    } else {
+      console.log('File is not exist')
+    }
+  });
+}
+
 export const getHubs = (successCallback, errorCallback) => {
   var hubList = [];
   axios({
@@ -53,17 +70,15 @@ export const getHubListConnectedToGadget = (gadgetuuid, successCallback, errorCa
     });
 }
 
-export const getBeacons = (successCallback, failCallback) => {
-  var beaconList = [],
-    returnObject = [];
+export const getBeacons = (product_id, successCallback, failCallback) => {
+  var beaconList = [];
   axios({
-    url: SERVER_BASE_URL + '/dash/beacons/list/mibs',
+    url: SERVER_BASE_URL + '/dash/beacons/list/' + product_id,
     method: 'GET',
     responseType: 'text' // important
   }).then(response => {
     if (!!response.data) {
       beaconList = response.data;
-      console.log("beaconList", beaconList);
       successCallback(beaconList);
     } else {
       console.log('File is not exist')
