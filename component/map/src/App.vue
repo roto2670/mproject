@@ -1,14 +1,14 @@
 <template>
 <div id="locationTracking">
   <Zoom></Zoom>
-  <!-- <BeaconFilter></BeaconFilter> -->
   <Upload></Upload>
   <Map></Map>
+  <BeaconFilter></BeaconFilter>
 </div>
 </template>
 <script>
 import Map from '@/components/map';
-// import BeaconFilter from '@/components/beacon-filter';
+import BeaconFilter from '@/components/beacon-filter';
 import Upload from '@/components/upload';
 import Zoom from '@/components/zoom';
 export default {
@@ -16,7 +16,7 @@ export default {
     Map,
     Upload,
     Zoom,
-    // BeaconFilter
+    BeaconFilter
   },
   methods: {
 
