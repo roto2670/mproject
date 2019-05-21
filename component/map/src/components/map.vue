@@ -684,7 +684,7 @@ export default {
                        context += '<div class="beacon"><button class="worker' + index + '"><img class="workerImg" src=' + this.BASE_URI + '"icon-worker' + index + '-tab.svg"></button></div>';
                     }
                 })
-                context +='<button class="clickbtnreFilter" @click="refilter"></button>' +
+                context +='<img class="clickbtnreFilter" @click="refilter" src=' + this.BASE_URI+ '"icon-alert-tab.svg">' +
                           '<button class="done"></button></div>';
                 var filterBeacons = {
                         'width' : 870,
@@ -701,23 +701,23 @@ export default {
                     'autoCloseOn' : false,
                     'autoOpenOn' : false,
                     'content' : '<div class="filter_menu">' +
-                    '<div class="beacon"><button class="worker1"><img class="workerImg" src=' + this.BASE_URI + '"icon-worker1-tab.svg"></button></div>' +
-                    '<div class="beacon"><button class="worker2"><img class="workerImg" src=' + this.BASE_URI + '"icon-worker2-tab.svg"></button></button></div>' +
-                    '<div class="beacon"><button class="worker3"><img class="workerImg" src=' + this.BASE_URI + '"icon-worker3-tab.svg"></button></button></div>' +
-                    '<div class="beacon"><button class="worker4"><img class="workerImg" src=' + this.BASE_URI + '"icon-worker4-tab.svg"></button></button></div>' +
-                    '<div class="beacon"><button class="worker5"><img class="workerImg" src=' + this.BASE_URI + '"icon-worker5-tab.svg"></button></button></div>' +
-                    '<div class="beacon"><button class="worker6"><img class="workerImg" src=' + this.BASE_URI + '"icon-worker6-tab.svg"></button></button></div>' +
-                    '<div class="beacon"><button class="worker7"><img class="workerImg" src=' + this.BASE_URI + '"icon-worker7-tab.svg"></button></button></div>' +
-                    '<div class="beacon"><button class="worker8"><img class="workerImg" src=' + this.BASE_URI + '"icon-worker8-tab.svg"></button></button></div>' +
-                    '<div class="beacon"><button class="worker9"><img class="workerImg" src=' + this.BASE_URI + '"icon-worker9-tab.svg"></button></button></div>' +
-                    '<div class="beacon"><button class="worker10"><img class="workerImg" src=' + this.BASE_URI + '"icon-worker10-tab.svg"></button></button></div>' +
-                    '<div class="beacon"><button class="worker11"><img class="workerImg" src=' + this.BASE_URI + '"icon-worker11-tab.svg"></button></button></div>' +
-                    '<div class="beacon"><button class="worker12"><img class="workerImg" src=' + this.BASE_URI + '"icon-worker12-tab.svg"></button></button></div>' +
-                    '<div class="beacon"><button class="worker13"><img class="workerImg" src=' + this.BASE_URI + '"icon-worker13-tab.svg"></button></button></div>' +
-                    '<div class="beacon"><button class="worker14"><img class="workerImg" src=' + this.BASE_URI + '"icon-worker14-tab.svg"></button></button></div>' +
-                    '<div class="beacon"><button class="worker15"><img class="workerImg" src=' + this.BASE_URI + '"icon-worker15-tab.svg"></button></button></div>' +
-                    '<div class="beacon"><button class="worker16"><img class="workerImg" src=' + this.BASE_URI + '"icon-worker16-tab.svg"></button></button></div>' +
-                    '<button class="clickbtnreFilter" @click="refilter"></button>' +
+                    '<div class="beacon"><button class="worker1"><img class="workerImg" src="' + this.BASE_URI + 'icon-worker1-tab.svg"></button></div>' +
+                    '<div class="beacon"><button class="worker2"><img class="workerImg" src="' + this.BASE_URI + 'icon-worker2-tab.svg"></button></button></div>' +
+                    '<div class="beacon"><button class="worker3"><img class="workerImg" src="' + this.BASE_URI + 'icon-worker3-tab.svg"></button></button></div>' +
+                    '<div class="beacon"><button class="worker4"><img class="workerImg" src="' + this.BASE_URI + 'icon-worker4-tab.svg"></button></button></div>' +
+                    '<div class="beacon"><button class="worker5"><img class="workerImg" src="' + this.BASE_URI + 'icon-worker5-tab.svg"></button></button></div>' +
+                    '<div class="beacon"><button class="worker6"><img class="workerImg" src="' + this.BASE_URI + 'icon-worker6-tab.svg"></button></button></div>' +
+                    '<div class="beacon"><button class="worker7"><img class="workerImg" src="' + this.BASE_URI + 'icon-worker7-tab.svg"></button></button></div>' +
+                    '<div class="beacon"><button class="worker8"><img class="workerImg" src="' + this.BASE_URI + 'icon-worker8-tab.svg"></button></button></div>' +
+                    '<div class="beacon"><button class="worker9"><img class="workerImg" src="' + this.BASE_URI + 'icon-worker9-tab.svg"></button></button></div>' +
+                    '<div class="beacon"><button class="worker10"><img class="workerImg" src="' + this.BASE_URI + 'icon-worker10-tab.svg"></button></button></div>' +
+                    '<div class="beacon"><button class="worker11"><img class="workerImg" src="' + this.BASE_URI + 'icon-worker11-tab.svg"></button></button></div>' +
+                    '<div class="beacon"><button class="worker12"><img class="workerImg" src="' + this.BASE_URI + 'icon-worker12-tab.svg"></button></button></div>' +
+                    '<div class="beacon"><button class="worker13"><img class="workerImg" src="' + this.BASE_URI + 'icon-worker13-tab.svg"></button></button></div>' +
+                    '<div class="beacon"><button class="worker14"><img class="workerImg" src="' + this.BASE_URI + 'icon-worker14-tab.svg"></button></button></div>' +
+                    '<div class="beacon"><button class="worker15"><img class="workerImg" src="' + this.BASE_URI + 'icon-worker15-tab.svg"></button></button></div>' +
+                    '<div class="beacon"><button class="worker16"><img class="workerImg" src="' + this.BASE_URI + 'icon-worker16-tab.svg"></button></button></div>' +
+                    '<img class="clickbtnreFilter" @click="refilter" src="' + this.BASE_URI+ 'icon-alert-tab.svg">' +
                     '<button class="done">OK</button></div>'
                 };
                 this.infoWindow = new maptalks.ui.InfoWindow(filterBeacons);
@@ -926,7 +926,6 @@ export default {
     margin-left: 42.5%;
     height: 35px;
     width: 35px;
-    background-image: url('../../public/icon-alert-tab.svg');
 }
 
 .clickbtnreFilter:hover {

@@ -10,7 +10,7 @@ import * as beaconDetector from '@/services/beacon-detector.js';
 Vue.prototype.$http = axios;
 Vue.prototype.services = services;
 Vue.prototype.beaconDetector = beaconDetector;
-Vue.prototype.BASE_URI = '';
+Vue.prototype.BASE_URI = 'static/location/imgs/';
 Vue.config.productionTip = false;
 
 export const EventBus = new Vue({});

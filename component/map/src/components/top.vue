@@ -2,11 +2,11 @@
 <div id="topContainer">
     <div id="leftContainer">
       <div id="zoom" class="subContainer">
-          <img id="clickbtnPlus" src="icon-plus.svg" @click="zoomIn">
-          <img id="clickbtnMinus" src="icon-minus.svg" @click="zoomOut">
+          <img id="clickbtnPlus" src="static/location/imgs/icon-plus.svg" @click="zoomIn">
+          <img id="clickbtnMinus" src="static/location/imgs/icon-minus.svg" @click="zoomOut">
       </div>
       <div id="filter" class="container">
-          <img id="clickbtnFilter" src="icon-alert.svg" @click="filter">
+          <img id="clickbtnFilter" src="static/location/imgs/icon-alert.svg" @click="filter">
       </div>
     </div>
     <div id="rightContainer">

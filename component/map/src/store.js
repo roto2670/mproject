@@ -25,7 +25,7 @@ export default new Vuex.Store({
             return state.gadgets[hid].find((gadget) => gadget.id === gid);
         },
         getGadgetsWithHub: (state) => {
-            return state.gadgets; 
+            return state.gadgets;
         },
         getdetectedGadgetList: (state) => {
             return state.detectedgadgets;
@@ -45,7 +45,7 @@ export default new Vuex.Store({
     mutations: {
         addHubs(state, payload) {
             _.forEach(payload, hub => {
-                state.hubs[hub.id] = hub; 
+                state.hubs[hub.id] = hub;
             });
         },
         addHub(state, payload) {
@@ -77,14 +77,13 @@ export default new Vuex.Store({
                             view: 0
                         }
                     }
-                    
+
                     state.forInfohubs[detectedGadget.hid] = payload;
                     if (_.isEmpty(state.detectedgadgets[detectedGadget.gid].hid.find((id) => id === detectedGadget.hid))) {
                         state.detectedgadgets[detectedGadget.gid].hid.push(detectedGadget.hid);
                     }
                 }
             })
-            console.log("detectedGadgets", state.detectedgadgets);
         },
         addGadgets(state, payload) {
             _.forEach(payload, gadget => {
@@ -115,13 +114,12 @@ export default new Vuex.Store({
         GadgetIsnotInMap(state, payload) {
             if (!_.isEmpty(state.detectedgadgets[payload])) {
                 state.detectedgadgets[payload].view = 0;
-            } 
+            }
         },
         removeGadgets(state) {
             state.gadgets = {};
         }
     },
     actions: {
-        
     }
 })
