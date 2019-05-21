@@ -30,6 +30,7 @@ export default {
     width: 10%;
     position: absolute;
     z-index: 1;
+    margin-left: 1%;
 }
 #clickbtnPlus {
     border-radius: 50%;

@@ -16,7 +16,7 @@ export default {
             this.submitFile()
         },
         getMapFile(successCallback) {
-            this.services.getMapFile
+            this.services.getMapFile;
             /*services.getMapFiles((url) => {
                 console.log("afaf", url)
                 successCallback(url)
