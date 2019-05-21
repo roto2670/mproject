@@ -1,11 +1,7 @@
 import axios from 'axios'
 
-// TODO: SERVER_BASE_URL
 const SERVER_BASE_URL = 'http://127.0.0.1:5000';
-//const SERVER_BASE_URL = '';
 export const setHubLocation = (hub, successCallback, errorCallback) => {
-  // TODO: deferred
-
   axios
     .post(SERVER_BASE_URL + '/dash/hubs/location', {'hub': hub}, {
       headers: {

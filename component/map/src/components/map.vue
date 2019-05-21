@@ -25,7 +25,7 @@ export default {
             contextCoordinate: null,
             infoWindow: null,
             selectFilteredBeacons: ["1", "2", "3", "4", "5", "6", "7", "8", "9", "10",
-                          "11", "12", "13", "14", "15", "16"],
+                                    "11", "12", "13", "14", "15", "16"],
             bcns: {},
             bcnsData: {},
             options: {
@@ -41,68 +41,53 @@ export default {
     methods: {
         initloadMap() {
             this.services.getMapFiles((url) => {
-                // console.log(url)
-                this.url = url
-            })
-            // Options
-            // http://maptalks.org/maptalks.js/api/0.x/Map.html#options
-            this.map = new maptalks.Map(this.id, {
-                center: [90, 50],
-                zoom: 6,
-                maxZoom: 7,
-                minZoom: 4,
-                // Extent
-                // http://maptalks.org/maptalks.js/api/0.x/Extent.html
-                maxExtent: new maptalks.Extent(5, 5, 170, 80),
-                zoomAnimation: false,
-                zoomInCenter: true,
-                panAnimation: false,
-                dragRotate: false,
-                dragPitch: false,
-                drgaRotatePitch: false,
-                touchGesture: false,
-                touchZoom: false,
-                touchRotate: false,
-                touchPitch: false,
-                touchZoomRotate: false,
-                doubleClickZoom: false,
-                // Image Layer
-                // http://maptalks.org/maptalks.js/api/0.x/ImageLayer.html
-                baseLayer: new maptalks.ImageLayer("base", [{
-                    //url: 'http://localhost:5000/static/dashboard/location/test/location',
-                    url: 'map.png',
-                    extent: [0, 0, 180, 85],
-                    opactiy: 1
-                }], {
-                    opactiy: 1
-                })
+                // Options
+                // http://maptalks.org/maptalks.js/api/0.x/Map.html#options
+                this.map = new maptalks.Map(this.id, {
+                    center: [90, 50],
+                    zoom: 6,
+                    maxZoom: 7,
+                    minZoom: 4,
+                    // Extent
+                    // http://maptalks.org/maptalks.js/api/0.x/Extent.html
+                    maxExtent: new maptalks.Extent(5, 5, 170, 80),
+                    zoomAnimation: false,
+                    zoomInCenter: true,
+                    panAnimation: false,
+                    dragRotate: false,
+                    dragPitch: false,
+                    drgaRotatePitch: false,
+                    touchGesture: false,
+                    touchZoom: false,
+                    touchRotate: false,
+                    touchPitch: false,
+                    touchZoomRotate: false,
+                    doubleClickZoom: false,
+                    // Image Layer
+                    // http://maptalks.org/maptalks.js/api/0.x/ImageLayer.html
+                    baseLayer: new maptalks.ImageLayer("base", [{
+                        //url: 'http://localhost:5000/static/dashboard/location/test/location',
+                        //url: url,
+                        url: 'map.png',
+                        extent: [0, 0, 180, 85],
+                        opactiy: 1
+                    }], {
+                        opactiy: 1
+                    })
+                });
+                this.layer = new maptalks.VectorLayer('vector').addTo(this.map);
+                this.hubLayer = new maptalks.VectorLayer('vector1').addTo(this.map);
+                this.workerLayer = new maptalks.VectorLayer('vector2').addTo(this.map);
+                this.camLayer = new maptalks.VectorLayer('vector3').addTo(this.map);
+                this.initBeaconLocationHandler();
+                this.initContextMenu();
+                this.loadHubs();
+                this.setIpcam();
             });
-            // #### Worldmap code
-            // this.map = new maptalks.Map(this.id, {
-            //   center: [127.113049, 37.498568],
-            //   //center: [0, 0],
-            //   zoom: 20,
-            //   minZoom: 8,
-            //   maxZoom: 16,
-            //   baseLayer: new maptalks.TileLayer("base", {
-            //     // urlTemplate: 'icon-hub.png',
-            //     urlTemplate: 'http://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}.png',
-            //     subdomains: ['a','b','c','d']
-            //   })
-            // });
-            this.layer = new maptalks.VectorLayer('vector').addTo(this.map);
-            this.hubLayer = new maptalks.VectorLayer('vector1').addTo(this.map);
-            this.workerLayer = new maptalks.VectorLayer('vector2').addTo(this.map);
-            this.camLayer = new maptalks.VectorLayer('vector3').addTo(this.map);
-            this.initBeaconLocationHandler();
-            this.initContextMenu();
-            this.loadHubs();
-            this.setIpcam();
         },
         initBeaconLocationHandler() {
             // run beacon detector.
             this.beaconDetector = new beaconDetector.BeaconDetector(this, (beacons) => {
-
             });
 
             // start
@@ -148,28 +133,12 @@ export default {
                             this.drawHub(hub.id, hub.custom.map_location);
                         }
                     });
-                    // this.handleAddGadget();
                 });
         },
-        // handleAddGadget() {
-        //     const hubList = this.$store.getters.getHubs;
-        //     this._.forEach(hubList, (hub) => {
-        //         this.loadGadgets(hub.id, () => {
-        //             if (!_.isEmpty(hub.custom)) {
-        //                 this.drawWorkers(hub.id, hub.custom.map_location);
-        //             } else {
-        //                 console.debug(`Custom data is empty in hubid: ${hub.id}`)
-        //             }
-        //         }, () => {
-        //             // console.log("Failed to load detected beacon list");
-        //         });
-        //     })
-        // },
         loadGadgets(hubId, successCallback, failCallback) {
             this.services.getDetectBeaconList(hubId, (beacons) => {
                 this.$store.commit('addDetectedHubGadget', beacons);
                 this.hasSameGadget(successCallback);
-                //successCallback();
             }, (err) => {
                 failCallback(err);
             });
@@ -178,9 +147,9 @@ export default {
             // show hub List
             this.showhubList((selectedId) => {
                 this.map.closeMenu(selectedId);
+                // draw hub
                 this.drawHub(selectedId, this.contextCoordinate);
             })
-            // draw hub
         },
         showhubList(selectedCallback) {
             this.map.closeMenu();
@@ -238,7 +207,7 @@ export default {
             let marker = new maptalks.Marker(
                 [coordinate.x, coordinate.y], {
                     'symbol': {
-                        markerFile: 'icon-hub-tab.svg',
+                        markerFile: this.BASE_URI + 'icon-hub-tab.svg',
                         markerWidth: 50,
                         markerHeight: 50,
                     }
@@ -247,7 +216,7 @@ export default {
 
             marker.on('click', () => {
                 marker.updateSymbol({
-                    markerFile: 'icon-hub.svg'
+                    markerFile: this.BASE_URI + 'icon-hub.svg'
                 })
                 this.showHubInfoWindow(hubId, marker);
             })
@@ -265,7 +234,7 @@ export default {
                     document.getElementsByClassName('hub-move-button')[0].onclick = () => {
                         marker.closeInfoWindow();
                         marker.updateSymbol({
-                            markerFile: 'icon-hub-tab.svg'
+                            markerFile: this.BASE_URI + 'icon-hub-tab.svg'
                         })
                         marker.config('draggable', false);
                         this.removeGadgetMarkersWhenHubIsMoved(hubId);
@@ -351,13 +320,15 @@ export default {
             }
             marker.setInfoWindow({ // TODO: vue component
                 content: '<ul class="worker_menu">' +
-                    '<div class="worker"><div class="workerId"><div class="workerkey">SCANNER</div><div class="hubInfo">' + hub.name + '</div></div>' +
+                    '<div class="worker">' +
+                    '<div class="workerId">' +
+                    '<div class="workerkey">SCANNER</div><div class="hubInfo">' + hub.name + '</div></div>' +
                     '<div class="workerCount"><div class="workerkey">WORKER</div>' + length + '</div>' +
                     '<div class="movebtn"><button class="hub-move-button">Move</button></div>' +
-                    '<div class="removebtn"><button class="hub-remove-button">Remove</button></div></div>' +
-                    '<ul class="workerInfo">' +
-                    context +
-                    '</ul></ul>',
+                    '<div class="removebtn"><button class="hub-remove-button">Remove</button></div>' +
+                    '</div>' +
+                    '<ul class="workerInfo">' + context + '</ul>' +
+                    '</ul>',
                 'width': 350
             });
             marker.openInfoWindow();
@@ -368,11 +339,11 @@ export default {
 
             document.getElementsByClassName('hub-remove-button')[0].onclick = () => {
                 this.removeHubMarker(hubId);
-            } // TODO: suck
+            }
 
             document.getElementsByClassName('maptalks-close')[0].onclick = () => {
                 marker.updateSymbol({
-                    markerFile: 'icon-hub-tab.svg'
+                    markerFile: this.BASE_URI + 'icon-hub-tab.svg'
                 })
                 marker.config('draggable', false);
             }
@@ -389,7 +360,7 @@ export default {
                     marker = new maptalks.Marker(
                     [beacon.custom.x , beacon.custom.y], {
                     'symbol': {
-                        'markerFile': `icon-worker${beacon.tags}` + '-tab.svg',
+                        'markerFile': this.BASE_URI + `icon-worker${beacon.tags}` + '-tab.svg',
                         'markerWidth': 50,
                         'markerHeight': 50
                         }
@@ -397,7 +368,7 @@ export default {
                     ).addTo(this.workerLayer);
                     marker.on('click', () => {
                         marker.updateSymbol({
-                            markerFile: `icon-worker${beacon.tags}` + '.svg'
+                            markerFile: this.BASE_URI + `icon-worker${beacon.tags}` + '.svg'
                         })
                         this.showGadgetInFoWindow(hubId, beacon, this.bcns[index]);
                     });
@@ -422,7 +393,7 @@ export default {
                     marker = new maptalks.Marker(
                     [coordinate.x + index + 1.5, coordinate.y], {
                     'symbol': {
-                        'markerFile': 'icon-worker' + beacon.tags + '-tab.svg',
+                        'markerFile': this.BASE_URI + 'icon-worker' + beacon.tags + '-tab.svg',
                         'markerWidth': 50,
                         'markerHeight': 50
                         }
@@ -430,7 +401,7 @@ export default {
                     ).addTo(this.workerLayer);
                     marker.on('click', () => {
                         marker.updateSymbol({
-                            markerFile: 'icon-worker' + beacon.tags + '.svg'
+                            markerFile: this.BASE_URI + 'icon-worker' + beacon.tags + '.svg'
                         })
                         this.showGadgetInFoWindow(hubId, beacon, this.bcns[index]);
                     });
@@ -477,7 +448,7 @@ export default {
                     '<div class="bcnName1">' + gadgetName + '</div>' +
                     '<div class="scannerData">SCANNER</div>' +
                     '<div class="scannerName">' + hub.name + '</div>' +
-                    '</div>' + '<img class="bcnsImg1" src="item.png"></img>' +
+                    '</div>' + '<img class="bcnsImg1" src=' + this.BASE_URI + '"item.png"></img>' +
                     '</div>',
                 'width': 400,
                 'bottom': 11
@@ -486,16 +457,17 @@ export default {
 
             document.getElementsByClassName('maptalks-close')[0].onclick = () => {
                 marker.updateSymbol({
-                    markerFile: 'icon-worker' + gadget.tags + '-tab.svg'
+                    markerFile: this.BASE_URI + 'icon-worker' + gadget.tags + '-tab.svg'
                 })
             }
 
-            // marker.setInfoWindow(// TODO: ipcam infowindow
+            // TODO: ipcam info window
+            // marker.setInfoWindow(
             //     'content': '<div class="bcns">' +
             //         '<div class="bcnsInfo2"><div class="bcnskey2">KIND</div>' +
             //         '<div class="bcnName2">' + gadgetName + '</div>' +
             //         '<div class="bcnNum2">' + gadget.tags + '</div>' +
-            //         '</div>' + '<img class="bcnsImg2" src="item.png"></img>' +
+            //         '</div>' + '<img class="bcnsImg2" src=' + this.BASE_URI + '"item.png"></img>' +
             //         '</div>',
             //     'width': 400,
             //     'bottom': 11
@@ -504,7 +476,7 @@ export default {
 
             // document.getElementsByClassName('maptalks-close')[0].onclick = () => {
             //     marker.updateSymbol({
-            //         markerFile: 'icon-worker' + gadget.tags + '-tab.svg'
+            //         markerFile: this.BASE_URI + 'icon-worker' + gadget.tags + '-tab.svg'
             //     })
             // }
 
@@ -514,7 +486,7 @@ export default {
             this.ipcam = new maptalks.Marker(
                 [127.113049, 37.498568], {
                     'symbol': {
-                        'markerFile': 'icon-ipcam.svg',
+                        'markerFile': this.BASE_URI + 'icon-ipcam.svg',
                         'markerWidth': 50,
                         'markerHeight': 50
                     }
@@ -528,7 +500,7 @@ export default {
             this.ipcam.setInfoWindow({
                 'content': '<div class="bcns">' +
                     '<div class="bcnsInfo"><div class="bcnskey">IPCAM</div></div>' +
-                    '<img class="bcnsImg" src="item.png"></img>' +
+                    '<img class="bcnsImg" src=' + this.BASE_URI + '"item.png"></img>' +
                     '</div>',
                 'width': 400
             });
@@ -578,7 +550,6 @@ export default {
                 if (!!hubInfo && !this._.isEmpty(hubInfo.custom)) {
                     hubLocation[hub.hid] = hubInfo.custom.map_location;
                     hubLocation[hub.hid].dist = hub.dist;
-                    // console.log("aqrr", hub.hid, this.$store.getters.getHub(hub.hid).custom.map_location);
                 } else {
                     console.warn(`There is empty custom in hubid: ${hub.hid}`);
                 }
@@ -624,35 +595,6 @@ export default {
             let gadgetCount = 1;
 
             console.log("sameGadgetList", sameGadgetList);
-            // this._.forEach((hub, index) => {
-            //     if (!this._.isEmpty(hub.beacons)) {
-            //         this._.forEach(hub.beacons, (beacon) => {
-            //             if (!!!gadgetList[beacon.uuid]) {
-            //                 gadgetList[beacon.uuid] = [];
-            //             }
-            //             gadgetList[beacon.uuid].push(hub.id);
-            //             if (gadgetList[beacon.uuid].length > 1) {
-            //                 sameGadgetList.push(beacon.uuid);
-            //             }
-            //         });
-            //     }
-            // });
-
-            // TODO: change source when data is set.
-            // this._.forEach(sameGadgetList, (gadget, gadgetid) => {
-            //     this.services.getHubListConnectedToGadget(gadgetid, (hubList) => {
-            //         if (!_.isEmpty(hubList)) {
-            //             this.setGadgetLocation(hubList.data);
-            //         }
-            //     })
-            // })
-
-            // this.services.getHubListConnectedToGadget("897d4536-ad17-eb35-7c12-6cfeef2b6c4b", (hubList) => {
-            //     if (!_.isEmpty(hubList)) {
-            //         console.log("getHubListConnectedToGadget", hubList);
-            //         this.setGadgetLocation(hubList.data);
-            //     }
-            // })
             if (sameGadgetListSize == 0) {
                 successCallback();
             } else {
@@ -737,9 +679,9 @@ export default {
             if (this.selectFilteredBeacons.length != 16) {
                 _.forEach(bcnNum, (index) => {
                     if (!_.includes(this.selectFilteredBeacons, index)) {
-                       context += '<div class="beacon"><button class="worker' + index + '"><img class="workerImg" src="icon-worker' + index + '.svg"></button></div>';
+                       context += '<div class="beacon"><button class="worker' + index + '"><img class="workerImg" src=' + this.BASE_URI + '"icon-worker' + index + '.svg"></button></div>';
                     } else {
-                       context += '<div class="beacon"><button class="worker' + index + '"><img class="workerImg" src="icon-worker' + index + '-tab.svg"></button></div>';
+                       context += '<div class="beacon"><button class="worker' + index + '"><img class="workerImg" src=' + this.BASE_URI + '"icon-worker' + index + '-tab.svg"></button></div>';
                     }
                 })
                 context +='<button class="clickbtnreFilter" @click="refilter"></button>' +
@@ -759,22 +701,22 @@ export default {
                     'autoCloseOn' : false,
                     'autoOpenOn' : false,
                     'content' : '<div class="filter_menu">' +
-                    '<div class="beacon"><button class="worker1"><img class="workerImg" src="icon-worker1-tab.svg"></button></div>' +
-                    '<div class="beacon"><button class="worker2"><img class="workerImg" src="icon-worker2-tab.svg"></button></button></div>' +
-                    '<div class="beacon"><button class="worker3"><img class="workerImg" src="icon-worker3-tab.svg"></button></button></div>' +
-                    '<div class="beacon"><button class="worker4"><img class="workerImg" src="icon-worker4-tab.svg"></button></button></div>' +
-                    '<div class="beacon"><button class="worker5"><img class="workerImg" src="icon-worker5-tab.svg"></button></button></div>' +
-                    '<div class="beacon"><button class="worker6"><img class="workerImg" src="icon-worker6-tab.svg"></button></button></div>' +
-                    '<div class="beacon"><button class="worker7"><img class="workerImg" src="icon-worker7-tab.svg"></button></button></div>' +
-                    '<div class="beacon"><button class="worker8"><img class="workerImg" src="icon-worker8-tab.svg"></button></button></div>' +
-                    '<div class="beacon"><button class="worker9"><img class="workerImg" src="icon-worker9-tab.svg"></button></button></div>' +
-                    '<div class="beacon"><button class="worker10"><img class="workerImg" src="icon-worker10-tab.svg"></button></button></div>' +
-                    '<div class="beacon"><button class="worker11"><img class="workerImg" src="icon-worker11-tab.svg"></button></button></div>' +
-                    '<div class="beacon"><button class="worker12"><img class="workerImg" src="icon-worker12-tab.svg"></button></button></div>' +
-                    '<div class="beacon"><button class="worker13"><img class="workerImg" src="icon-worker13-tab.svg"></button></button></div>' +
-                    '<div class="beacon"><button class="worker14"><img class="workerImg" src="icon-worker14-tab.svg"></button></button></div>' +
-                    '<div class="beacon"><button class="worker15"><img class="workerImg" src="icon-worker15-tab.svg"></button></button></div>' +
-                    '<div class="beacon"><button class="worker16"><img class="workerImg" src="icon-worker16-tab.svg"></button></button></div>' +
+                    '<div class="beacon"><button class="worker1"><img class="workerImg" src=' + this.BASE_URI + '"icon-worker1-tab.svg"></button></div>' +
+                    '<div class="beacon"><button class="worker2"><img class="workerImg" src=' + this.BASE_URI + '"icon-worker2-tab.svg"></button></button></div>' +
+                    '<div class="beacon"><button class="worker3"><img class="workerImg" src=' + this.BASE_URI + '"icon-worker3-tab.svg"></button></button></div>' +
+                    '<div class="beacon"><button class="worker4"><img class="workerImg" src=' + this.BASE_URI + '"icon-worker4-tab.svg"></button></button></div>' +
+                    '<div class="beacon"><button class="worker5"><img class="workerImg" src=' + this.BASE_URI + '"icon-worker5-tab.svg"></button></button></div>' +
+                    '<div class="beacon"><button class="worker6"><img class="workerImg" src=' + this.BASE_URI + '"icon-worker6-tab.svg"></button></button></div>' +
+                    '<div class="beacon"><button class="worker7"><img class="workerImg" src=' + this.BASE_URI + '"icon-worker7-tab.svg"></button></button></div>' +
+                    '<div class="beacon"><button class="worker8"><img class="workerImg" src=' + this.BASE_URI + '"icon-worker8-tab.svg"></button></button></div>' +
+                    '<div class="beacon"><button class="worker9"><img class="workerImg" src=' + this.BASE_URI + '"icon-worker9-tab.svg"></button></button></div>' +
+                    '<div class="beacon"><button class="worker10"><img class="workerImg" src=' + this.BASE_URI + '"icon-worker10-tab.svg"></button></button></div>' +
+                    '<div class="beacon"><button class="worker11"><img class="workerImg" src=' + this.BASE_URI + '"icon-worker11-tab.svg"></button></button></div>' +
+                    '<div class="beacon"><button class="worker12"><img class="workerImg" src=' + this.BASE_URI + '"icon-worker12-tab.svg"></button></button></div>' +
+                    '<div class="beacon"><button class="worker13"><img class="workerImg" src=' + this.BASE_URI + '"icon-worker13-tab.svg"></button></button></div>' +
+                    '<div class="beacon"><button class="worker14"><img class="workerImg" src=' + this.BASE_URI + '"icon-worker14-tab.svg"></button></button></div>' +
+                    '<div class="beacon"><button class="worker15"><img class="workerImg" src=' + this.BASE_URI + '"icon-worker15-tab.svg"></button></button></div>' +
+                    '<div class="beacon"><button class="worker16"><img class="workerImg" src=' + this.BASE_URI + '"icon-worker16-tab.svg"></button></button></div>' +
                     '<button class="clickbtnreFilter" @click="refilter"></button>' +
                     '<button class="done">OK</button></div>'
                 };
@@ -907,7 +849,7 @@ export default {
         },
         refilterBeacons() {
             this.selectFilteredBeacons = ["1", "2", "3", "4", "5", "6", "7", "8", "9", "10",
-                          "11", "12", "13", "14", "15", "16"];
+                                          "11", "12", "13", "14", "15", "16"];
             let detectedGadgetList = this.$store.getters.getdetectedGadgetList;
             _.forEach(detectedGadgetList, (detectedGadget) => {
                 if (detectedGadget.view == 0) {
