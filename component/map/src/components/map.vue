@@ -217,9 +217,6 @@ export default {
             ).addTo(this.hubLayer);
 
             marker.on('click', () => {
-                // marker.updateSymbol({
-                //     markerFile: this.BASE_URI + 'icon-hub.svg'
-                // })
                 this.showHubInfoWindow(hubId, marker);
             })
             this.markerMap.hubs[hubId] = marker;
@@ -235,9 +232,6 @@ export default {
 
                     document.getElementsByClassName('hub-move-button')[0].onclick = () => {
                         marker.closeInfoWindow();
-                        // marker.updateSymbol({
-                        //     markerFile: this.BASE_URI + 'icon-hub-tab.svg'
-                        // })
                         marker.config('draggable', false);
                         this.removeGadgetMarkersWhenHubIsMoved(hubId);
                         this._updateHubLocation(hubId, e.coordinate.x, e.coordinate.y);
@@ -254,7 +248,6 @@ export default {
         },
         removeHubMarker(hubId) {
             // console.debug(`Try remove hub marker, id: ${hubId}`);
-
             let hubMarker = this.markerMap.hubs[hubId];
             if (!this._.isEmpty(hubMarker)) {
                 // remove location in hub model
@@ -371,9 +364,6 @@ export default {
                     }
                     ).addTo(this.workerLayer);
                     marker.on('click', () => {
-                        // marker.updateSymbol({
-                        //     markerFile: this.BASE_URI + `icon-worker${beacon.tags}` + '.svg'
-                        // })
                         this.showGadgetInFoWindow(hubId, beacon, this.bcns[index]);
                     });
 
@@ -406,9 +396,6 @@ export default {
                     }
                     ).addTo(this.workerLayer);
                     marker.on('click', () => {
-                        // marker.updateSymbol({
-                        //     markerFile: this.BASE_URI + 'icon-worker' + beacon.tags + '.svg'
-                        // })
                         this.showGadgetInFoWindow(hubId, beacon, this.bcns[index]);
                     });
 
@@ -622,15 +609,17 @@ export default {
             }
         },
         setFilterdBeacons() {
+            let gadgetList = this.$store.getters.getdetectedGadgetList;
             if (!this._.isEmpty(this.selectFilteredBeacons)) {
                 this._.forEach(this.bcnsData, (bcn, gid) => {
                     if (!this._.includes(this.selectFilteredBeacons, this._.first(bcn.tags))) {
+                        gadgetList[gid].view = 0;
                         bcn.marker.hide();
                         this.$store.commit('GadgetIsnotInMap', gid);
                         console.log("Sucess to Hide selected Gadgets");
                     } else {
-                        let gadgetList = this.$store.getters.getdetectedGadgetList;
                         if (gadgetList[gid].view === 0) {
+                            gadgetList[gid].view = 1;
                             bcn.marker.show();
                             this.$store.commit('GadgetIsInMap', gid);
                         }
@@ -639,65 +628,61 @@ export default {
                 })
             } else {
                 this._.forEach(this.bcnsData, (bcn, gid) => {
+                    gadgetList[gid].view = 0;
                     bcn.marker.hide();
                 })
             }
         },
         bgChangeWorkerTab(workerNum) {
-            var str = document.getElementsByClassName('worker' + workerNum)[0].innerHTML,
+            var str = document.getElementById('worker' + workerNum).src,
                 text = str.replace("icon-worker"+workerNum+".svg", "icon-worker"+workerNum+"-tab.svg");
-            document.getElementsByClassName('worker' + workerNum)[0].innerHTML = text;
+            document.getElementById('worker' + workerNum).src = text;
 
             if (!this._.includes(this.selectFilteredBeacons, workerNum)) {
                 this.selectFilteredBeacons.push(workerNum.toString());
             }
-
-            document.getElementsByClassName('worker' + workerNum)[0].onclick = () => {
+            document.getElementById('worker' + workerNum).onclick = () => {
                 this.bgChangeWorker(workerNum);
-            }
-            document.getElementsByClassName('done')[0].onclick = () => {
-                this.infoWindow.remove();
-                this.setFilterdBeacons();
             }
         },
         bgChangeWorker (workerNum) {
-            var str = document.getElementsByClassName('worker' + workerNum)[0].innerHTML,
+            var str = document.getElementById('worker' + workerNum).src,
                 text = str.replace("icon-worker"+workerNum+"-tab.svg", "icon-worker"+workerNum+".svg");
-            document.getElementsByClassName('worker' + workerNum)[0].innerHTML = text;
+            document.getElementById('worker' + workerNum).src = text;
 
-           this._.forEach(this.selectFilteredBeacons, (bcn, index) => {
+            this._.forEach(this.selectFilteredBeacons, (bcn, index) => {
                 if (bcn === workerNum.toString()) {
                     this.selectFilteredBeacons.splice(index, 1);
                 }
-
-            })
-            // this.selectFilteredBeacons.splice(this.selectFilteredBeacons.indexOf(workerNum), 1);
-            document.getElementsByClassName('worker' + workerNum)[0].onclick = () => {
+            });
+            document.getElementById('worker' + workerNum).onclick = () => {
                 this.bgChangeWorkerTab(workerNum);
-            }
-            document.getElementsByClassName('done')[0].onclick = () => {
-                this.infoWindow.remove();
-                this.setFilterdBeacons();
             }
         },
         filterBeacons() {
-            let context = '<div class="filter_menu">',
+            let context = '',
                 bcnNum = ["1", "2", "3", "4", "5", "6", "7", "8", "9", "10",
                           "11", "12", "13", "14", "15", "16"];
             var coordinate = this.map.getCenter(),
                 filterBeacons = {};
             if (this.selectFilteredBeacons.length != 16) {
+                context += '<div class="filter_menu"><div>';
                 this._.forEach(bcnNum, (index) => {
                     if (!this._.includes(this.selectFilteredBeacons, index)) {
-                       context += '<div class="beacon"><button class="worker' + index + '"><img class="workerImg" src=' + this.BASE_URI + '"icon-worker' + index + '.svg"></button></div>';
+                       context += '<img id="worker' + index + '" class="workerImg" src="' + this.BASE_URI + 'icon-worker' + index + '.svg">';
                     } else {
-                       context += '<div class="beacon"><button class="worker' + index + '"><img class="workerImg" src=' + this.BASE_URI + '"icon-worker' + index + '-tab.svg"></button></div>';
+                       context += '<img id="worker' + index + '" class="workerImg" src="' + this.BASE_URI + 'icon-worker' + index + '-tab.svg">';
                     }
                 })
-                context +='<img class="clickbtnreFilter" @click="refilter" src=' + this.BASE_URI+ '"icon-alert-tab.svg">' +
-                          '<button class="done"></button></div>';
+                context += '</div>' +
+                           '<div class="controlContainer">' +
+                           '<button id="done" class="done">OK</button>'+
+                           '<button id="reset" class="reset">Reset</button>' +
+                           '</div>' +
+                           '</div>'
+
                 filterBeacons = {
-                        'width' : 870,
+                        'width' : 700,
                         'height' : 250,
                         'content' : context
                     };
@@ -705,30 +690,35 @@ export default {
                 this.infoWindow.addTo(this.map).show(coordinate);
             } else {
                 filterBeacons = {
-                    'width' : 870,
+                    'width' : 700,
                     'height' : 250,
                     'autoPan' : false,
                     'autoCloseOn' : false,
                     'autoOpenOn' : false,
                     'content' : '<div class="filter_menu">' +
-                    '<div class="beacon"><button class="worker1"><img class="workerImg" src="' + this.BASE_URI + 'icon-worker1-tab.svg"></button></div>' +
-                    '<div class="beacon"><button class="worker2"><img class="workerImg" src="' + this.BASE_URI + 'icon-worker2-tab.svg"></button></button></div>' +
-                    '<div class="beacon"><button class="worker3"><img class="workerImg" src="' + this.BASE_URI + 'icon-worker3-tab.svg"></button></button></div>' +
-                    '<div class="beacon"><button class="worker4"><img class="workerImg" src="' + this.BASE_URI + 'icon-worker4-tab.svg"></button></button></div>' +
-                    '<div class="beacon"><button class="worker5"><img class="workerImg" src="' + this.BASE_URI + 'icon-worker5-tab.svg"></button></button></div>' +
-                    '<div class="beacon"><button class="worker6"><img class="workerImg" src="' + this.BASE_URI + 'icon-worker6-tab.svg"></button></button></div>' +
-                    '<div class="beacon"><button class="worker7"><img class="workerImg" src="' + this.BASE_URI + 'icon-worker7-tab.svg"></button></button></div>' +
-                    '<div class="beacon"><button class="worker8"><img class="workerImg" src="' + this.BASE_URI + 'icon-worker8-tab.svg"></button></button></div>' +
-                    '<div class="beacon"><button class="worker9"><img class="workerImg" src="' + this.BASE_URI + 'icon-worker9-tab.svg"></button></button></div>' +
-                    '<div class="beacon"><button class="worker10"><img class="workerImg" src="' + this.BASE_URI + 'icon-worker10-tab.svg"></button></button></div>' +
-                    '<div class="beacon"><button class="worker11"><img class="workerImg" src="' + this.BASE_URI + 'icon-worker11-tab.svg"></button></button></div>' +
-                    '<div class="beacon"><button class="worker12"><img class="workerImg" src="' + this.BASE_URI + 'icon-worker12-tab.svg"></button></button></div>' +
-                    '<div class="beacon"><button class="worker13"><img class="workerImg" src="' + this.BASE_URI + 'icon-worker13-tab.svg"></button></button></div>' +
-                    '<div class="beacon"><button class="worker14"><img class="workerImg" src="' + this.BASE_URI + 'icon-worker14-tab.svg"></button></button></div>' +
-                    '<div class="beacon"><button class="worker15"><img class="workerImg" src="' + this.BASE_URI + 'icon-worker15-tab.svg"></button></button></div>' +
-                    '<div class="beacon"><button class="worker16"><img class="workerImg" src="' + this.BASE_URI + 'icon-worker16-tab.svg"></button></button></div>' +
-                    '<img class="clickbtnreFilter" @click="refilter" src="' + this.BASE_URI+ 'icon-alert-tab.svg">' +
-                    '<button class="done">OK</button></div>'
+                    '<div>' +
+                    '<img id="worker1" class="workerImg" src="' + this.BASE_URI + 'icon-worker1-tab.svg">' +
+                    '<img id="worker2" class="workerImg" src="' + this.BASE_URI + 'icon-worker2-tab.svg">' +
+                    '<img id="worker3" class="workerImg" src="' + this.BASE_URI + 'icon-worker3-tab.svg">' +
+                    '<img id="worker4" class="workerImg" src="' + this.BASE_URI + 'icon-worker4-tab.svg">' +
+                    '<img id="worker5" class="workerImg" src="' + this.BASE_URI + 'icon-worker5-tab.svg">' +
+                    '<img id="worker6" class="workerImg" src="' + this.BASE_URI + 'icon-worker6-tab.svg">' +
+                    '<img id="worker7" class="workerImg" src="' + this.BASE_URI + 'icon-worker7-tab.svg">' +
+                    '<img id="worker8" class="workerImg" src="' + this.BASE_URI + 'icon-worker8-tab.svg">' +
+                    '<img id="worker9" class="workerImg" src="' + this.BASE_URI + 'icon-worker9-tab.svg">' +
+                    '<img id="worker10" class="workerImg" src="' + this.BASE_URI + 'icon-worker10-tab.svg">' +
+                    '<img id="worker11" class="workerImg" src="' + this.BASE_URI + 'icon-worker11-tab.svg">' +
+                    '<img id="worker12" class="workerImg" src="' + this.BASE_URI + 'icon-worker12-tab.svg">' +
+                    '<img id="worker13" class="workerImg" src="' + this.BASE_URI + 'icon-worker13-tab.svg">' +
+                    '<img id="worker14" class="workerImg" src="' + this.BASE_URI + 'icon-worker14-tab.svg">' +
+                    '<img id="worker15" class="workerImg" src="' + this.BASE_URI + 'icon-worker15-tab.svg">' +
+                    '<img id="worker16" class="workerImg" src="' + this.BASE_URI + 'icon-worker16-tab.svg">' +
+                    '</div>' +
+                    '<div class="controlContainer">' +
+                    '<button id="done" class="done">OK</button>'+
+                    '<button id="reset" class="reset">Reset</button>' +
+                    '</div>' +
+                    '</div>'
                 };
                 this.infoWindow = new maptalks.ui.InfoWindow(filterBeacons);
                 this.infoWindow.addTo(this.map).show(coordinate);
@@ -739,117 +729,122 @@ export default {
                 this.infoWindow.remove();
             }
 
-            document.getElementsByClassName('clickbtnreFilter')[0].onclick = () => {
+            document.getElementById('done').onclick = () => {
+                this.infoWindow.remove();
+                this.setFilterdBeacons();
+            }
+
+            document.getElementById('reset').onclick = () => {
                 this.refilterBeacons();
                 this.infoWindow.hide();
                 this.infoWindow.remove();
             }
 
-            document.getElementsByClassName('worker1')[0].onclick = () => {
+            document.getElementById('worker1').onclick = () => {
                 if (!this._.includes(this.selectFilteredBeacons, "1")) {
                     this.bgChangeWorkerTab(1, this.selectFilteredBeacons, () => {});
                 } else {
                     this.bgChangeWorker(1, this.selectFilteredBeacons, () => {});
                 }
             }
-            document.getElementsByClassName('worker2')[0].onclick = () => {
+            document.getElementById('worker2').onclick = () => {
                 if (!this._.includes(this.selectFilteredBeacons, "2")) {
                     this.bgChangeWorkerTab(2, this.selectFilteredBeacons, () => {});
                 } else{
                     this.bgChangeWorker(2, this.selectFilteredBeacons, () => {});
                 }
             }
-            document.getElementsByClassName('worker3')[0].onclick = () => {
+            document.getElementById('worker3').onclick = () => {
                 if (!this._.includes(this.selectFilteredBeacons, "3")) {
                     this.bgChangeWorkerTab(3, this.selectFilteredBeacons, () => {});
                 } else {
                     this.bgChangeWorker(3, this.selectFilteredBeacons, () => {});
                 }
             }
-            document.getElementsByClassName('worker4')[0].onclick = () => {
+            document.getElementById('worker4').onclick = () => {
                 if (!this._.includes(this.selectFilteredBeacons, "4")) {
                     this.bgChangeWorkerTab(4, this.selectFilteredBeacons, () => {});
                 } else {
                     this.bgChangeWorker(4, this.selectFilteredBeacons, () => {});
                 }
             }
-            document.getElementsByClassName('worker5')[0].onclick = () => {
+            document.getElementById('worker5').onclick = () => {
                 if (!this._.includes(this.selectFilteredBeacons, "5")) {
                     this.bgChangeWorkerTab(5, this.selectFilteredBeacons, () => {});
                 } else {
                     this.bgChangeWorker(5, this.selectFilteredBeacons, () => {});
                 }
             }
-            document.getElementsByClassName('worker6')[0].onclick = () => {
+            document.getElementById('worker6').onclick = () => {
                 if (!this._.includes(this.selectFilteredBeacons, "6")) {
                     this.bgChangeWorkerTab(6, this.selectFilteredBeacons, () => {});
                 } else{
                    this.bgChangeWorker(6, this.selectFilteredBeacons, () => {});
                 }
             }
-            document.getElementsByClassName('worker7')[0].onclick = () => {
+            document.getElementById('worker7').onclick = () => {
                 if (!this._.includes(this.selectFilteredBeacons, "7")) {
                     this.bgChangeWorkerTab(7, this.selectFilteredBeacons, () => {});
                 }
                 this.bgChangeWorker(7, this.selectFilteredBeacons, () => {});
             }
-            document.getElementsByClassName('worker8')[0].onclick = () => {
+            document.getElementById('worker8').onclick = () => {
                 if (!this._.includes(this.selectFilteredBeacons, "8")) {
                     this.bgChangeWorkerTab(8, this.selectFilteredBeacons, () => {});
                 } else {
                     this.bgChangeWorker(8, this.selectFilteredBeacons, () => {});
                 }
             }
-            document.getElementsByClassName('worker9')[0].onclick = () => {
+            document.getElementById('worker9').onclick = () => {
                 if (!this._.includes(this.selectFilteredBeacons, "9")) {
                     this.bgChangeWorkerTab(9, this.selectFilteredBeacons, () => {});
                 } else {
                     this.bgChangeWorker(9, this.selectFilteredBeacons, () => {});
                 }
             }
-            document.getElementsByClassName('worker10')[0].onclick = () => {
+            document.getElementById('worker10').onclick = () => {
                 if (!this._.includes(this.selectFilteredBeacons, "10")) {
                     this.bgChangeWorkerTab(10, this.selectFilteredBeacons, () => {});
                 } else {
                     this.bgChangeWorker(10, this.selectFilteredBeacons, () => {});
                 }
             }
-            document.getElementsByClassName('worker11')[0].onclick = () => {
+            document.getElementById('worker11').onclick = () => {
                 if (!this._.includes(this.selectFilteredBeacons, "11")) {
                     this.bgChangeWorkerTab(11, this.selectFilteredBeacons, () => {});
                 } else {
                     this.bgChangeWorker(11, this.selectFilteredBeacons, () => {});
                 }
             }
-            document.getElementsByClassName('worker12')[0].onclick = () => {
+            document.getElementById('worker12').onclick = () => {
                 if (!this._.includes(this.selectFilteredBeacons, "12")) {
                     this.bgChangeWorkerTab(12, this.selectFilteredBeacons, () => {});
                 } else {
                     this.bgChangeWorker(12, this.selectFilteredBeacons, () => {});
                 }
             }
-            document.getElementsByClassName('worker13')[0].onclick = () => {
+            document.getElementById('worker13').onclick = () => {
                 if (!this._.includes(this.selectFilteredBeacons, "13")) {
                     this.bgChangeWorkerTab(13, this.selectFilteredBeacons, () => {});
                 } else {
                     this.bgChangeWorker(13, this.selectFilteredBeacons, () => {});
                 }
             }
-            document.getElementsByClassName('worker14')[0].onclick = () => {
+            document.getElementById('worker14').onclick = () => {
                 if (!this._.includes(this.selectFilteredBeacons, "14")) {
                     this.bgChangeWorkerTab(14, this.selectFilteredBeacons, () => {});
                 } else {
                     this.bgChangeWorker(14, this.selectFilteredBeacons, () => {});
                 }
             }
-            document.getElementsByClassName('worker15')[0].onclick = () => {
+            document.getElementById('worker15').onclick = () => {
                 if (!this._.includes(this.selectFilteredBeacons, "15")) {
                     this.bgChangeWorkerTab(15, this.selectFilteredBeacons, () => {});
                 } else {
                     this.bgChangeWorker(15, this.selectFilteredBeacons, () => {});
                 }
             }
-            document.getElementsByClassName('worker16')[0].onclick = () => {
+            document.getElementById('worker16').onclick = () => {
                 if (!this._.includes(this.selectFilteredBeacons, "16")) {
                     this.bgChangeWorkerTab(16, this.selectFilteredBeacons, () => {});
                 } else {
@@ -865,6 +860,7 @@ export default {
                 if (detectedGadget.view == 0) {
                     this._.forEach(this.bcnsData, (bcn, gid) => {
                         if (gid === detectedGadget.gid) {
+                            detectedGadgetList[gid].view = 1;
                             bcn.marker.show();
                             this.$store.commit('GadgetIsInMap', gid);
                         }
@@ -923,208 +919,45 @@ export default {
 .filter_menu {
     width: 100%;
     background: rgb(42 147 240) !important;
-    border-radius: 20%;
     overflow: hidden;
     border: none !important;
+    border-radius: 10px;
 }
 
-.clickbtnreFilter {
-    border-radius: 50%;
-    cursor: pointer;
-    margin-top: 17%;
-    position: absolute;
-    margin-left: 42.5%;
-    height: 35px;
-    width: 35px;
+.controlContainer {
+    text-align: center;
 }
 
-.clickbtnreFilter:hover {
-    box-shadow: 2px 2px 0.5px #aaaaaa;
-}
-
-.beacon {
-    height: 50px;
+.reset {
+    font-size: 15px;
     width: 60px;
-    position: absolute;
+    height: 40px;
+    cursor: pointer;
+    border-radius: 15%;
+    background-color: #e0696d;
+    font-weight: 900;
+    color: #333333;
+    margin: 5px;
 }
 
 .done {
     font-size: 15px;
-    width: 40px;
+    width: 60px;
     height: 40px;
-    margin: 200px 0px 0px 370px;
     cursor: pointer;
-    position: absolute;
-    border-radius: 20%;
+    border-radius: 15%;
     background-color: #87CEEB;
     font-weight: 900;
     color: #333333;
+    margin: 5px;
 }
 
 .workerImg {
     width: 60px;
     height: 60px;
-}
-
-.worker1 {
-    width: 60px;
-    height: 60px;
     border-radius: 50%;
-    margin: 50px 0px 0px 50px;
-    padding: 0px;
     cursor: pointer;
-    position: absolute;
-}
-
-.worker2 {
-    width: 60px;
-    height: 60px;
-    border-radius: 50%;
-    margin: 50px 0px 0px 140px;
-    cursor: pointer;
-    position: absolute;
-    padding: 0px;
-}
-
-.worker3 {
-    width: 60px;
-    height: 60px;
-    border-radius: 50%;
-    margin: 50px 0px 0px 230px;
-    cursor: pointer;
-    position: absolute;
-    padding: 0px;
-}
-
-.worker4 {
-    width: 60px;
-    height: 60px;
-    border-radius: 50%;
-    margin: 50px 0px 0px 320px;
-    cursor: pointer;
-    position: absolute;
-
-    padding: 0px;
-}
-
-.worker5 {
-    width: 60px;
-    height: 60px;
-    border-radius: 50%;
-    margin: 50px 0px 0px 410px;
-    cursor: pointer;
-    position: absolute;
-    padding: 0px;
-}
-
-.worker6 {
-    width: 60px;
-    height: 60px;
-    border-radius: 50%;
-    margin: 50px 0px 0px 500px;
-    cursor: pointer;
-    position: absolute;
-    padding: 0px;
-}
-
-.worker7 {
-    width: 60px;
-    height: 60px;
-    border-radius: 50%;
-    margin: 50px 0px 0px 590px;
-    cursor: pointer;
-    position: absolute;
-    padding: 0px;
-}
-
-.worker8 {
-    width: 60px;
-    height: 60px;
-    border-radius: 50%;
-    margin: 50px 0px 0px 680px;
-    cursor: pointer;
-    position: absolute;
-    padding: 0px;
-}
-
-.worker9 {
-    width: 60px;
-    height: 60px;
-    border-radius: 50%;
-    margin: 140px 0px 0px 50px;
-    cursor: pointer;
-    position: absolute;
-    padding: 0px;
-}
-
-.worker10 {
-    width: 60px;
-    height: 60px;
-    border-radius: 50%;
-    margin: 140px 0px 0px 140px;
-    cursor: pointer;
-    position: absolute;
-    padding: 0px;
-}
-
-.worker11 {
-    width: 60px;
-    height: 60px;
-    border-radius: 50%;
-    margin: 140px 0px 0px 230px;
-    cursor: pointer;
-    position: absolute;
-    padding: 0px;
-}
-
-.worker12 {
-    width: 60px;
-    height: 60px;
-    border-radius: 50%;
-    margin: 140px 0px 0px 320px;
-    cursor: pointer;
-    position: absolute;
-    padding: 0px;
-}
-
-.worker13 {
-    width: 60px;
-    height: 60px;
-    border-radius: 50%;
-    margin: 140px 0px 0px 410px;
-    cursor: pointer;
-    position: absolute;
-    padding: 0px;
-}
-
-.worker14 {
-    width: 60px;
-    height: 60px;
-    border-radius: 50%;
-    margin: 140px 0px 0px 500px;
-    cursor: pointer;
-    position: absolute;
-    padding: 0px;
-}
-
-.worker15 {
-    width: 60px;
-    height: 60px;
-    border-radius: 50%;
-    margin: 140px 0px 0px 590px;
-    cursor: pointer;
-    position: absolute;
-    padding: 0px;
-}
-
-.worker16 {
-    width: 60px;
-    height: 60px;
-    border-radius: 50%;
-    margin: 140px 0px 0px 680px;
-    cursor: pointer;
-    position: absolute;
-    padding: 0px;
+    margin: 13px;
 }
 
 .hub {
