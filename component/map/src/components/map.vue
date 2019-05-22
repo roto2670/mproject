@@ -46,7 +46,7 @@ export default {
                 this.map = new maptalks.Map(this.id, {
                     center: [90, 50],
                     zoom: 6,
-                    maxZoom: 7,
+                    maxZoom: 9,
                     minZoom: 4,
                     // Extent
                     // http://maptalks.org/maptalks.js/api/0.x/Extent.html
@@ -68,7 +68,7 @@ export default {
                     baseLayer: new maptalks.ImageLayer("base", [{
                         //url: 'http://localhost:5000/static/dashboard/location/test/location',
                         //url: url,
-                        url: 'map.png',
+                        url: this.BASE_URI + 'map.png',
                         extent: [0, 0, 180, 85],
                         opactiy: 1
                     }], {
@@ -82,7 +82,8 @@ export default {
                 this.initBeaconLocationHandler();
                 this.initContextMenu();
                 this.loadHubs();
-                this.setIpcam();
+                // TODO:
+                //this.setIpcam();
             });
         },
         initBeaconLocationHandler() {
@@ -113,8 +114,9 @@ export default {
         },
         loadHubs() {
             console.debug('Try load hubs');
-            this.services.getProductId((productId) => {
-                this.services.getBeacons(productId.product_id, (bcndata) => {
+            // TODO: product id list?
+            this.services.getInfo((info) => {
+                this.services.getBeacons(info.product_id, (bcndata) => {
                     this.$store.commit('addDetectedGadget', bcndata);
                     this._loadHubs();
                 })
@@ -163,7 +165,7 @@ export default {
                     const geometry = new maptalks.Marker([this.contextCoordinate.x, this.contextCoordinate.y]).addTo(this.hubLayer);
                     geometry.hide();
                     this._.forEach(hubList, (hub, index) => {
-                        if (!_.has(this.markerMap.hubs, hub.id)) {
+                        if (!this._.has(this.markerMap.hubs, hub.id)) {
                             // draw only no location hubs.
                             if (!!!hub.custom || !!!hub.custom.map_location) {
                                 const itemObj = {
@@ -215,9 +217,9 @@ export default {
             ).addTo(this.hubLayer);
 
             marker.on('click', () => {
-                marker.updateSymbol({
-                    markerFile: this.BASE_URI + 'icon-hub.svg'
-                })
+                // marker.updateSymbol({
+                //     markerFile: this.BASE_URI + 'icon-hub.svg'
+                // })
                 this.showHubInfoWindow(hubId, marker);
             })
             this.markerMap.hubs[hubId] = marker;
@@ -233,9 +235,9 @@ export default {
 
                     document.getElementsByClassName('hub-move-button')[0].onclick = () => {
                         marker.closeInfoWindow();
-                        marker.updateSymbol({
-                            markerFile: this.BASE_URI + 'icon-hub-tab.svg'
-                        })
+                        // marker.updateSymbol({
+                        //     markerFile: this.BASE_URI + 'icon-hub-tab.svg'
+                        // })
                         marker.config('draggable', false);
                         this.removeGadgetMarkersWhenHubIsMoved(hubId);
                         this._updateHubLocation(hubId, e.coordinate.x, e.coordinate.y);
@@ -251,7 +253,7 @@ export default {
             });
         },
         removeHubMarker(hubId) {
-            console.debug(`Try remove hub marker, id: ${hubId}`);
+            // console.debug(`Try remove hub marker, id: ${hubId}`);
 
             let hubMarker = this.markerMap.hubs[hubId];
             if (!this._.isEmpty(hubMarker)) {
@@ -260,7 +262,7 @@ export default {
                 if (!this._.isEmpty(hub)) {
                     delete hub.custom.map_location;
                     this.services.setHubLocation(hub);
-                    this._loadHubs;
+                    this._loadHubs();
                 } else {
                     console.warn(`Failed to clear hub location, cannot found hub model by given id: ${hubId}`);
                 }
@@ -276,7 +278,7 @@ export default {
             delete this.markerMap.hubs[hubId];
         },
         removeGadgetMarkersWhenHubIsMoved(hubId) {
-            console.log(`Try remove hub markers for id: ${hubId}`);
+            // console.log(`Try remove hub markers for id: ${hubId}`);
             let gadgetMarkers = this.markerMap.gadgets[hubId];
             if (!this._.isEmpty(gadgetMarkers)) {
                 this._.forEach(gadgetMarkers, (marker) => {
@@ -290,7 +292,7 @@ export default {
             delete this.markerMap.gadgets[hubId];
         },
         removeGadgetMarker(marker) {
-            if (!_.isEmpty(marker)) {
+            if (!this._.isEmpty(marker)) {
                 marker.remove();
             }
         },
@@ -300,7 +302,7 @@ export default {
                 gadgetList = {};
             const gadgets = this.$store.getters.getBeaconWithHubs(hubId),
                   hub = this.$store.getters.getHub(hubId);
-            if (!_.isEmpty(this.infoWindow)) {
+            if (!this._.isEmpty(this.infoWindow)) {
                this.infoWindow.remove();
             }
             if (!this._.isEmpty(gadgets)) {
@@ -312,7 +314,7 @@ export default {
                     } else {
 
                     }
-                    length = _.keys(gadgetList).length;
+                    length = this._.keys(gadgetList).length;
                 })
             } else {
                 context += '<li>Theres no hub to load</li>';
@@ -342,22 +344,24 @@ export default {
             }
 
             document.getElementsByClassName('maptalks-close')[0].onclick = () => {
-                marker.updateSymbol({
-                    markerFile: this.BASE_URI + 'icon-hub-tab.svg'
-                })
+                // marker.updateSymbol({
+                //     markerFile: this.BASE_URI + 'icon-hub-tab.svg'
+                // })
                 marker.config('draggable', false);
             }
 
         },
         drawWorkers(hubId, coordinate) {
-            let bcns = _.values(this.$store.getters.getdetectedGadgetList);
+            let bcns = this._.values(this.$store.getters.getdetectedGadgetList);
+            let count = 1;
             this._.forEach(bcns, (beacon, index) => {
                 let marker = null;
-                if ((_.includes(beacon.hid, hubId)) && (!this._.isEmpty(beacon.custom))) {
+                if ((this._.includes(beacon.hid, hubId)) && (!this._.isEmpty(beacon.custom))) {
                     if (beacon.view === 1) {
                         this.removeGadgetMarker(this.bcnsData[beacon.gid].marker, () => {});
                     }
                     marker = new maptalks.Marker(
+                    // Beacon 위치설정
                     [beacon.custom.x , beacon.custom.y], {
                     'symbol': {
                         'markerFile': this.BASE_URI + `icon-worker${beacon.tags}` + '-tab.svg',
@@ -367,9 +371,9 @@ export default {
                     }
                     ).addTo(this.workerLayer);
                     marker.on('click', () => {
-                        marker.updateSymbol({
-                            markerFile: this.BASE_URI + `icon-worker${beacon.tags}` + '.svg'
-                        })
+                        // marker.updateSymbol({
+                        //     markerFile: this.BASE_URI + `icon-worker${beacon.tags}` + '.svg'
+                        // })
                         this.showGadgetInFoWindow(hubId, beacon, this.bcns[index]);
                     });
 
@@ -388,10 +392,12 @@ export default {
                     markerCache.push(marker);
                 } else if ((this._.includes(beacon.hid, hubId)) && (this._.isEmpty(beacon.custom))) {
                     if (beacon.view === 1) {
-                       this.removeGadgetMarker(this.bcnsData[beacon.gid].marker, () => {});
+                        console.log("Marker : ", this.bcnsData[beacon.gid].marker);
+                        this.removeGadgetMarker(this.bcnsData[beacon.gid].marker, () => {});
                     }
                     marker = new maptalks.Marker(
-                    [coordinate.x + index + 1.5, coordinate.y], {
+                    // Beacon 위치설정
+                    [coordinate.x, coordinate.y - (count / 10)], {
                     'symbol': {
                         'markerFile': this.BASE_URI + 'icon-worker' + beacon.tags + '-tab.svg',
                         'markerWidth': 50,
@@ -400,9 +406,9 @@ export default {
                     }
                     ).addTo(this.workerLayer);
                     marker.on('click', () => {
-                        marker.updateSymbol({
-                            markerFile: this.BASE_URI + 'icon-worker' + beacon.tags + '.svg'
-                        })
+                        // marker.updateSymbol({
+                        //     markerFile: this.BASE_URI + 'icon-worker' + beacon.tags + '.svg'
+                        // })
                         this.showGadgetInFoWindow(hubId, beacon, this.bcns[index]);
                     });
 
@@ -419,6 +425,7 @@ export default {
                         this.markerMap.gadgets[hubId] = markerCache;
                     }
                     markerCache.push(marker);
+                    count++;
                 } else {
                     // console.log("bcns", beacon);
                 }
@@ -435,7 +442,7 @@ export default {
                               15: "CHARGING PUMP UNIT", 16: "BUS"},
                 gadgetName = gadgetInfo[this.bcnsData[gadget.gid].tags],
                 hub = this.$store.getters.getHub(hubId);
-            if (!_.isEmpty(this.infoWindow)) {
+            if (!this._.isEmpty(this.infoWindow)) {
                this.infoWindow.remove();
             }
 
@@ -448,7 +455,7 @@ export default {
                     '<div class="bcnName1">' + gadgetName + '</div>' +
                     '<div class="scannerData">SCANNER</div>' +
                     '<div class="scannerName">' + hub.name + '</div>' +
-                    '</div>' + '<img class="bcnsImg1" src=' + this.BASE_URI + '"item.png"></img>' +
+                    '</div>' + '<img class="bcnsImg1" src="' + this.BASE_URI + 'item.png"></img>' +
                     '</div>',
                 'width': 400,
                 'bottom': 11
@@ -456,9 +463,9 @@ export default {
             marker.openInfoWindow();
 
             document.getElementsByClassName('maptalks-close')[0].onclick = () => {
-                marker.updateSymbol({
-                    markerFile: this.BASE_URI + 'icon-worker' + gadget.tags + '-tab.svg'
-                })
+                // marker.updateSymbol({
+                //     markerFile: this.BASE_URI + 'icon-worker' + gadget.tags + '-tab.svg'
+                // })
             }
 
             // TODO: ipcam info window
@@ -482,7 +489,6 @@ export default {
 
         },
         setIpcam() {
-            return; // TODO: impl.
             this.ipcam = new maptalks.Marker(
                 [127.113049, 37.498568], {
                     'symbol': {
@@ -500,7 +506,7 @@ export default {
             this.ipcam.setInfoWindow({
                 'content': '<div class="bcns">' +
                     '<div class="bcnsInfo"><div class="bcnskey">IPCAM</div></div>' +
-                    '<img class="bcnsImg" src=' + this.BASE_URI + '"item.png"></img>' +
+                    '<img class="bcnsImg" src="' + this.BASE_URI + 'item.png"></img>' +
                     '</div>',
                 'width': 400
             });
@@ -526,12 +532,12 @@ export default {
             }
         },
         startInterval(hubId) {
-            const CHECK_THRESOLD_TIME = 10000 * 1000;
+            const CHECK_THRESOLD_TIME = 1000 * 60;
             setInterval(() => {
                 this.$store.commit('removeGadgets');
                 const hub = this.$store.getters.getHub(hubId);
                 this.removeGadgetMarkersWhenHubIsMoved(hub.id);
-                if (!_.isEmpty(hub.id)) {
+                if (!this._.isEmpty(hub.id)) {
                     this.drawWorkers(hub.id, hub.custom.map_location);
                 } else {
                     console.warn(`There is no hub id, so we cannot update hub data`);
@@ -545,8 +551,12 @@ export default {
                 y = 0,
                 gid = null;
             this._.forEach(hubList, (hub) => {
+                // hub -> {'hid': '', 'gid': '', 'dist': '', '_t': ''}
                 const hubInfo = this.$store.getters.getHub(hub.hid); //TODO: name change
                 gid = hub.gid;
+                // console.log("### hubdist : ", hub);
+                // console.log("hid : " + hub.hid + ", custom x : ", hubInfo.custom);
+                // console.log("hid : " + hub.hid + ", custom x : "+ hubInfo.custom.map_location.x + ", y : " + hubInfo.custom.map_location.y);
                 if (!!hubInfo && !this._.isEmpty(hubInfo.custom)) {
                     hubLocation[hub.hid] = hubInfo.custom.map_location;
                     hubLocation[hub.hid].dist = hub.dist;
@@ -559,9 +569,8 @@ export default {
                 if (this.isNumber(hub.dist)) {
                     let datax = hub.x,
                         datay = hub.y;
-                    datax = datax + (datax * (Math.abs(hub.dist) / 200));
-                    datay = datay + (datay * (Math.abs(hub.dist) / 200));
-
+                    datax = datax + (Math.abs(hub.dist) / 200);
+                    datay = datay + (Math.abs(hub.dist) / 200);
                     x += datax;
                     y += datay;
                 } else {
@@ -581,6 +590,8 @@ export default {
                 })
                 this.$store.commit('addGadgetLocation', gadgetLocation);
             }
+            // console.log("hub loc : ", hubLocation);
+            // console.log("gadget loc : ", gadgetLocation);
         },
         hasSameGadget(successCallback) { // 비콘이 여러 허브에 들어있을 경우에 그 허브들의 리스트를 받아옴
             const gadgetData = this.$store.getters.getdetectedGadgetList;
@@ -591,7 +602,7 @@ export default {
                     sameGadgetList[gadgetId] = hub.hid;
                 }
             })
-            let sameGadgetListSize = _.keys(sameGadgetList).length;
+            let sameGadgetListSize = this._.keys(sameGadgetList).length;
             let gadgetCount = 1;
 
             console.log("sameGadgetList", sameGadgetList);
@@ -611,9 +622,9 @@ export default {
             }
         },
         setFilterdBeacons() {
-            if (!_.isEmpty(this.selectFilteredBeacons)) {
-                _.forEach(this.bcnsData, (bcn, gid) => {
-                    if (!_.includes(this.selectFilteredBeacons, _.first(bcn.tags))) {
+            if (!this._.isEmpty(this.selectFilteredBeacons)) {
+                this._.forEach(this.bcnsData, (bcn, gid) => {
+                    if (!this._.includes(this.selectFilteredBeacons, this._.first(bcn.tags))) {
                         bcn.marker.hide();
                         this.$store.commit('GadgetIsnotInMap', gid);
                         console.log("Sucess to Hide selected Gadgets");
@@ -627,7 +638,7 @@ export default {
                     }
                 })
             } else {
-                _.forEach(this.bcnsData, (bcn, gid) => {
+                this._.forEach(this.bcnsData, (bcn, gid) => {
                     bcn.marker.hide();
                 })
             }
@@ -637,7 +648,7 @@ export default {
                 text = str.replace("icon-worker"+workerNum+".svg", "icon-worker"+workerNum+"-tab.svg");
             document.getElementsByClassName('worker' + workerNum)[0].innerHTML = text;
 
-            if (!_.includes(this.selectFilteredBeacons, workerNum)) {
+            if (!this._.includes(this.selectFilteredBeacons, workerNum)) {
                 this.selectFilteredBeacons.push(workerNum.toString());
             }
 
@@ -648,14 +659,13 @@ export default {
                 this.infoWindow.remove();
                 this.setFilterdBeacons();
             }
-            console.log("111", this.selectFilteredBeacons);
         },
         bgChangeWorker (workerNum) {
             var str = document.getElementsByClassName('worker' + workerNum)[0].innerHTML,
                 text = str.replace("icon-worker"+workerNum+"-tab.svg", "icon-worker"+workerNum+".svg");
             document.getElementsByClassName('worker' + workerNum)[0].innerHTML = text;
 
-           _.forEach(this.selectFilteredBeacons, (bcn, index) => {
+           this._.forEach(this.selectFilteredBeacons, (bcn, index) => {
                 if (bcn === workerNum.toString()) {
                     this.selectFilteredBeacons.splice(index, 1);
                 }
@@ -669,16 +679,16 @@ export default {
                 this.infoWindow.remove();
                 this.setFilterdBeacons();
             }
-            console.log("222", this.selectFilteredBeacons);
         },
         filterBeacons() {
             let context = '<div class="filter_menu">',
                 bcnNum = ["1", "2", "3", "4", "5", "6", "7", "8", "9", "10",
                           "11", "12", "13", "14", "15", "16"];
-            var coordinate = this.map.getCenter();
+            var coordinate = this.map.getCenter(),
+                filterBeacons = {};
             if (this.selectFilteredBeacons.length != 16) {
-                _.forEach(bcnNum, (index) => {
-                    if (!_.includes(this.selectFilteredBeacons, index)) {
+                this._.forEach(bcnNum, (index) => {
+                    if (!this._.includes(this.selectFilteredBeacons, index)) {
                        context += '<div class="beacon"><button class="worker' + index + '"><img class="workerImg" src=' + this.BASE_URI + '"icon-worker' + index + '.svg"></button></div>';
                     } else {
                        context += '<div class="beacon"><button class="worker' + index + '"><img class="workerImg" src=' + this.BASE_URI + '"icon-worker' + index + '-tab.svg"></button></div>';
@@ -686,7 +696,7 @@ export default {
                 })
                 context +='<img class="clickbtnreFilter" @click="refilter" src=' + this.BASE_URI+ '"icon-alert-tab.svg">' +
                           '<button class="done"></button></div>';
-                var filterBeacons = {
+                filterBeacons = {
                         'width' : 870,
                         'height' : 250,
                         'content' : context
@@ -694,7 +704,7 @@ export default {
                 this.infoWindow = new maptalks.ui.InfoWindow(filterBeacons);
                 this.infoWindow.addTo(this.map).show(coordinate);
             } else {
-                var filterBeacons = {
+                filterBeacons = {
                     'width' : 870,
                     'height' : 250,
                     'autoPan' : false,
@@ -736,111 +746,111 @@ export default {
             }
 
             document.getElementsByClassName('worker1')[0].onclick = () => {
-                if (!_.includes(this.selectFilteredBeacons, "1")) {
+                if (!this._.includes(this.selectFilteredBeacons, "1")) {
                     this.bgChangeWorkerTab(1, this.selectFilteredBeacons, () => {});
                 } else {
                     this.bgChangeWorker(1, this.selectFilteredBeacons, () => {});
                 }
             }
             document.getElementsByClassName('worker2')[0].onclick = () => {
-                if (!_.includes(this.selectFilteredBeacons, "2")) {
+                if (!this._.includes(this.selectFilteredBeacons, "2")) {
                     this.bgChangeWorkerTab(2, this.selectFilteredBeacons, () => {});
                 } else{
                     this.bgChangeWorker(2, this.selectFilteredBeacons, () => {});
                 }
             }
             document.getElementsByClassName('worker3')[0].onclick = () => {
-                if (!_.includes(this.selectFilteredBeacons, "3")) {
+                if (!this._.includes(this.selectFilteredBeacons, "3")) {
                     this.bgChangeWorkerTab(3, this.selectFilteredBeacons, () => {});
                 } else {
                     this.bgChangeWorker(3, this.selectFilteredBeacons, () => {});
                 }
             }
             document.getElementsByClassName('worker4')[0].onclick = () => {
-                if (!_.includes(this.selectFilteredBeacons, "4")) {
+                if (!this._.includes(this.selectFilteredBeacons, "4")) {
                     this.bgChangeWorkerTab(4, this.selectFilteredBeacons, () => {});
                 } else {
                     this.bgChangeWorker(4, this.selectFilteredBeacons, () => {});
                 }
             }
             document.getElementsByClassName('worker5')[0].onclick = () => {
-                if (!_.includes(this.selectFilteredBeacons, "5")) {
+                if (!this._.includes(this.selectFilteredBeacons, "5")) {
                     this.bgChangeWorkerTab(5, this.selectFilteredBeacons, () => {});
                 } else {
                     this.bgChangeWorker(5, this.selectFilteredBeacons, () => {});
                 }
             }
             document.getElementsByClassName('worker6')[0].onclick = () => {
-                if (!_.includes(this.selectFilteredBeacons, "6")) {
+                if (!this._.includes(this.selectFilteredBeacons, "6")) {
                     this.bgChangeWorkerTab(6, this.selectFilteredBeacons, () => {});
                 } else{
                    this.bgChangeWorker(6, this.selectFilteredBeacons, () => {});
                 }
             }
             document.getElementsByClassName('worker7')[0].onclick = () => {
-                if (!_.includes(this.selectFilteredBeacons, "7")) {
+                if (!this._.includes(this.selectFilteredBeacons, "7")) {
                     this.bgChangeWorkerTab(7, this.selectFilteredBeacons, () => {});
                 }
                 this.bgChangeWorker(7, this.selectFilteredBeacons, () => {});
             }
             document.getElementsByClassName('worker8')[0].onclick = () => {
-                if (!_.includes(this.selectFilteredBeacons, "8")) {
+                if (!this._.includes(this.selectFilteredBeacons, "8")) {
                     this.bgChangeWorkerTab(8, this.selectFilteredBeacons, () => {});
                 } else {
                     this.bgChangeWorker(8, this.selectFilteredBeacons, () => {});
                 }
             }
             document.getElementsByClassName('worker9')[0].onclick = () => {
-                if (!_.includes(this.selectFilteredBeacons, "9")) {
+                if (!this._.includes(this.selectFilteredBeacons, "9")) {
                     this.bgChangeWorkerTab(9, this.selectFilteredBeacons, () => {});
                 } else {
                     this.bgChangeWorker(9, this.selectFilteredBeacons, () => {});
                 }
             }
             document.getElementsByClassName('worker10')[0].onclick = () => {
-                if (!_.includes(this.selectFilteredBeacons, "10")) {
+                if (!this._.includes(this.selectFilteredBeacons, "10")) {
                     this.bgChangeWorkerTab(10, this.selectFilteredBeacons, () => {});
                 } else {
                     this.bgChangeWorker(10, this.selectFilteredBeacons, () => {});
                 }
             }
             document.getElementsByClassName('worker11')[0].onclick = () => {
-                if (!_.includes(this.selectFilteredBeacons, "11")) {
+                if (!this._.includes(this.selectFilteredBeacons, "11")) {
                     this.bgChangeWorkerTab(11, this.selectFilteredBeacons, () => {});
                 } else {
                     this.bgChangeWorker(11, this.selectFilteredBeacons, () => {});
                 }
             }
             document.getElementsByClassName('worker12')[0].onclick = () => {
-                if (!_.includes(this.selectFilteredBeacons, "12")) {
+                if (!this._.includes(this.selectFilteredBeacons, "12")) {
                     this.bgChangeWorkerTab(12, this.selectFilteredBeacons, () => {});
                 } else {
                     this.bgChangeWorker(12, this.selectFilteredBeacons, () => {});
                 }
             }
             document.getElementsByClassName('worker13')[0].onclick = () => {
-                if (!_.includes(this.selectFilteredBeacons, "13")) {
+                if (!this._.includes(this.selectFilteredBeacons, "13")) {
                     this.bgChangeWorkerTab(13, this.selectFilteredBeacons, () => {});
                 } else {
                     this.bgChangeWorker(13, this.selectFilteredBeacons, () => {});
                 }
             }
             document.getElementsByClassName('worker14')[0].onclick = () => {
-                if (!_.includes(this.selectFilteredBeacons, "14")) {
+                if (!this._.includes(this.selectFilteredBeacons, "14")) {
                     this.bgChangeWorkerTab(14, this.selectFilteredBeacons, () => {});
                 } else {
                     this.bgChangeWorker(14, this.selectFilteredBeacons, () => {});
                 }
             }
             document.getElementsByClassName('worker15')[0].onclick = () => {
-                if (!_.includes(this.selectFilteredBeacons, "15")) {
+                if (!this._.includes(this.selectFilteredBeacons, "15")) {
                     this.bgChangeWorkerTab(15, this.selectFilteredBeacons, () => {});
                 } else {
                     this.bgChangeWorker(15, this.selectFilteredBeacons, () => {});
                 }
             }
             document.getElementsByClassName('worker16')[0].onclick = () => {
-                if (!_.includes(this.selectFilteredBeacons, "16")) {
+                if (!this._.includes(this.selectFilteredBeacons, "16")) {
                     this.bgChangeWorkerTab(16, this.selectFilteredBeacons, () => {});
                 } else {
                     this.bgChangeWorker(16, this.selectFilteredBeacons, () => {});
@@ -851,9 +861,9 @@ export default {
             this.selectFilteredBeacons = ["1", "2", "3", "4", "5", "6", "7", "8", "9", "10",
                                           "11", "12", "13", "14", "15", "16"];
             let detectedGadgetList = this.$store.getters.getdetectedGadgetList;
-            _.forEach(detectedGadgetList, (detectedGadget) => {
+            this._.forEach(detectedGadgetList, (detectedGadget) => {
                 if (detectedGadget.view == 0) {
-                    _.forEach(this.bcnsData, (bcn, gid) => {
+                    this._.forEach(this.bcnsData, (bcn, gid) => {
                         if (gid === detectedGadget.gid) {
                             bcn.marker.show();
                             this.$store.commit('GadgetIsInMap', gid);

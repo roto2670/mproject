@@ -17,16 +17,14 @@ export const setHubLocation = (hub, successCallback, errorCallback) => {
     })
 }
 
-export const getProductId = (successCallback, errorCallback) => {
-  var product_id = null;
+export const getInfo = (successCallback, errorCallback) => {
   axios({
     url: SERVER_BASE_URL + '/dash/info',
     method: 'GET',
     responseType: 'text' // important
   }).then(response => {
     if (!!response.data) {
-      product_id = response.data;
-      successCallback(product_id);
+      successCallback(response.data);
     } else {
       console.log('File is not exist')
     }

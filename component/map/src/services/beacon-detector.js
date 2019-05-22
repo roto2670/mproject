@@ -1,7 +1,7 @@
 import * as services from '@/services/services'
 import Vue from 'vue'
-const CHECK_THRESOLD_TIME = 10000 * 1000; 
-//600 * 1000; // 10 min
+const CHECK_THRESOLD_TIME = 1000 * 60;
+//60 * 1000; // 1 min
 
 let instance = null;
 export class BeaconDetector {
@@ -41,7 +41,7 @@ export class BeaconDetector {
         let hubList = this._vm.$store.getters.getHubs;
         this._vm._.forEach(hubList, (hub) => {
             services.getDetectBeaconList(hub.id, (result) => {
-                this._vm.$store.commit('addGadget', result);
+                this._vm.$store.commit('addGadgets', result);
                 this._detectedCallback(result); // TODO: brush up result.
             }, (error) => {
                 console.warn('Failed to refresh beacons.', error);
