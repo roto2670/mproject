@@ -159,7 +159,6 @@ export default {
                 this.$store.commit('addHubs', hubList);
                 // Clear old hub list view
                 this.options.items = []; // TODO: destory for GC?
-
                 if (!this._.isEmpty(hubList)) {
                     const geometry = new maptalks.Marker([this.contextCoordinate.x, this.contextCoordinate.y]).addTo(this.hubLayer);
                     geometry.hide();
@@ -183,8 +182,20 @@ export default {
                             }
                         }
                     });
+                    if (this._.isEmpty(this.options.items)) {
+                        const itemObj = {
+                            item: "No Scanner",
+                            click: () => {
+                            }
+                        }
+                        this.options.items.push(itemObj);
+                    }
                     geometry.setMenu(this.options).openMenu();
                 } else {
+                    const itemObj = {
+                        item: "No Scanner"
+                    }
+                    this.options.items.push(itemObj);
                 }
             },
             function(error) {
@@ -302,9 +313,8 @@ export default {
                     if (!gadgetList[gadget.gid]) {
                         gadgetList[gadget.gid] = {};
                         var name = this.$store.getters.getdetectedGadgetName(gadget.gid);
-                            context += `<li>${name}</li>`;
+                        context += `<li>${name}</li>`;
                     } else {
-
                     }
                     length = this._.keys(gadgetList).length;
                 })
