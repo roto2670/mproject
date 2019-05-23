@@ -67,8 +67,8 @@ export default {
                     // http://maptalks.org/maptalks.js/api/0.x/ImageLayer.html
                     baseLayer: new maptalks.ImageLayer("base", [{
                         //url: 'http://localhost:5000/static/dashboard/location/test/location',
-                        // url: this.BASE_URI + 'map.png',
                         url: url,
+                        // url: this.BASE_URI + 'map.png',
                         extent: [0, 0, 180, 85],
                         opactiy: 1
                     }], {
@@ -124,7 +124,6 @@ export default {
         },
         _loadHubs() {
            let hubs = this.services.getHubs((hubList) => {
-                    console.log('Load hubs.', hubList);
                     // Store hubs.
                     this.$store.commit('addHubs', hubList); // TODO; move to services?
 
@@ -385,7 +384,6 @@ export default {
                     markerCache.push(marker);
                 } else if ((this._.includes(beacon.hid, hubId)) && (this._.isEmpty(beacon.custom))) {
                     if (beacon.view === 1) {
-                        console.log("Marker : ", this.bcnsData[beacon.gid].marker);
                         this.removeGadgetMarker(this.bcnsData[beacon.gid].marker, () => {});
                     }
                     marker = new maptalks.Marker(
@@ -515,7 +513,6 @@ export default {
                 // send to server.
                 this.$store.commit('addHubLocation', hub);
                 this.services.setHubLocation(hub);
-                console.log("success to set hub location");
             } else {
                 console.warn('Failed to update hub location, given parms cannot be null.', hub, x, y);
             }
@@ -589,7 +586,6 @@ export default {
             let sameGadgetListSize = this._.keys(sameGadgetList).length;
             let gadgetCount = 1;
 
-            console.log("sameGadgetList", sameGadgetList);
             if (sameGadgetListSize == 0) {
                 successCallback();
             } else {
@@ -662,6 +658,7 @@ export default {
                           "11", "12", "13", "14", "15", "16"];
             var coordinate = this.map.getCenter(),
                 filterBeacons = {};
+            coordinate.y -= 3;
             if (this.selectFilteredBeacons.length != 16) {
                 context += '<div class="filter_menu"><div>';
                 this._.forEach(bcnNum, (index) => {
@@ -896,6 +893,8 @@ export default {
 #map {
     width: 100%;
     height: 100%;
+    /* TODO : position absolute? */
+    position: absolute;
 }
 
 #info {

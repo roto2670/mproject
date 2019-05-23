@@ -108,7 +108,6 @@ export default {
 
 /*  Upload Button */
 #upload {
-    right: 0;
 }
 
 input[type='file'] {

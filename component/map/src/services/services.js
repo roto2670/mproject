@@ -125,7 +125,7 @@ export const getMapFiles = (successCallback, failCallback) => {
     }).then(response => {
         if(response.data) {
             console.log('Success to Get map image file')
-            successCallback('http://' + window.location.host + response.data);
+            successCallback(window.location.protocol + '//' + window.location.host + response.data);
         } else {
             console.log('Sorry, Img file does not exist');
         }
