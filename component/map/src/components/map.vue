@@ -1,5 +1,5 @@
 <template>
-<div :id="id" v-if="isEmptyUrl" class="container">
+<div :id="id" v-if="isEmptyUrl">
 </div>
 </template>
 <script>
@@ -67,8 +67,8 @@ export default {
                     // http://maptalks.org/maptalks.js/api/0.x/ImageLayer.html
                     baseLayer: new maptalks.ImageLayer("base", [{
                         //url: 'http://localhost:5000/static/dashboard/location/test/location',
-                        // url: url,
-                        url: this.BASE_URI + 'map.png',
+                        // url: this.BASE_URI + 'map.png',
+                        url: url,
                         extent: [0, 0, 180, 85],
                         opactiy: 1
                     }], {
@@ -896,7 +896,6 @@ export default {
 #map {
     width: 100%;
     height: 100%;
-    position: absolute;
 }
 
 #info {

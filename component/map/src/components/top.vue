@@ -1,16 +1,16 @@
 <template>
 <div id="topContainer">
     <div id="leftContainer">
-      <div id="zoom" class="subContainer">
+      <div id="zoom">
           <img id="clickbtnPlus" src="static/location/imgs/icon-plus.svg" @click="zoomIn">
           <img id="clickbtnMinus" src="static/location/imgs/icon-minus.svg" @click="zoomOut">
       </div>
-      <div id="filter" class="container">
+      <div id="filter">
           <img id="clickbtnFilter" src="static/location/imgs/icon-filter.svg" @click="filter">
       </div>
     </div>
     <div id="rightContainer">
-      <div id="upload" class="subContainer">
+      <div id="upload">
           <button id="clickbtn" @click="$refs.file.click()">
               <div id="btntitle">Upload <i class="fa fa-upload"></i></div>
           </button>
@@ -63,6 +63,10 @@ export default {
 
 <style>
 
+#topContainer {
+    width: 100%;
+}
+
 #leftContainer {
     width: 50%;
     display: inline-block;
@@ -70,6 +74,7 @@ export default {
 
 #rightContainer {
     width: 50%;
+    text-align: right;
     display: inline-block;
 }
 
@@ -118,8 +123,6 @@ input[type='file'] {
     cursor: pointer;
     height: 35px;
     width: 100px;
-    float: right;
-    margin-right: 15px;
     border: 1px solid rgb(85, 185, 250);
     color: rgb(85, 185, 250)
 }
