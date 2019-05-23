@@ -6,7 +6,7 @@
           <img id="clickbtnMinus" src="static/location/imgs/icon-minus.svg" @click="zoomOut">
       </div>
       <div id="filter" class="container">
-          <img id="clickbtnFilter" src="static/location/imgs/icon-alert.svg" @click="filter">
+          <img id="clickbtnFilter" src="static/location/imgs/icon-filter.svg" @click="filter">
       </div>
     </div>
     <div id="rightContainer">
@@ -32,23 +32,19 @@ export default {
             EventBus.$emit('zoomOut');
         },
         onFileChange(e) {
-            this.file = e.target.files[0]
-            this.submitFile()
+            this.file = e.target.files[0];
+            this.submitFile();
         },
         getMapFile(successCallback) {
-            this.services.getMapFile
-            /*services.getMapFiles((url) => {
-                console.log("afaf", url)
-                successCallback(url)
-            })*/
+            this.services.getMapFile;
         },
         submitFile() {
             this.services.postMapFile(this.file, (url) => {
-                console.log("adadada",url)
-            })
+                window.location.reload();
+            });
         },
         handleFileUpload() {
-            this.file = this.$refs.file.files[0]
+            this.file = this.$refs.file.files[0];
         },
         filter() {
             EventBus.$emit('filter');
@@ -56,58 +52,58 @@ export default {
     },
     computed: {
         isEmptyUrl() {
-            return !!!this.url
+            return !!!this.url;
         },
     },
     created() {
-        this.getMapFile()
+        this.getMapFile();
     }
 }
 </script>
 
 <style>
+
+#leftContainer {
+    width: 50%;
+    display: inline-block;
+}
+
+#rightContainer {
+    width: 50%;
+    display: inline-block;
+}
+
 /*  Zoom */
 #btntitle {
 }
 
 #zoom {
-    position: absolute;
-    z-index: 1;
+    display: inline-block;
 }
+
 #clickbtnPlus {
+    margin: 0 5px;
     border-radius: 100%;
     cursor: pointer;
     height: 35px;
     width: 35px;
+    border: 1px solid rgb(85, 185, 250);
     background-color: rgb(85, 185, 250);
-}
-
-#clickbtnPlus:hover {
-    border-radius: 100%;
-    display: inline-block;
-    cursor: pointer;
 }
 
 #clickbtnMinus {
-    margin-left: 10px;
+    margin: 0 5px;
     border-radius: 100%;
     cursor: pointer;
     height: 35px;
     width: 35px;
+    border: 1px solid rgb(85, 185, 250);
     background-color: rgb(85, 185, 250);
-}
-
-#clickbtnMinus:hover {
-    border-radius: 100%;
-    display: inline-block;
-    cursor: pointer;
 }
 
 /*  Upload Button */
 #upload {
-    position: absolute;
     right: 0;
-    z-index: 1;
 }
 
 input[type='file'] {
@@ -124,30 +120,22 @@ input[type='file'] {
     width: 100px;
     float: right;
     margin-right: 15px;
-}
-
-#clickbtn:hover {
-    display: inline-block;
-    cursor: pointer;
+    border: 1px solid rgb(85, 185, 250);
+    color: rgb(85, 185, 250)
 }
 
 /*  Beacon Filter */
 #filter {
-    width: 10%;
-    position: absolute;
-    z-index: 1;
-    margin-left: 8%;
+    display: inline-block;
 }
 
 #clickbtnFilter {
-    border-radius: 50%;
+    border-radius: 100%;
     cursor: pointer;
     height: 35px;
     width: 35px;
+    margin: 0 5px;
+    border: 1px solid rgb(85, 185, 250);
+    background-color: rgb(85, 185, 250);
 }
-
-#clickbtnFilter:hover {
-    box-shadow: 2px 2px 0.5px #aaaaaa;
-}
-
 </style>

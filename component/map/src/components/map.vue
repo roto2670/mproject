@@ -67,7 +67,7 @@ export default {
                     // http://maptalks.org/maptalks.js/api/0.x/ImageLayer.html
                     baseLayer: new maptalks.ImageLayer("base", [{
                         //url: 'http://localhost:5000/static/dashboard/location/test/location',
-                        //url: url,
+                        // url: url,
                         url: this.BASE_URI + 'map.png',
                         extent: [0, 0, 180, 85],
                         opactiy: 1
@@ -329,6 +329,9 @@ export default {
             marker.openInfoWindow();
 
             document.getElementsByClassName('hub-move-button')[0].onclick = () => {
+                var str = document.getElementsByClassName('hub-move-button')[0].innerHTML;
+                var text = str.replace("Move", "SetLocation");
+                document.getElementsByClassName('hub-move-button')[0].innerHTML = text;
                 marker.config('draggable', true);
             }
 
@@ -460,7 +463,6 @@ export default {
             //     'content': '<div class="bcns">' +
             //         '<div class="bcnsInfo2"><div class="bcnskey2">KIND</div>' +
             //         '<div class="bcnName2">' + gadgetName + '</div>' +
-            //         '<div class="bcnNum2">' + gadget.tags + '</div>' +
             //         '</div>' + '<img class="bcnsImg2" src=' + this.BASE_URI + '"item.png"></img>' +
             //         '</div>',
             //     'width': 400,
@@ -541,9 +543,6 @@ export default {
                 // hub -> {'hid': '', 'gid': '', 'dist': '', '_t': ''}
                 const hubInfo = this.$store.getters.getHub(hub.hid); //TODO: name change
                 gid = hub.gid;
-                // console.log("### hubdist : ", hub);
-                // console.log("hid : " + hub.hid + ", custom x : ", hubInfo.custom);
-                // console.log("hid : " + hub.hid + ", custom x : "+ hubInfo.custom.map_location.x + ", y : " + hubInfo.custom.map_location.y);
                 if (!!hubInfo && !this._.isEmpty(hubInfo.custom)) {
                     hubLocation[hub.hid] = hubInfo.custom.map_location;
                     hubLocation[hub.hid].dist = hub.dist;
@@ -577,8 +576,6 @@ export default {
                 })
                 this.$store.commit('addGadgetLocation', gadgetLocation);
             }
-            // console.log("hub loc : ", hubLocation);
-            // console.log("gadget loc : ", gadgetLocation);
         },
         hasSameGadget(successCallback) { // 비콘이 여러 허브에 들어있을 경우에 그 허브들의 리스트를 받아옴
             const gadgetData = this.$store.getters.getdetectedGadgetList;
@@ -900,7 +897,6 @@ export default {
     width: 100%;
     height: 100%;
     position: absolute;
-    padding-top: 40px
 }
 
 #info {
@@ -922,6 +918,7 @@ export default {
     overflow: hidden;
     border: none !important;
     border-radius: 10px;
+    padding: 10px;
 }
 
 .controlContainer {
@@ -1012,8 +1009,8 @@ export default {
     overflow: visible !important;
     border: none !important;
     border-radius: 10px !important;
-    background: none !important;
-    background: rgb(57 178 255) !important;
+    /* background: none !important;
+    background: rgb(57 178 255) !important; */
 }
 
 .maptalks-msgBox a.maptalks-close {
@@ -1063,21 +1060,21 @@ export default {
 .workerId {
     width: 100px;
     height: 50px;
-    margin-left: 30px;
+    margin-left: 20px;
     margin-top: 30px;
     color: white;
-    text-align: left;
+    text-align: center;
     overflow: hidden;
     font-weight: 900;
     font-size: large
 }
 
 .workerCount {
-    width: 80px;
+    width: 100px;
     height: 40px;
-    margin-left: 30px;
+    margin-left: 20px;
     color: white;
-    text-align: left;
+    text-align: center;
     overflow: hidden;
     font-weight: 900;
     font-size: large;
@@ -1124,14 +1121,13 @@ export default {
 }
 
 .scannerData {
-    text-align: left;
+    text-align: center;
     font-size: 12px;
-    margin-left: 13px;
     padding-top: 20px;
 }
 
 .scannerName {
-    text-align: left;
+    text-align: center;
     font-size: 16px;
     padding-top: 10px;
     padding-left: 12px;
@@ -1141,9 +1137,8 @@ export default {
 }
 
 .bcnskey1 {
-    text-align: left;
+    text-align: center;
     font-size: 13px;
-    margin-left: 13px;
     padding-top: 20px;
 }
 
@@ -1198,35 +1193,8 @@ export default {
     border-radius: 15px;
 }
 
-.bcnNum1 {
-    color: white;
-    text-align: center;
-    margin-left: 13px;
-    margin-top: 60px;
-    background-color: black;
-    border-radius: 50%;
-    width: 30px;
-    height: 30px;
-    font-size: 30px;
-    font-weight: 200;
-}
-
-.bcnNum2 {
-    font-weight: 200;
-    font-size: 30px;
-    color: rgb(93 224 219);
-    margin-left: 90%;
-    background-color: white;
-    border-radius: 50%;
-    width: 30px;
-    height: 30px;
-    text-align: center;
-    position: absolute;
-    margin-top: 5.5%;
-}
-
 .bcnName1 {
-    text-align: left;
+    text-align: center;
     font-size: 16px;
     padding-top: 10px;
     padding-left: 10px;
@@ -1287,16 +1255,6 @@ export default {
     border-bottom-right-radius: 10px;
 }
 
-.ipcam_menu {
-    width: 100%;
-    list-style: none;
-    padding: 0;
-    text-align: center;
-    margin-block-end: 0;
-    border-radius: 10px;
-    overflow: hidden
-}
-
 .ipcam-content {
     height: 200px
 }
@@ -1304,9 +1262,5 @@ export default {
 .ipcam {
     height: 60px;
     background-color: rgb(93 224 219);
-}
-
-.exampleimg {
-    height: 100%
 }
 </style>
