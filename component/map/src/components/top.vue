@@ -76,12 +76,10 @@ export default {
     width: 50%;
     text-align: right;
     display: inline-block;
+    position: absolute;
 }
 
 /*  Zoom */
-#btntitle {
-}
-
 #zoom {
     display: inline-block;
 }
@@ -107,9 +105,6 @@ export default {
 }
 
 /*  Upload Button */
-#upload {
-}
-
 input[type='file'] {
     display: none;
 }

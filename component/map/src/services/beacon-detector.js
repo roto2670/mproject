@@ -1,7 +1,5 @@
 import * as services from '@/services/services'
 import Vue from 'vue'
-const CHECK_THRESOLD_TIME = 1000 * 60;
-//60 * 1000; // 1 min
 
 let instance = null;
 export class BeaconDetector {
@@ -11,7 +9,6 @@ export class BeaconDetector {
         }
 
         this._timers = [];
-        this.hubIds = [];
         this.isRunning = false;
         this._vm = vm;
         this._detectedCallback = detectedCallback || function() {};
@@ -25,7 +22,7 @@ export class BeaconDetector {
         }
         this._timers.push(setInterval(() => {
             this._refreshBeacons();
-        }, CHECK_THRESOLD_TIME));
+        }, window.CONSTANTS.TIMER.CHECK_THRESHOLD));
 
         console.info('Beacon detector started');
     }
@@ -37,16 +34,36 @@ export class BeaconDetector {
         console.info('Beacon detector stopped');
     }
 
-    _refreshBeacons() {
-        let hubList = this._vm.$store.getters.getHubs;
-        this._vm._.forEach(hubList, (hub) => {
-            services.getDetectBeaconList(hub.id, (result) => {
-                this._vm.$store.commit('addGadgets', result);
-                this._detectedCallback(result); // TODO: brush up result.
-            }, (error) => {
-                console.warn('Failed to refresh beacons.', error);
+    _refreshBeacons(_detectedCallback, failCallback) {
+        let hubList = this._vm.$store.getters.getHubsWhichIsInMap,
+            viewLength = 0,
+            cnt = 0;
+        if (!_.isEmpty(hubList)) {
+            this._vm.$store.commit('removeGadgets');
+            services.getInfo((info) => {
+                services.getBeacons(info.product_id, (bcnData) => {
+                    this._vm.$store.commit('addDetectedGadget', bcnData);
+                    _.forEach(hubList, (hub) => {
+                        if (hub.view === window.CONSTANTS.HUB_VIEW.IN_MAP) {
+                            viewLength++;
+                            services.getDetectBeaconList(hub.id, (detectedGadgetList) => {
+                                cnt++;
+                                this._vm.$store.commit('addDetectedHubGadget', detectedGadgetList);
+                                if (cnt === viewLength) {
+                                    this._detectedCallback(console.debug('Success to update'));
+                                } 
+                            }, (err) => {
+                                failCallback(err);
+                            });
+                        }
+                    })
+                }, (err) => {
+                    failCallback(err);
+                })
+            }, (err) => {
+                failCallback(err);
             });
-        });
+        }
     }
 
     _clearTimer() {
