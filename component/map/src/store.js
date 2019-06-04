@@ -9,37 +9,38 @@ export default new Vuex.Store({
         gadgets: {},
         detectedgadgets: {},
         forInfohubs: [],
-        drawgadget: {}
+        drawnHubs: {}
     },
     getters: {
         getHubs: (state) => {
             return _.values(state.hubs);
         },
-        getHub: (state) => (id) => {
-            return state.hubs[id];
+        getHub: (state) => (hid) => {
+            if (!_.isEmpty(state.hubs[hid])) {
+                return state.hubs[hid];
+            } else {
+                console.warn(`Theres no hub data in hubid ${hid}`);
+            }
+        },
+        getHubsWhichIsInMap: (state) => {
+            return _.values(state.drawnHubs);
         },
         getBeaconWithHubs: (state) => (hid) => {
-            return state.forInfohubs[hid];
-        },
-        getGadget: (state) => (hid, gid) => {
-            return state.gadgets[hid].find((gadget) => gadget.id === gid);
-        },
-        getGadgetsWithHub: (state) => {
-            return state.gadgets;
+            if (!_.isEmpty(state.forInfohubs[hid])) {
+                return state.forInfohubs[hid];
+            } else {
+                console.warn(`Theres no hub data in hubid ${id}`);
+            }
         },
         getdetectedGadgetList: (state) => {
             return state.detectedgadgets;
         },
         getdetectedGadgetName: (state) => (detectedGadgetId) => {
-            return state.detectedgadgets[detectedGadgetId].name
-        },
-        getgadgetmanyhubs: (state) => {
-            let returnObject = {};
-            _.forEach(state.detectedgadgets, (detectedGadget) => {
-                returnObject[detectedGadget.gid] = {};
-                returnObject[detectedGadget.gid] = detectedGadget.hid;
-            })
-            return returnObject;
+            if (_.isUndefined(state.detectedgadgets[detectedGadgetId].name)) {
+                return 1;
+            } else {
+                return state.detectedgadgets[detectedGadgetId].name;
+            }
         }
     },
     mutations: {
@@ -48,11 +49,19 @@ export default new Vuex.Store({
                 state.hubs[hub.id] = hub;
             });
         },
-        addHub(state, payload) {
-            if (_.isEmpty(state.hubs[payload.hub_id])) {
-                state.hubs[payload.hub_id] = [];
+        HubIsInMap(state, payload) {
+            if (_.isEmpty(state.drawnHubs[payload])) {
+                state.drawnHubs[payload] = {};
             }
-            state.hubs[payload.hub_id].push(payload.hub);
+            state.drawnHubs[payload].id = payload;
+            state.drawnHubs[payload].view = 1;
+        },
+        HubIsNotInMap(state, payload) {
+            if (_.isEmpty(state.drawnHubs[payload])) {
+                state.drawnHubs[payload] = {};
+            }
+            state.drawnHubs[payload].id = payload;
+            state.drawnHubs[payload].view = 0;
         },
         addDetectedGadget(state, payload) {
             _.forEach(payload, bcn => {
@@ -66,7 +75,7 @@ export default new Vuex.Store({
                     if (_.isEmpty(state.detectedgadgets[detectedGadget.gid])) {
                         state.detectedgadgets[detectedGadget.gid] = {
                             gid: data.id,
-                            hid: [],
+                            hubIdList: [],
                             name: data.name,
                             dist: detectedGadget.dist,
                             uuid: data.beacon_spec.uuid,
@@ -74,52 +83,51 @@ export default new Vuex.Store({
                             minor: data.beacon_spec.minor,
                             custom: {},
                             tags: data.tags,
-                            view: 0
+                            view: 0,
+                            account_id: data.account_id
                         }
                     }
 
                     state.forInfohubs[detectedGadget.hid] = payload;
-                    if (_.isEmpty(state.detectedgadgets[detectedGadget.gid].hid.find((id) => id === detectedGadget.hid))) {
-                        state.detectedgadgets[detectedGadget.gid].hid.push(detectedGadget.hid);
+                    if (_.isEmpty(state.detectedgadgets[detectedGadget.gid].hubIdList.find((hid) => hid === detectedGadget.hid))) {
+                        state.detectedgadgets[detectedGadget.gid].hubIdList.push(detectedGadget.hid);
                     }
                 }
             })
         },
-        addGadgets(state, payload) {
-            _.forEach(payload, gadget => {
-                state.gadgets[gadget.id] = gadget;
-            });
-        },
         addHubLocation(state, payload) {
-            const hubList = state.hubs[payload.id];
+            let hubList = state.hubs[payload.id];
             if (!_.isEmpty(hubList)) {
                 hubList.custom.map_location = payload.custom.map_location;
             }
         },
         addGadgetLocation(state, payload) {
-            const gadgetList = state.gadgets[payload.gid],
-                  detectedgadgetList = state.detectedgadgets[payload.gid];
-            if (!_.isEmpty(gadgetList)) {
+            let gadgetList = state.gadgets[payload.gid],
+                  detectedGadgetList = state.detectedgadgets[payload.gid];
+            if (!_.isEmpty(gadgetList) && !_.isUndefined(detectedGadgetList)) {
                 gadgetList.custom = _.pick(payload, ['x', 'y']);
-                detectedgadgetList.custom = _.pick(payload, ['x', 'y']);
-            } else {
-                console.warn(`GadgetList is Empty`);
+                detectedGadgetList.custom = _.pick(payload, ['x', 'y']);
             }
         },
         GadgetIsInMap(state, payload) {
             if (state.detectedgadgets[payload]) {
-                state.detectedgadgets[payload].view = 1;
+                state.detectedgadgets[payload].view = window.CONSTANTS.HUB_VIEW.IN_MAP;
             }
         },
         GadgetIsnotInMap(state, payload) {
             if (!_.isEmpty(state.detectedgadgets[payload])) {
-                state.detectedgadgets[payload].view = 0;
+                state.detectedgadgets[payload].view = window.CONSTANTS.HUB_VIEW.NOT_IN_MAP;
             }
         },
         removeGadgets(state) {
-            state.gadgets = {};
+            _.forEach(state.gadgets, (gadget, gid) => {
+                state.gadgets[gid] = {};
+                Vue.delete(state.gadgets, gid);
+            });
+            _.forEach(state.detectedgadgets, (gadget, gid) => {
+                state.detectedgadgets[gid] = {};
+                Vue.delete(state.detectedgadgets, gid);
+            });
         }
-    },
-    actions: {
     }
 })

@@ -1,28 +1,24 @@
 import axios from 'axios'
 
-// Dev
-const SERVER_BASE_URL = 'http://127.0.0.1:5000';
-// Production
-// const SERVER_BASE_URL = '';
-export const setHubLocation = (hub, successCallback, errorCallback) => {
+export const setHubLocation = (hub, readyCallback) => {
   axios
-    .post(SERVER_BASE_URL + '/dash/hubs/location', {'hub': hub}, {
+    .post(window.CONSTANTS.URL.CONSOLE + '/dash/hubs/location', {'hub': hub}, {
       headers: {
         'Content-Type': 'application/json'
       }
     })
     .then(e => {
-      // Success
-      // console.log('SUCCESS!!', e)
+      readyCallback();
     })
     .catch(e => {
-      console.log('FAILURE!!', e)
+      readyCallback();
     })
 }
 
 export const getInfo = (successCallback, errorCallback) => {
   axios({
-    url: SERVER_BASE_URL + '/dash/info',
+    url: window.CONSTANTS.URL.CONSOLE + '/dash/location/info',
+    // url: window.CONSTANTS.URL.CONSOLE + '/dash/info',
     method: 'GET',
     responseType: 'text' // important
   }).then(response => {
@@ -37,7 +33,7 @@ export const getInfo = (successCallback, errorCallback) => {
 export const getHubs = (successCallback, errorCallback) => {
   var hubList = [];
   axios({
-    url: SERVER_BASE_URL + '/dash/scanner/list',
+    url: window.CONSTANTS.URL.CONSOLE + '/dash/scanner/list',
     method: 'GET',
     responseType: 'text' // important
   }).then(response => {
@@ -53,7 +49,7 @@ export const getHubs = (successCallback, errorCallback) => {
 export const getHubListConnectedToGadget = (gadgetuuid, successCallback, errorCallback) => {
     let hubList = {};
     axios({
-        url: SERVER_BASE_URL + '/dash/hubs/detected/' + gadgetuuid,
+        url: window.CONSTANTS.URL.CONSOLE + '/dash/hubs/detected/' + gadgetuuid,
         method: 'GET',
         responseType: 'text' // important
     }).then(response => {
@@ -70,7 +66,7 @@ export const getHubListConnectedToGadget = (gadgetuuid, successCallback, errorCa
 export const getBeacons = (product_id, successCallback, failCallback) => {
   var beaconList = [];
   axios({
-    url: SERVER_BASE_URL + '/dash/beacons/list/' + product_id,
+    url: window.CONSTANTS.URL.CONSOLE + '/dash/beacons/list/' + product_id,
     method: 'GET',
     responseType: 'text' // important
   }).then(response => {
@@ -85,7 +81,7 @@ export const getBeacons = (product_id, successCallback, failCallback) => {
 export const getDetectBeaconList = (hubId, successCallback, failCallback) => {
     let beaconList = {};
     axios({
-      url: SERVER_BASE_URL + '/dash/beacons/detected/' + hubId,
+      url: window.CONSTANTS.URL.CONSOLE + '/dash/beacons/detected/' + hubId,
       method: 'GET',
       responseType: 'text' // important
     }).then(response => {
@@ -99,16 +95,9 @@ export const getDetectBeaconList = (hubId, successCallback, failCallback) => {
   });
 }
 
-export const getGadgets = (gadgetIds, successCallback, failCallback) => {
-    let gadgets = [];
-    _getGadgets(gadgetIds, gadgets, () => {
-        successCallback(gadgets);
-    });
-}
-
 export const getGadget = (gadgetId, successCallback, failCallback) => { // TODO: force reload?
     axios({
-      url: SERVER_BASE_URL + '/dash/beacons/' + gadgetId,
+      url: window.CONSTANTS.URL.CONSOLE + '/dash/beacons/' + gadgetId,
       method: 'GET',
       responseType: 'text'
     }).then(response => {
@@ -122,7 +111,7 @@ export const getGadget = (gadgetId, successCallback, failCallback) => { // TODO:
 
 export const getMapFiles = (successCallback, failCallback) => {
     axios({
-        url: SERVER_BASE_URL + '/dashboard/location/view',
+        url: window.CONSTANTS.URL.CONSOLE + '/dashboard/location/view',
         method: 'GET',
         responseType: 'text'
     }).then(response => {
@@ -135,36 +124,40 @@ export const getMapFiles = (successCallback, failCallback) => {
     })
 }
 
+export const getBeaconImg = (gadgetId, successCallback, failCallback) => {
+    var target = window.CONSTANTS.URL.YOUR_CLOUD + '/mib/v1/sense/' + gadgetId;
+    axios({
+        method: 'GET',
+        headers: {
+            // 'Src': accountId + '.'
+        },
+        url: target
+    }).then(res => {
+        if (res && res.data) {
+          successCallback(res.data.v.img_url);
+        } else {
+          console.log("Failed to get value in storage ", error);
+          failCallback(error); 
+        }
+    });
+}
+
 export const postMapFile = (file, successCallback, failCallback) => {
     let formData = new FormData()
     if(file) {
         formData.append('file', file)
         axios
-            .post(SERVER_BASE_URL + '/dashboard/location/upload', formData, {
+            .post(window.CONSTANTS.URL.CONSOLE + '/dashboard/location/upload', formData, {
                 headers: {
                     'Content-Type': 'multiart/form-data'
                 }
             })
             .then(e => {
-                console.log('Success to Upload map image file')
+                console.log('Success to Upload map image file');
                 successCallback('http://' + window.location.host + e.data)
             })
             .catch(e => {
                 console.log('Fail to Upload map image file')
             })
-    }
-}
-
-function _getGadgets(gadgetIds, gadgets, doneCallback) {
-    let id = gadgetIds.shift();
-    if (id) {
-        getGadget(id, (gadget) => {
-            gadgets.push(gadget);
-            _getGadgets(gadgetIds, gadgets, doneCallback);
-        }, () => {
-            _getGadgets(gadgetIds, gadgets, doneCallback);
-        });
-    } else {
-        doneCallback();
     }
 }
