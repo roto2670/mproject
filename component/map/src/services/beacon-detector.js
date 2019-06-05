@@ -1,9 +1,8 @@
 import * as services from '@/services/services'
-import Vue from 'vue'
 
 let instance = null;
 export class BeaconDetector {
-    constructor(vm, detectedCallback) {
+    constructor(vm, detectedCallback, failCallback) {
         if (instance) {
             return instance;
         }
@@ -12,18 +11,26 @@ export class BeaconDetector {
         this.isRunning = false;
         this._vm = vm;
         this._detectedCallback = detectedCallback || function() {};
-
+        this._failCallback = failCallback || function() {};
+        this.check_threshold = null;
+        this.info = null;
         instance = this;
     }
 
-    start() {
+    start(info) {
+        this.info = info;
         if (this.isRunning) {
             this.isRunning = true;
         }
+        if (_.isNumber(this.info.interval)) {
+            this.check_threshold = this.info.interval * 1000;
+        } else {
+            this.check_threshold = 60 * 1000;
+        }
         this._timers.push(setInterval(() => {
             this._refreshBeacons();
-        }, window.CONSTANTS.TIMER.CHECK_THRESHOLD));
-
+        }, this.check_threshold));
+    
         console.info('Beacon detector started');
     }
 
@@ -34,35 +41,31 @@ export class BeaconDetector {
         console.info('Beacon detector stopped');
     }
 
-    _refreshBeacons(_detectedCallback, failCallback) {
+    _refreshBeacons() {
         let hubList = this._vm.$store.getters.getHubsWhichIsInMap,
             viewLength = 0,
             cnt = 0;
         if (!_.isEmpty(hubList)) {
-            this._vm.$store.commit('removeGadgets');
-            services.getInfo((info) => {
-                services.getBeacons(info.product_id, (bcnData) => {
-                    this._vm.$store.commit('addDetectedGadget', bcnData);
-                    _.forEach(hubList, (hub) => {
-                        if (hub.view === window.CONSTANTS.HUB_VIEW.IN_MAP) {
-                            viewLength++;
-                            services.getDetectBeaconList(hub.id, (detectedGadgetList) => {
-                                cnt++;
-                                this._vm.$store.commit('addDetectedHubGadget', detectedGadgetList);
-                                if (cnt === viewLength) {
-                                    this._detectedCallback(console.debug('Success to update'));
-                                } 
-                            }, (err) => {
-                                failCallback(err);
-                            });
-                        }
-                    })
-                }, (err) => {
-                    failCallback(err);
+            services.getBeacons(this.info.product_id, (bcnData) => {
+                this._vm.$store.commit('removeGadgets');
+                this._vm.$store.commit('addDetectedGadget', bcnData);
+                _.forEach(hubList, (hub) => {
+                    if (hub.view === window.CONSTANTS.HUB_VIEW.IN_MAP) {
+                        viewLength++;
+                        services.getDetectBeaconList(hub.id, (detectedGadgetList) => {
+                            cnt++;
+                            this._vm.$store.commit('addDetectedHubGadget', detectedGadgetList);
+                            if (cnt === viewLength) {
+                                this._detectedCallback(console.debug('Success to update'));
+                            } 
+                        }, (err) => {
+                            this._failCallback(err);
+                        });
+                    }
                 })
             }, (err) => {
-                failCallback(err);
-            });
+                this._failCallback(err);
+            })
         }
     }
 

@@ -15,10 +15,9 @@ export const setHubLocation = (hub, readyCallback) => {
     })
 }
 
-export const getInfo = (successCallback, errorCallback) => {
+export const getInfo = (successCallback) => {
   axios({
     url: window.CONSTANTS.URL.CONSOLE + '/dash/location/info',
-    // url: window.CONSTANTS.URL.CONSOLE + '/dash/info',
     method: 'GET',
     responseType: 'text' // important
   }).then(response => {
@@ -30,7 +29,7 @@ export const getInfo = (successCallback, errorCallback) => {
   });
 }
 
-export const getHubs = (successCallback, errorCallback) => {
+export const getHubs = (successCallback) => {
   var hubList = [];
   axios({
     url: window.CONSTANTS.URL.CONSOLE + '/dash/scanner/list',
@@ -46,7 +45,7 @@ export const getHubs = (successCallback, errorCallback) => {
   });
 }
 
-export const getHubListConnectedToGadget = (gadgetuuid, successCallback, errorCallback) => {
+export const getHubListConnectedToGadget = (gadgetuuid, successCallback) => {
     let hubList = {};
     axios({
         url: window.CONSTANTS.URL.CONSOLE + '/dash/hubs/detected/' + gadgetuuid,
@@ -63,7 +62,7 @@ export const getHubListConnectedToGadget = (gadgetuuid, successCallback, errorCa
     });
 }
 
-export const getBeacons = (product_id, successCallback, failCallback) => {
+export const getBeacons = (product_id, successCallback) => {
   var beaconList = [];
   axios({
     url: window.CONSTANTS.URL.CONSOLE + '/dash/beacons/list/' + product_id,
@@ -109,17 +108,17 @@ export const getGadget = (gadgetId, successCallback, failCallback) => { // TODO:
     });
 }
 
-export const getMapFiles = (successCallback, failCallback) => {
+export const getMapFiles = (successCallback) => {
     axios({
         url: window.CONSTANTS.URL.CONSOLE + '/dashboard/location/view',
         method: 'GET',
         responseType: 'text'
     }).then(response => {
         if(response.data) {
-            console.log('Success to Get map image file')
-            successCallback(window.location.protocol + '//' + window.location.host + response.data);
+          console.log('Success to Get map image file')
+          successCallback(window.location.protocol + '//' + window.location.host + response.data);
         } else {
-            console.log('Sorry, Img file does not exist');
+          console.log('Sorry, Img file does not exist');
         }
     })
 }
@@ -154,10 +153,10 @@ export const postMapFile = (file, successCallback, failCallback) => {
             })
             .then(e => {
                 console.log('Success to Upload map image file');
-                successCallback('http://' + window.location.host + e.data)
+                successCallback('http://' + window.location.host + e.data);
             })
             .catch(e => {
-                console.log('Fail to Upload map image file')
+              failCallback();
             })
     }
 }
