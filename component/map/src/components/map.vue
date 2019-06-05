@@ -84,17 +84,18 @@ export default {
                 this.hubLayer.setZIndex(3);
                 this.workerLayer.setZIndex(1);
                 this.initContextMenu();
-                this.loadHubs();
-                this.initBeaconLocationHandler();
+                this.services.getInfo((info) => {
+                    this.loadHubs(info);
+                    this.initBeaconLocationHandler(info);
+                })
                 // TODO:
                 //this.setIpcam();
             });
         },
-        initBeaconLocationHandler(successCallback, failCallback) {
+        initBeaconLocationHandler(info, successCallback, failCallback) {
             // run beacon detector.
             this.beaconDetector = new beaconDetector.BeaconDetector(this, () => {
                 let hubs = this.$store.getters.getHubsWhichIsInMap;
-
                 if (!this._.isEmpty(this.infoWindow)) {
                     this.infoWindow.remove();
                 }
@@ -115,11 +116,12 @@ export default {
                 } else {
                     console.warn(`There is no hub id, so we cannot update hub data`);
                 }
+            }, (err) => {
+                console.warn(`There's no data to update`);
             });
 
-
             // start
-            this.beaconDetector.start();
+            this.beaconDetector.start(info);
         },
         initContextMenu() {
             this.contextMenuOption = {
@@ -139,14 +141,12 @@ export default {
                 this.map.openMenu(e.coordinate);
             });
         },
-        loadHubs() {
+        loadHubs(info) {
             console.debug('Try load hubs');
             // TODO: product id list?
-            this.services.getInfo((info) => {
-                this.services.getBeacons(info.product_id, (bcndata) => {
-                    this.$store.commit('addDetectedGadget', bcndata);
-                    this._loadHubs();
-                })
+            this.services.getBeacons(info.product_id, (bcndata) => {
+                this.$store.commit('addDetectedGadget', bcndata);
+                this._loadHubs();
             });
         },
         _loadHubs() {

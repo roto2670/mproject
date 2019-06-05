@@ -41,6 +41,8 @@ export default {
         submitFile() {
             this.services.postMapFile(this.file, (url) => {
                 window.location.reload();
+            }, (err) => {
+                console.warn(`File upload failed`);
             });
         },
         handleFileUpload() {

@@ -8,9 +8,6 @@ window.CONSTANTS = {
         // CONSOLE : 'http://127.0.0.1:5000',
         CONSOLE : ''
     },
-    TIMER : {
-        CHECK_THRESHOLD : 60 * 1000
-    },
     GADGETINFO : { 1: "JUMBO DRILL(2B)", 2: "JUMBO DRILL(3B)",
                 3: "CHARGING CAR", 4: "WHEEL LOADER", 5: "DUMP TRUCK",
                 6: "EXCAVATOR(WHEEL)", 7: "EXCAVATOR(CRAWLER)",
