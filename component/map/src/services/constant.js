@@ -4,6 +4,7 @@ window.CONSTANTS = {
         IN_MAP : 1
     },
     URL : {
+        BASE_IMG: 'static/location/imgs/',
         YOUR_CLOUD : 'https://c2.prota.space', 
         // CONSOLE : 'http://127.0.0.1:5000',
         CONSOLE : ''

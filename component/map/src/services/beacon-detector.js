@@ -22,11 +22,12 @@ export class BeaconDetector {
         if (this.isRunning) {
             this.isRunning = true;
         }
-        if (_.isNumber(this.info.interval)) {
-            this.check_threshold = this.info.interval * 1000;
-        } else {
-            this.check_threshold = 60 * 1000;
-        }
+        // if (_.isNumber(this.info.interval)) {
+        //     this.check_threshold = this.info.interval * 1000;
+        // } else {
+        //     this.check_threshold = 60 * 1000;
+        // }
+        this.check_threshold = 600000 * 1000;
         this._timers.push(setInterval(() => {
             this._refreshBeacons();
         }, this.check_threshold));
@@ -48,6 +49,7 @@ export class BeaconDetector {
         if (!_.isEmpty(hubList)) {
             services.getBeacons(this.info.product_id, (bcnData) => {
                 this._vm.$store.commit('removeGadgets');
+                this._vm.$store.commit('removeHubs'); 
                 this._vm.$store.commit('addDetectedGadget', bcnData);
                 _.forEach(hubList, (hub) => {
                     if (hub.view === window.CONSTANTS.HUB_VIEW.IN_MAP) {

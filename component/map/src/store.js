@@ -29,17 +29,17 @@ export default new Vuex.Store({
             if (!_.isEmpty(state.forInfohubs[hid])) {
                 return state.forInfohubs[hid];
             } else {
-                console.warn(`Theres no hub data in hubid ${id}`);
+                console.warn(`Theres no hub data in hubid ${hid}`);
             }
         },
         getdetectedGadgetList: (state) => {
             return state.detectedgadgets;
         },
         getdetectedGadgetName: (state) => (detectedGadgetId) => {
-            if (_.isUndefined(state.detectedgadgets[detectedGadgetId].name)) {
-                return 1;
-            } else {
+            if (!!state.detectedgadgets[detectedGadgetId]) {
                 return state.detectedgadgets[detectedGadgetId].name;
+            } else {
+                return "";
             }
         }
     },
@@ -128,6 +128,12 @@ export default new Vuex.Store({
                 state.detectedgadgets[gid] = {};
                 Vue.delete(state.detectedgadgets, gid);
             });
+        },
+        removeHubs(state) {
+            _.forEach(state.forInfohubs, (gadgets, hid) => {
+                state.forInfohubs[hid] = {};
+                Vue.delete(state.forInfohubs, hid);
+            })
         }
     }
 })
