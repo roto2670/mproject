@@ -24,10 +24,9 @@ export default {
             contextCoordinate: null,
             infoWindow: null,
             hubInfoWindow: null,
-            selectFilteredBeaconsUpdateBefore: ["1", "2", "3", "4", "5", "6", "7", "8", "9", "10",
-                                    "11", "12", "13", "14", "15", "16"],
-            selectFilteredBeaconsUpdateAfter: ["1", "2", "3", "4", "5", "6", "7", "8", "9", "10",
-                                    "11", "12", "13", "14", "15", "16"],
+            gadgetInfoNumber: this._.keys(window.CONSTANTS.GADGET_INFO),
+            selectFilteredBeaconsUpdateBefore: this._.keys(window.CONSTANTS.GADGET_INFO),
+            selectFilteredBeaconsUpdateAfter: this._.keys(window.CONSTANTS.GADGET_INFO),
             bcns: {},
             bcnsData: {},
             hubsData: {},
@@ -87,8 +86,10 @@ export default {
                     this.workerLayer.setZIndex(1);
                     this.initContextMenu();
                     this.services.getInfo((info) => {
-                        this.loadHubs(info)
-                        this.initBeaconLocationHandler(info);
+                        if (!!info) {
+                            this.loadHubs(info)
+                            this.initBeaconLocationHandler(info);
+                        }
                         this.hideLoading();
                     });
                 });
@@ -742,7 +743,7 @@ export default {
                 filterBeacons = {};
             coordinate.y -= 3;
             if (this.selectFilteredBeaconsUpdateAfter.length != window.CONSTANTS.MINIMUM_NUMBER.FILTERED_BEACONS) {
-                this._.forEach(window.CONSTANTS.BEACON_NUMBER, (index) => {
+                this._.forEach(this.gadgetInfoNumber, (index) => {
                     if (!this._.includes(this.selectFilteredBeaconsUpdateAfter, index)) {
                        context += '<img id="worker' + index + '" class="workerImg" src="' + window.CONSTANTS.URL.BASE_IMG + 'icon-worker' + index + '.svg">';
                     } else {
@@ -750,7 +751,7 @@ export default {
                     }
                 })
             } else {
-                this._.forEach(window.CONSTANTS.BEACON_NUMBER, (index) => {
+                this._.forEach(this.gadgetInfoNumber, (index) => {
                     context += '<img id="worker' + index + '" class="workerImg" src="' + window.CONSTANTS.URL.BASE_IMG + 'icon-worker' + index + '-tab.svg">';
                 }) 
             }
@@ -788,7 +789,7 @@ export default {
                 this.infoWindow.remove();
             }
 
-            this._.forEach(window.CONSTANTS.BEACON_NUMBER, (index) => {
+            this._.forEach(this.gadgetInfoNumber, (index) => {
                 document.getElementById('worker' + index).onclick = () => {
                     if (!this._.includes(this.selectFilteredBeaconsUpdateAfter, index)) {
                         this.bgChangeWorkerTab(index, this.selectFilteredBeaconsUpdateAfter, () => {});
