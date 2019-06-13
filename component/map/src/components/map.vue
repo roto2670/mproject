@@ -23,6 +23,7 @@ export default {
             ipcams: [],
             contextCoordinate: null,
             infoWindow: null,
+            hubInfoWindow: null,
             selectFilteredBeaconsUpdateBefore: ["1", "2", "3", "4", "5", "6", "7", "8", "9", "10",
                                     "11", "12", "13", "14", "15", "16"],
             selectFilteredBeaconsUpdateAfter: ["1", "2", "3", "4", "5", "6", "7", "8", "9", "10",
@@ -42,6 +43,7 @@ export default {
     },
     methods: {
         initloadMap() {
+            this.showLoading();
             this.services.getMapFiles((url) => {
                 // Options
                 // http://maptalks.org/maptalks.js/api/0.x/Map.html#options
@@ -68,26 +70,28 @@ export default {
                     // Image Layer
                     // http://maptalks.org/maptalks.js/api/0.x/ImageLayer.html
                     baseLayer: new maptalks.ImageLayer("base", [{
-                        //url: 'http://localhost:5000/static/dashboard/location/test/location',
                         url: url,
-                        // url: this.BASE_URI + 'map.png',
                         extent: [0, 0, 180, 85],
                         opactiy: 1
                     }], {
                         opactiy: 1
                     })
                 });
-                this.layer = new maptalks.VectorLayer('vector').addTo(this.map);
-                this.hubLayer = new maptalks.VectorLayer('vector1').addTo(this.map);
-                this.workerLayer = new maptalks.VectorLayer('vector2').addTo(this.map);
-                this.camLayer = new maptalks.VectorLayer('vector3').addTo(this.map);
-                this.hubLayer.setZIndex(3);
-                this.workerLayer.setZIndex(1);
-                this.initContextMenu();
-                this.services.getInfo((info) => {
-                    this.loadHubs(info);
-                    this.initBeaconLocationHandler(info);
-                })
+                this.map.once('baselayerload', () => {
+                    // this._.first(document.getElementsByClassName('loader')).remove();
+                    this.layer = new maptalks.VectorLayer('vector').addTo(this.map);
+                    this.hubLayer = new maptalks.VectorLayer('vector1').addTo(this.map);
+                    this.workerLayer = new maptalks.VectorLayer('vector2').addTo(this.map);
+                    this.camLayer = new maptalks.VectorLayer('vector3').addTo(this.map);
+                    this.hubLayer.setZIndex(3);
+                    this.workerLayer.setZIndex(1);
+                    this.initContextMenu();
+                    this.services.getInfo((info) => {
+                        this.loadHubs(info)
+                        this.initBeaconLocationHandler(info);
+                        this.hideLoading();
+                    });
+                });
                 // TODO:
                 //this.setIpcam();
             });
@@ -96,6 +100,9 @@ export default {
             // run beacon detector.
             this.beaconDetector = new beaconDetector.BeaconDetector(this, () => {
                 let hubs = this.$store.getters.getHubsWhichIsInMap;
+                if (!!this.hubInfoWindow) {
+                    this.hubInfoWindow.remove();
+                }
                 if (!this._.isEmpty(this.infoWindow)) {
                     this.infoWindow.remove();
                 }
@@ -119,7 +126,7 @@ export default {
             }, (err) => {
                 console.warn(`There's no data to update`);
             });
-
+        
             // start
             this.beaconDetector.start(info);
         },
@@ -186,8 +193,8 @@ export default {
                 this.$store.commit('addHubs', hubList);
                 // Clear old hub list view
                 this.options.items = []; // TODO: destory for GC?
+                let geometry = new maptalks.Marker([this.contextCoordinate.x, this.contextCoordinate.y]).addTo(this.hubLayer);
                 if (!this._.isEmpty(hubList)) {
-                    let geometry = new maptalks.Marker([this.contextCoordinate.x, this.contextCoordinate.y]).addTo(this.hubLayer);
                     geometry.hide();
                     this._.forEach(hubList, (hub, index) => {
                         if (!this._.has(this.markerMap.hubs, hub.id)) {
@@ -240,7 +247,7 @@ export default {
             marker = new maptalks.Marker(
                 [coordinate.x, coordinate.y], {
                     'symbol': {
-                        markerFile: this.BASE_URI + 'icon-hub-tab.svg',
+                        markerFile: window.CONSTANTS.URL.BASE_IMG + 'icon-hub-tab.svg',
                         markerWidth: this.zoomLv,
                         markerHeight: this.zoomLv,
                     },
@@ -369,10 +376,10 @@ export default {
                     if (!gadgetList[gadget.gid]) {
                         gadgetList[gadget.gid] = {};
                         var name = this.$store.getters.getdetectedGadgetName(gadget.gid);
-                        if (name === 1) {
-                            context += '<li id="' + gadget.gid + '">UNKNOWN</li>';
+                        if (this._.isEmpty(name)) {
+                            context += `<li id="${gadget.gid}">UNKNOWN</li>`;
                         } else {
-                            context += `<li id="` + gadget.gid + `">${name}</li>`;
+                            context += `<li id="${gadget.gid}">${name}</li>`;
                         }
                     } 
                     length = this._.keys(gadgetList).length;
@@ -382,7 +389,7 @@ export default {
                 length += 0;
             }
             marker.setInfoWindow({ // TODO: vue component
-                content: '<ul class="worker_menu">' +
+                content: '<div class="worker_menu">' +
                     '<div class="worker">' +
                     '<div class="workerId">' +
                     '<div class="workerkey">SCANNER</div><div class="hubInfo" title="' + hub.name + '">' + hub.name + '</div></div>' +
@@ -390,12 +397,12 @@ export default {
                     '<div class="movebtn"><button class="hub-move-button">Move</button></div>' +
                     '<div class="removebtn"><button class="hub-remove-button">Remove</button></div>' +
                     '</div>' +
-                    '<ul class="workerInfo">' + context + '</ul>' +
-                    '</ul>',
+                    '<div class="workerInfo">' + context + '</div>' +
+                    '</div>',
                 'width': 350
             });
             marker.openInfoWindow();
-
+            this.hubInfoWindow = marker._infoWindow;
             this._.forEach(gadgets, (gadget) => {
                 if (!this._.isEmpty(this.bcnsData[gadget.gid])) {
                     let gadgetData = this.$store.getters.getdetectedGadgetList[gadget.gid];
@@ -404,6 +411,7 @@ export default {
                     }
                 }
             })
+
             document.getElementsByClassName('hub-move-button')[0].onclick = () => {
                 var str = document.getElementsByClassName('hub-move-button')[0].innerHTML;
                 var text = str.replace("Move", "SetLocation");
@@ -417,7 +425,7 @@ export default {
 
             document.getElementsByClassName('maptalks-close')[0].onclick = () => {
                 // marker.updateSymbol({
-                //     markerFile: this.BASE_URI + 'icon-hub-tab.svg'
+                //     markerFile: window.CONSTANTS.URL.BASE_IMG + 'icon-hub-tab.svg'
                 // })
                 marker.config('draggable', false);
             }
@@ -445,7 +453,7 @@ export default {
                     marker = new maptalks.Marker(
                     customLocation, {
                         'symbol': {
-                            'markerFile': this.BASE_URI + `icon-worker${beacon.tags}` + '-tab.svg',
+                            'markerFile': window.CONSTANTS.URL.BASE_IMG + `icon-worker${beacon.tags}` + '-tab.svg',
                             'markerWidth': this.zoomLv,
                             'markerHeight': this.zoomLv
                         }
@@ -465,7 +473,7 @@ export default {
                         this.$store.commit('GadgetIsnotInMap', beacon.gid);
                     }
                     if (_.isEmpty(beacon.tags)) {
-                        marker.updateSymbol('markerFile', this.BASE_URI + 'icon-alert-tab.svg');
+                        marker.updateSymbol('markerFile', window.CONSTANTS.URL.BASE_IMG + 'icon-alert-tab.svg');
                     }
                     marker.on('click', () => {
                         this.showGadgetInFoWindow(beacon, this.bcnsData[beacon.gid].marker);
@@ -498,7 +506,6 @@ export default {
                 hubName = null,
                 gadgetImageURL = null,
                 context = '';
-
             if (!this._.isEmpty(hubList)) {
                 this._.forEach(hubList, (hub) => {
                     hubName = this.$store.getters.getHub(hub).name; 
@@ -516,28 +523,33 @@ export default {
                     '<div class="scannerData">SCANNER</div>' +
                     '<div class="scannerNameList">' +
                     context +
-                    // '</div>' + '<img class="bcnsImg1" src="' + this.BASE_URI + 'item.png"></img>' +
-                    '</div><div class="loader"><div></div><div></div><div></div><div></div></div>' + '<img class="bcnsImg1" src="' + this.BASE_URI + 'item.png"></img>' +
+                    // '</div>' + '<img class="bcnsImg1" src="' + window.CONSTANTS.URL.BASE_IMG + 'item.png"></img>' +
+                    '</div><div class="loader"><div></div><div></div><div></div><div></div></div>' + '<img class="bcnsImg1" src="' + window.CONSTANTS.URL.BASE_IMG + 'item.png"></img>' +
                     '</div>',
                 'width': 400,
                 'bottom': 11
             });
             marker.openInfoWindow();
+            const el = this._.first(document.getElementsByClassName('loader'));
             this.services.getBeaconImg(gadget.gid, (url) => {
                 let imgElement = document.getElementsByClassName('bcnsImg1');
                 if (!!url && !this._.isEmpty(imgElement)) {
                   imgElement[0].src = url; 
-                  document.getElementsByClassName('loader')[0].remove();
-                } else {
-                    document.getElementsByClassName('loader')[0].remove();
                 }
-            }, (err) => {})
+                if (!!el) {
+                    el.remove(); 
+                }
+            }, (err) => {
+                if (!!el) {
+                    el.remove(); 
+                }
+            })
         },
         setIpcam() {
             this.ipcam = new maptalks.Marker(
                 [127.113049, 37.498568], {
                     'symbol': {
-                        'markerFile': this.BASE_URI + 'icon-ipcam.svg',
+                        'markerFile': window.CONSTANTS.URL.BASE_IMG + 'icon-ipcam.svg',
                         'markerWidth': 50,
                         'markerHeight': 50
                     }
@@ -551,7 +563,7 @@ export default {
             this.ipcam.setInfoWindow({
                 'content': '<div class="bcns">' +
                     '<div class="bcnsInfo"><div class="bcnskey">IPCAM</div></div>' +
-                    '<img class="bcnsImg" src="' + this.BASE_URI + 'item.png"></img>' +
+                    '<img class="bcnsImg" src="' + window.CONSTANTS.URL.BASE_IMG + 'item.png"></img>' +
                     '</div>',
                 'width': 400
             });
@@ -580,40 +592,61 @@ export default {
                 gadgetLocation = {},
                 x = 0,
                 y = 0,
-                gid = null;
+                gid = null,
+                distratio = 0,
+                first = null,
+                second = null,
+                cnt = 0,
+                datax = null,
+                datay = null;
+            
             this._.forEach(hubList, (hub) => {
                 // hub -> {'hid': '', 'gid': '', 'dist': '', '_t': ''}
                 let hubInfo = this.$store.getters.getHub(hub.hid); //TODO: name change
                 gid = hub.gid;
                 if (!!hubInfo && !this._.isEmpty(hubInfo.custom)) {
                     hubLocation[hub.hid] = hubInfo.custom.map_location;
-                    hubLocation[hub.hid].dist = hub.dist;
+                    if (!this.isNumber(hubLocation[hub.hid].dist)) {
+                        hubLocation[hub.hid].dist = hub.dist;
+                    }
                 } else {
                     // console.warn(`There is empty custom in hubid: ${hub.hid}`);
                 }
             });
-            
-            this._.forEach(hubLocation, (hub, hubid) => {
-                if (this.isNumber(hub.dist)) {
-                    let datax = hub.x,
-                        datay = hub.y;
-                    datax = datax + (Math.abs(hub.dist) / 200);
-                    datay = datay + (Math.abs(hub.dist) / 200);
-                    x += datax;
-                    y += datay;
-                } else {
-                    console.warn(`There is no dist data in hubId: ${hubid}`);
-                }
-            })
-            
+            if (this._.size(hubLocation) === 2 ) {
+                this._.forEach(hubLocation, (hub, hubid) => {
+                    if (cnt === 0) {
+                        first = hub;
+                    } else {
+                        second = hub;
+                    }
+                    if (this.isNumber(hub.dist)) {
+                        distratio += hub.dist;
+                    }
+                    cnt++;
+                })
+                x = (first.x * second.dist + second.x * first.dist) / distratio;
+                y = (first.y * second.dist + second.y * first.dist) / distratio;
+            } else {
+                this._.forEach(hubLocation, (hub, hubid) => {
+                    if (this.isNumber(hub.dist)) {
+                        x += hub.x + (Math.abs(hub.dist) / 200);
+                        y += hub.y + (Math.abs(hub.dist) / 200);
+                    } else {
+                        console.warn(`There is no dist data in hubId: ${hubid}`);
+                    }
+                }) 
+                x = x / this._.size(hubLocation);
+                y = y / this._.size(hubLocation);
+            }
+
             if (!this._.isEmpty(hubLocation)) {
                 this._.forEach(hubList, (hub) => {
-                    // this._.forEach(hub, (hubid) => {
                         gadgetLocation = {
                             hid: hub.hid,
                             gid: hub.gid,
-                            x: x / this._.size(hubLocation),
-                            y: y / this._.size(hubLocation)
+                            x: x,
+                            y: y
                         }
                     
                 })
@@ -711,14 +744,14 @@ export default {
             if (this.selectFilteredBeaconsUpdateAfter.length != window.CONSTANTS.MINIMUM_NUMBER.FILTERED_BEACONS) {
                 this._.forEach(window.CONSTANTS.BEACON_NUMBER, (index) => {
                     if (!this._.includes(this.selectFilteredBeaconsUpdateAfter, index)) {
-                       context += '<img id="worker' + index + '" class="workerImg" src="' + this.BASE_URI + 'icon-worker' + index + '.svg">';
+                       context += '<img id="worker' + index + '" class="workerImg" src="' + window.CONSTANTS.URL.BASE_IMG + 'icon-worker' + index + '.svg">';
                     } else {
-                       context += '<img id="worker' + index + '" class="workerImg" src="' + this.BASE_URI + 'icon-worker' + index + '-tab.svg">';
+                       context += '<img id="worker' + index + '" class="workerImg" src="' + window.CONSTANTS.URL.BASE_IMG + 'icon-worker' + index + '-tab.svg">';
                     }
                 })
             } else {
                 this._.forEach(window.CONSTANTS.BEACON_NUMBER, (index) => {
-                    context += '<img id="worker' + index + '" class="workerImg" src="' + this.BASE_URI + 'icon-worker' + index + '-tab.svg">';
+                    context += '<img id="worker' + index + '" class="workerImg" src="' + window.CONSTANTS.URL.BASE_IMG + 'icon-worker' + index + '-tab.svg">';
                 }) 
             }
             context += '</div>' +
@@ -763,7 +796,13 @@ export default {
                         this.bgChangeWorker(index, this.selectFilteredBeaconsUpdateAfter, () => {});
                     }
                 }
-            })
+            });
+        },
+        showLoading() {
+            this.$emit('map-load', true);
+        },
+        hideLoading() {
+            this.$emit('map-load', false);
         }
     },
     computed: {
@@ -821,6 +860,7 @@ html, body {
     margin-left: 60%;
     margin-top: 24%;
     opacity: 0.6;
+    z-index: 4;
 }
 .loader div {
   position: absolute;
@@ -879,12 +919,12 @@ html, body {
 }
 
 .filter_menu {
-    width: 100%;
     background: rgb(42 147 240) !important;
     overflow: hidden;
     border: none !important;
     border-radius: 10px;
-    padding: 10px;
+    padding: 12px;
+    height: 100%;
 }
 
 .controlContainer {
@@ -916,8 +956,10 @@ html, body {
 }
 
 .workerImg {
-    width: 60px;
-    height: 60px;
+    width: 3vw;
+    height: 3vw;
+    min-width: 30px;
+    min-height: 30px;
     border-radius: 50%;
     cursor: pointer;
     margin: 13px;
@@ -932,7 +974,6 @@ html, body {
     margin-top: 15px;
     box-shadow: 3px 3px 1px #aaaaaa;
 }
-
 
 .maptalks-menu {
     overflow: scroll !important;
@@ -1001,6 +1042,7 @@ html, body {
 
 .maptalks-msgBox .maptalks-msgContent {
     padding: 0 !important;
+    height: 100%;
 }
 
 .maptalks-msgBox em.maptalks-ico {
@@ -1009,6 +1051,7 @@ html, body {
 
 .worker_menu {
     width: 100%;
+    height: 250px;
     list-style: none;
     padding: 0;
     text-align: center;
@@ -1019,13 +1062,14 @@ html, body {
 }
 
 .workerInfo {
-    height: 250px;
-    width: 200px;
     margin-left: 150px;
     background-color: white;
     padding-inline-start: 0;
-    overflow: scroll;
     border-top-right-radius: 10px;
+    border-bottom-right-radius: 10px;
+    height: 250px;
+    overflow-x: none;
+    overflow-y: scroll;
 }
 
 .workerId {

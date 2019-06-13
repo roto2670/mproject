@@ -1,22 +1,22 @@
 <template>
 <div id="topContainer">
     <div id="leftContainer">
-      <div id="zoom">
-          <img id="clickbtnPlus" src="static/location/imgs/icon-plus.svg" @click="zoomIn">
-          <img id="clickbtnMinus" src="static/location/imgs/icon-minus.svg" @click="zoomOut">
-      </div>
-      <div id="filter">
-          <img id="clickbtnFilter" src="static/location/imgs/icon-filter.svg" @click="filter">
-      </div>
-    </div>
-    <div id="rightContainer">
-      <div id="upload">
-          <button id="clickbtn" @click="$refs.file.click()">
-              <div id="btntitle">Upload <i class="fa fa-upload"></i></div>
-          </button>
-          <input type="file" id="file" ref="file" @change="onFileChange"
-              accept="image/jpeg, image/png, image/gif" />
-      </div>
+        <div id="zoom">
+            <img id="clickbtnPlus" src="static/location/imgs/icon-plus.svg" @click="zoomIn">
+            <img id="clickbtnMinus" src="static/location/imgs/icon-minus.svg" @click="zoomOut">
+        </div>
+        <div id="filter">
+            <img id="clickbtnFilter" src="static/location/imgs/icon-filter.svg" @click="filter">
+        </div>
+        </div>
+        <div id="rightContainer">
+        <div id="upload">
+            <button id="clickbtn" @click="$refs.file.click()">
+                <div id="btntitle">Upload <i class="fa fa-upload"></i></div>
+            </button>
+            <input type="file" id="file" ref="file" @change="onFileChange"
+                accept="image/jpeg, image/png, image/gif" />
+        </div>
     </div>
 </div>
 </template>
@@ -64,9 +64,9 @@ export default {
 </script>
 
 <style>
-
 #topContainer {
     width: 100%;
+    margin-bottom: 10px;
 }
 
 #leftContainer {
@@ -90,8 +90,10 @@ export default {
     margin: 0 5px;
     border-radius: 100%;
     cursor: pointer;
-    height: 35px;
-    width: 35px;
+    height: 2vw;
+    width: 2vw;
+    min-width: 20px;
+    min-height: 20px;
     border: 1px solid rgb(85, 185, 250);
     background-color: rgb(85, 185, 250);
 }
@@ -100,8 +102,10 @@ export default {
     margin: 0 5px;
     border-radius: 100%;
     cursor: pointer;
-    height: 35px;
-    width: 35px;
+    height: 2vw;
+    width: 2vw;
+    min-width: 20px;
+    min-height: 20px;
     border: 1px solid rgb(85, 185, 250);
     background-color: rgb(85, 185, 250);
 }
@@ -113,12 +117,14 @@ input[type='file'] {
 
 #clickbtn {
     display: inline-block;
-    font-size: 15px;
-    font-weight: 700;
+    font-size: 1vw;
+    font-weight: 600;
     border-radius: 15px;
     cursor: pointer;
-    height: 35px;
-    width: 100px;
+    height: 2vw;
+    width: 6vw;
+    min-width: 80px;
+    min-height: 25px;
     border: 1px solid rgb(85, 185, 250);
     color: rgb(85, 185, 250)
 }
@@ -131,8 +137,10 @@ input[type='file'] {
 #clickbtnFilter {
     border-radius: 100%;
     cursor: pointer;
-    height: 35px;
-    width: 35px;
+     height: 2vw;
+    width: 2vw;
+    min-width: 20px;
+    min-height: 20px;
     margin: 0 5px;
     border: 1px solid rgb(85, 185, 250);
     background-color: rgb(85, 185, 250);
