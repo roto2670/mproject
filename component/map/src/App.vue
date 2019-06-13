@@ -41,7 +41,7 @@ export default {
   z-index: 3;
   opacity: 0.7;
    /*------------ This CSS are required when npm run build -----------*/
-   position: relative;
+  position: relative;
 }
 
 .main-loader {
