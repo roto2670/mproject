@@ -1,184 +1,174 @@
 import axios from 'axios'
+import { fail } from 'assert';
+import * as WebSocket from '@/services/websocket';
 
-// TODO: readyCallback -> sucessCallback, failCallback
-export const setHubLocation = (hub, readyCallback) => {
+const socket = new WebSocket.SocketClient();
+const _getTimestamp = () => new Date() / 1000.0;
+
+export const websocketConnect = (host, port, connectCallback, disconnectCallback, errorCallback) => {
+    socket.connect(host, port, connectCallback, disconnectCallback, errorCallback);
+}
+
+export const websocketDisconnect = () => {
+    socket.disconnect();
+}
+
+export const subscribe = (handlers, callback) => {
+    socket.subscribe(handlers, callback);
+}
+
+export const unsubscribe = () => {
+    socket.unsubscribe();
+}
+
+export const updateData = (data, kind, handler) => { //hub, ipcam, mibsskec 데이터 업데이트
+    socket.call({
+        e: window.CONSTANTS.REQUEST_TYPE.UPDATE_DATA,
+        kwargs: {
+            kind: kind,
+            data: data
+        },
+        _t: _getTimestamp()
+    }, handler);
+}
+
+export const getMapFile = (readyCallback) => {
+    const baseImageUrl = `${ window.CONSTANTS.URL.BASE_IMG }map.png`;
+    axios({
+        url: `${ window.CONSTANTS.URL.CONSOLE }/dashboard/location/view`,
+        method: 'GET',
+        responseType: 'text'
+    }).then(response => {
+        if(response.data) {
+            console.log('Success to Get map image file', response.data);
+            readyCallback(`${ window.location.protocol }//${ window.location.host }${ response.data}`);
+        } else {
+            console.warn('Sorry, Img file does not exist');
+            readyCallback(baseImageUrl);
+        }
+    }).catch(error => {
+        console.warn("Failed to get map file ", error);
+        readyCallback(baseImageUrl);
+    });
+}
+
+export const postMapFile = (file, successCallback, failCallback) => {
+    let formData = new FormData()
+    if(file) {
+        formData.append('file', file)
+        axios
+        .post(`${ window.CONSTANTS.URL.CONSOLE }/dashboard/location/upload`, formData, {
+            headers: {
+                'Content-Type': 'multiart/form-data'
+            }
+        })
+        .then(e => {
+            console.warn('Success to Upload map image file');
+            successCallback(`http://${ window.location.host }${ e.data }`);
+        })
+        .catch(e => {
+            failCallback(e);
+        });
+    } else {
+        failCallback();
+    }
+}
+
+export const updateGadgetData = (beacon, successCallback, failCallback) => {
     axios
-    .post(window.CONSTANTS.URL.CONSOLE + '/dash/hubs/location', {'hub': hub}, {
+    .post(`${ window.CONSTANTS.URL.CONSOLE }/dash/beacons/update`, {'beacon': beacon}, {
         headers: {
-          'Content-Type': 'application/json'
+            'Content-Type': 'application/json'
         }
     })
     .then(e => {
-      readyCallback();
+        successCallback();
     })
     .catch(e => {
-      readyCallback();
+        failCallback();
     });
 }
 
 export const getInfo = (readyCallback) => {
-  axios({
-    url: window.CONSTANTS.URL.CONSOLE + '/dash/location/info',
-    method: 'GET',
-    responseType: 'text' // important
-  }).then(response => {
-    if (!!response.data) {
-      readyCallback(response.data);
+    if (window.CONSTANTS.IS_DEV) {
+        readyCallback({
+            interval: 10,
+            product_id: 'mibsskec',
+            stage: 0
+        });
     } else {
-      console.log('File is not exist')
-      readyCallback();
+        axios({
+            url: `${ window.CONSTANTS.URL.CONSOLE }/dash/location/info`,
+            method: 'GET',
+            responseType: 'text' // important
+        }).then(response => {
+            if (!!response.data) {
+                readyCallback(response.data);
+            } else {
+                console.warn('File is not exist')
+                readyCallback();
+            }
+            }).catch(error => {
+                console.warn("Failed to get info ", error);
+                readyCallback();
+        });
     }
-  }).catch(error => {
-    console.warn("Failed to get info ", error);
-    readyCallback();
-  });
 }
 
-export const getHubs = (readyCallback) => {
-  axios({
-    url: window.CONSTANTS.URL.CONSOLE + '/dash/scanner/list',
-    method: 'GET',
-    responseType: 'text' // important
-  }).then(response => {
-    if (!!response.data) {
-      readyCallback(response.data);
-    } else {
-      console.log('File is not exist')
-      readyCallback([]);
-    }
-  }).catch(error => {
-    console.warn("Failed to get hubs ", error);
-    readyCallback([]);
-  });
+export const getIpcams = (handler) => {
+    socket.call({
+        e: window.CONSTANTS.REQUEST_TYPE.GET_DATA,
+        kwargs: {
+            kind: window.CONSTANTS.PRODUCT_KIND.IPCAM
+        },
+        _t: _getTimestamp()
+    }, handler)
 }
 
-export const getHubListConnectedToGadget = (gadgetId, readyCallback) => {
-  axios({
-    url: window.CONSTANTS.URL.CONSOLE + '/dash/hubs/detected/' + gadgetId,
-    method: 'GET',
-    responseType: 'text' // important
-  }).then(response => {
-    const dataObj = response.data;
-    if (!!dataObj && _.isArray(dataObj.data)) {
-      readyCallback(dataObj);
-    } else {
-      console.log("fail to load connectedGadget");
-      readyCallback({});
-    }
-  }).catch(error => {
-    console.warn("Failed to get hub list connected to gadget ", error);
-    readyCallback({});
-  });
+
+export const getHubs = (handler) => {
+    socket.call({
+        e: window.CONSTANTS.REQUEST_TYPE.GET_DATA,
+        kwargs: {
+            kind: window.CONSTANTS.PRODUCT_KIND.HUB
+        },
+        _t: _getTimestamp()
+    }, handler);
 }
 
-export const getBeacons = (product_id, readyCallback) => {
-  axios({
-    url: window.CONSTANTS.URL.CONSOLE + '/dash/beacons/list/' + product_id,
-    method: 'GET',
-    responseType: 'text' // important
-  }).then(response => {
-    if (!!response.data) {
-      readyCallback(response.data);
-    } else {
-      console.log('beacon is not exist')
-      readyCallback([]);
-    }
-  }).catch(error => {
-    console.warn("Failed to get beacons ", error);
-    readyCallback([]);
-  });
+export const getBeacons = (product_id, handler) => {
+    socket.call({
+        e: window.CONSTANTS.REQUEST_TYPE.GET_DATA,
+        kwargs: {
+            kind: product_id
+        },
+        _t: _getTimestamp()
+    }, handler);
 }
 
-export const getDetectBeaconList = (hubId, successCallback, failCallback) => {
-  axios({
-    url: window.CONSTANTS.URL.CONSOLE + '/dash/beacons/detected/' + hubId,
-    method: 'GET',
-    responseType: 'text' // important
-  }).then(response => {
-    const dataObj = response.data;
-    if (!!dataObj && _.isArray(dataObj.data)) {
-      successCallback(dataObj);
-    } else {
-      failCallback('not exist');
-    }
-  }).catch(error => {
-    failCallback(error);
-  });
+export const getDetectBeaconList = (handler) => { //TODO: 한번에 비콘이 몇개씩 날라오는지 결정해야함
+    socket.call({
+        e: window.CONSTANTS.REQUEST_TYPE.GET_DETECTED_LIST,
+        _t: _getTimestamp()
+    }, handler)
 }
 
-export const getGadget = (gadgetId, successCallback, failCallback) => { // TODO: force reload?
-  axios({
-    url: window.CONSTANTS.URL.CONSOLE + '/dash/beacons/' + gadgetId,
-    method: 'GET',
-    responseType: 'text'
-  }).then(response => {
-    if (response.data) {
-      successCallback(response.data);
-  } else {
-      failCallback(`Failed to get gadget, id: ${gadgetId}`); // TODO: server error
-    }
-  }).catch(error => {
-    failCallback(error);
-  });
+export const openIpcamStream = (ipcamId, handler) => {
+    socket.call({
+        e: window.CONSTANTS.REQUEST_TYPE.OPEN_STREAM,
+        kwargs: {
+            ids: ipcamId
+        },
+        _t: _getTimestamp()
+    }, handler)
 }
 
-export const getMapFiles = (readyCallback) => {
-  const baseImageUrl = window.CONSTANTS.URL.BASE_IMG + 'map.png';
-  axios({
-    url: window.CONSTANTS.URL.CONSOLE + '/dashboard/location/view',
-    method: 'GET',
-    responseType: 'text'
-  }).then(response => {
-    if(response.data) {
-      console.log('Success to Get map image file')
-      readyCallback(window.location.protocol + '//' + window.location.host + response.data);
-    } else {
-      console.log('Sorry, Img file does not exist');
-      readyCallback(baseImageUrl);
-    }
-  }).catch(error => {
-    console.warn("Failed to get map file ", error);
-    readyCallback(baseImageUrl);
-  });
-}
-
-export const getBeaconImg = (gadgetId, successCallback, failCallback) => {
-  var target = window.CONSTANTS.URL.YOUR_CLOUD + '/mib/v1/sense/' + gadgetId;
-  axios({
-    method: 'GET',
-    headers: {
-        // 'Src': accountId + '.'
-    },
-    url: target
-  }).then(res => {
-    if (res && res.data) {
-      successCallback(res.data.v.img_url);
-    } else {
-      failCallback();
-    }
-  }).catch(error => {
-    failCallback(error);
-  });
-}
-
-export const postMapFile = (file, successCallback, failCallback) => {
-  let formData = new FormData()
-  if(file) {
-    formData.append('file', file)
-    axios
-      .post(window.CONSTANTS.URL.CONSOLE + '/dashboard/location/upload', formData, {
-          headers: {
-              'Content-Type': 'multiart/form-data'
-          }
-      })
-      .then(e => {
-          console.log('Success to Upload map image file');
-          successCallback('http://' + window.location.host + e.data);
-      })
-      .catch(e => {
-        failCallback(e);
-      });
-  } else {
-    failCallback();
-  }
+export const closeIpcamStream = (ipcamId, handler) => {
+    socket.call({
+        e: window.CONSTANTS.REQUEST_TYPE.CLOSE_STREAM,
+        kwargs: {
+            ids: ipcamId
+        },
+        _t: _getTimestamp()
+    }, handler)
 }
