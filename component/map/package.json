@@ -11,11 +11,17 @@
     "@vue/cli": "^3.5.5",
     "axios": "^0.18.0",
     "core-js": "^2.6.5",
+    "hls.js": "^0.12.4",
     "maptalks": "^0.43.0",
+    "socket.io": "^2.2.0",
+    "socket.io-client": "^2.2.0",
+    "sweetalert2": "^8.13.0",
+    "uws": "^100.0.1",
     "vue": "^2.6.6",
     "vue-cli": "^2.9.6",
     "vue-lodash": "^2.0.2",
-    "vuex": "^3.0.1"
+    "vuex": "^3.0.1",
+    "websocket": "^1.0.29"
   },
   "devDependencies": {
     "@vue/cli-plugin-babel": "^3.5.0",

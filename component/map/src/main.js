@@ -4,19 +4,20 @@ import axios from 'axios'
 import VueLodash from 'vue-lodash'
 import 'maptalks/dist/maptalks.css'
 import store from './store';
+import sweetalert from 'sweetalert2';
 import '@/services/constant.js';
 import * as services from '@/services/services.js';
-import * as beaconDetector from '@/services/beacon-detector.js';
+import * as SocketClient from '@/services/websocket.js';
 
 Vue.prototype.$http = axios;
 Vue.prototype.services = services;
-Vue.prototype.beaconDetector = beaconDetector;
+Vue.prototype.sweetbox = sweetalert;
 Vue.config.productionTip = false;
 
 export const EventBus = new Vue({});
 
 Vue.use(VueLodash);
 new Vue({
-  store,
-  render: h => h(App)
+    store,
+    render: h => h(App)
 }).$mount('#locationTracking')
