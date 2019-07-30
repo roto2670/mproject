@@ -30,9 +30,7 @@ export default {
         websocketConnect() {
             let url = window.location.hostname;
             if (window.CONSTANTS.IS_DEV) {
-                // url = '192.168.0.13';
-                // url = '127.0.0.1';
-                // url = '192.168.1.136'
+                // url = '192.168.1.171';
                 url = '192.168.0.15'
             }
             this.services.websocketConnect(url, 5555, () => {

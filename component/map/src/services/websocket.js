@@ -167,6 +167,9 @@ export class SocketClient {
                 case window.CONSTANTS.EVENT_TYPE.REFRESH:
                     this._subscribeHandlers.refresh(data);
                 break;
+                case window.CONSTANTS.EVENT_TYPE.REOPEN_STREAM:
+                    this._subscribeHandlers.reopenStream(data);
+                break;
             }
         }
     }

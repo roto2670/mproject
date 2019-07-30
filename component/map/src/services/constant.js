@@ -1,6 +1,6 @@
 window.CONSTANTS = {
     IS_DEV: false,
-    IS_MOCK: true,
+    IS_MOCK: false,
     HUB_VIEW : {
         NOT_IN_MAP : 0,
         IN_MAP : 1
@@ -71,7 +71,8 @@ window.CONSTANTS = {
         GET_DETECTED_LIST: "detected",
         HUB_ONLINE: "on",
         HUB_OFFLINE: "off",
-        REFRESH: "refresh"
+        REFRESH: "refresh",
+        REOPEN_STREAM: 'reopen_stream'
     },
     PRODUCT_KIND: {
         HUB: "hub",

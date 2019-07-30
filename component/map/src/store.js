@@ -102,7 +102,6 @@ export default new Vuex.Store({
 						name: data.name,
 						custom: _.isObject(data.custom) ? data.custom : {},
 						tags: data.tags,
-						view: 0,
 						account_id: data.account_id,
 						_t : new Date() / 1000
 					}
@@ -157,7 +156,10 @@ export default new Vuex.Store({
 		},
 		updateGadgetData(state, payload) {
 			if (!!state.gadgets[payload.id]) {
-				state.gadgets[payload.id] = payload
+				_.extend(state.gadgets[payload.id], payload);
+			}
+			if (!!state.detectedgadgets[payload.id]) {
+				_.extend(state.detectedgadgets[payload.id], payload);
 			}
 		},
 		removeGadgetLocation(state, gid) {
@@ -172,16 +174,6 @@ export default new Vuex.Store({
 			if (!!gadget && !!detectedGadget) {
 				gadget.custom.map_location = _.pick(payload, ['x', 'y'])
 				detectedGadget.custom.map_location = _.pick(payload, ['x', 'y'])
-			}
-		},
-		GadgetIsInMap(state, payload) {
-			if (state.detectedgadgets[payload]) {
-				state.detectedgadgets[payload].view = window.CONSTANTS.HUB_VIEW.IN_MAP
-			}
-		},
-		GadgetIsnotInMap(state, payload) {
-			if (!_.isEmpty(state.detectedgadgets[payload])) {
-				state.detectedgadgets[payload].view = window.CONSTANTS.HUB_VIEW.NOT_IN_MAP
 			}
 		},
 		removeGadget(state, gid) {
