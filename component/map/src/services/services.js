@@ -1,6 +1,6 @@
 import axios from 'axios'
-import { fail } from 'assert';
 import * as WebSocket from '@/services/websocket';
+import { read } from 'fs';
 
 const socket = new WebSocket.SocketClient();
 const _getTimestamp = () => new Date() / 1000.0;
@@ -74,6 +74,25 @@ export const postMapFile = (file, successCallback, failCallback) => {
     }
 }
 
+export const postAlarmId = (id, successCallback, failCallback) => {
+    axios({
+        url: `${ window.CONSTANTS.URL.TEST.URL }/pa/alarm/stream`,
+        method: 'POST',
+        headers: {
+            'content-type': 'json'
+        },
+        data:id
+    }).then(response => {
+        if (response.data) {
+            successCallback();
+        } else {
+            failCallback();
+        }
+    }).catch(error => {
+        failCallback();
+    })
+}
+
 export const getInfo = (readyCallback) => {
     if (window.CONSTANTS.IS_DEV) {
         readyCallback({
@@ -88,6 +107,7 @@ export const getInfo = (readyCallback) => {
             method: 'GET',
             responseType: 'text' // important
         }).then(response => {
+            console.log("response", response);
             if (!!response.data) {
                 readyCallback(response.data);
             } else {
@@ -132,6 +152,33 @@ export const getBeacons = (product_id, handler) => {
     }, handler);
 }
 
+export const getSpeakers = (handler) => { //TODO: name change
+    socket.call({
+        e: window.CONSTANTS.REQUEST_TYPE.GET_DATA,
+        kwargs: {
+            kind: window.CONSTANTS.PRODUCT_KIND.SPEAKER
+        },
+        _t: _getTimestamp()
+    }, handler);
+}
+
+export const getAlarms = (handler) => {
+    socket.call({
+        e: window.CONSTANTS.REQUEST_TYPE.GET_ALARM_LIST,
+        _t: _getTimestamp()
+    }, handler);
+}
+
+export const setAlarms = (data, handler) => {
+    socket.call({
+        e: window.CONSTANTS.REQUEST_TYPE.SET_ALARM,
+        kwargs: [{
+            name: data.name,
+            data: data.file
+        }],
+        _t: _getTimestamp()
+    }, handler);
+}
 export const getDetectBeaconList = (handler) => { //TODO: 한번에 비콘이 몇개씩 날라오는지 결정해야함
     socket.call({
         e: window.CONSTANTS.REQUEST_TYPE.GET_DETECTED_LIST,
@@ -157,4 +204,43 @@ export const closeIpcamStream = (ipcamId, handler) => {
         },
         _t: _getTimestamp()
     }, handler)
+}
+
+export const getGroupData = (successCallback, failCallback) => {
+    axios({
+        url: `${ window.CONSTANTS.URL.CONSOLE }/pa/group/list`,
+        method: 'GET'
+    }).then(response => {
+        if(response.data) {
+            console.log('Success to get group data', response.data);
+            successCallback(response.data);
+        } else {
+            console.warn('Failed to get group data');
+            failCallback();
+        }
+    }).catch(error => {
+        console.warn("Failed to get group data ", error);
+        failCallback();
+    });
+}
+
+export const getAlarmList = (successCallback, failCallback) => {
+    axios({
+        url: `${ window.CONSTANTS.URL.CONSOLE }/pa/alarm/list`,
+        method: 'GET',
+        headers: {
+            'content-type': 'json'
+        }
+    }).then(response => {
+        if(response.data) {
+            console.log('Success to get alarm data', response.data);
+            successCallback(response.data);
+        } else {
+            console.warn('Failed to get alarm data');
+            failCallback();
+        }
+    }).catch(error => {
+        console.warn("Failed to get alarm data ", error);
+        failCallback();
+    });
 }

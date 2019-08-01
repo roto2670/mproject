@@ -2,22 +2,20 @@
 <div class="main-container">
     <div :id="id" v-if="isEmptyUrl">
     </div>
+    <SpeakerInfoWindow :item="speakerInfoWindowItems" :isForGroup="false" v-if="isShowingInfoWindow" @select-close="handleInfoWindowClose"></SpeakerInfoWindow>
 </div>
 </template>
 
 <script>
     import * as maptalks from 'maptalks'
     import * as beaconDetector from '@/services/beacon-detector';
-    import BcnCountArea from '@/components/bcncountArea';
+    import SpeakerInfoWindow from '@/components/SpeakerInfoWindow';
     import util from '@/services/util';
     import { EventBus } from "../main";
     import { setTimeout, setInterval } from 'timers';
     import Hls from 'hls.js';
     export default {
         name: 'Map',
-        components: {
-            BcnCountArea
-        },
         props: {
             info: {
                 type: Object,
@@ -46,15 +44,20 @@
                 lostTagCamLayer: '',
                 workerLayer: [],
                 lostTagWorkerLayer: '',
+                speakerLayer: [],
+                noGroupSpeakerkLayer: '',
+                speakerInfoWindowItems: null,
+                alarmData: {},
                 ipcam: '',
                 ipcams: [],
                 contextCoordinate: null,
                 infoWindow: null,
                 hubInfoWindow: null,
-                ipcamFilterOn: 0,
-                hubSetIntervalData: {},
-                ipcamSetIntervalData: {},
+                ipcamInfoWindow: null,
+                speakerInfoWindow: null,
                 checkedMoiFilter: false,
+                checkSpeakerFilter: false,
+                setIntervalData: {},
                 gadgetCount: {},
                 gadgetInfoWindow: null,
                 gadgetInfoNumber: this._.keys(window.CONSTANTS.GADGET_INFO),
@@ -64,7 +67,8 @@
                 ipcamStreamData: {},
                 markerMap: {
                     hubs: {},
-                    cams: {}
+                    cams: {},
+                    speakers: {}
                 },
                 tags: {
                     xll: ['1', '2', '8'],
@@ -72,6 +76,9 @@
                     l: ['4', '5', '6', '7', '9', '11']
                 }
             }
+        },
+        components: {
+            SpeakerInfoWindow
         },
         methods: {
             initloadMap() {
@@ -122,6 +129,7 @@
                         })
                         this.lostTagWorkerLayer = new maptalks.VectorLayer('vector20').addTo(this.map);
                         this.lostTagWorkerLayer.setZIndex(1);
+                        this.noGroupSpeakerkLayer = new maptalks.VectorLayer('speakerVector4').addTo(this.map);
                         this.hubPortalLayer.setZIndex(3);
                         this.hubAT1Layer.setZIndex(3);
                         this.hubAT2Layer.setZIndex(3);
@@ -136,7 +144,6 @@
                         this.hideLoading();
                     });
                     this.map.on('zoomend', (e) => {
-                        console.log("zoomLevel", this.map.getZoom());
                         this.zoomLv = 50 * (this.map.getZoom() / 11);
                         let markerWidth = this.zoomLv,
                             markerHeight = this.zoomLv;
@@ -153,6 +160,14 @@
                                 markerHeight: markerHeight
                             })
                         });
+
+                        this._.forEach(this.markerMap.speakers, (marker) => {
+                            marker.updateSymbol({
+                                markerWidth: markerWidth,
+                                markerHeight: markerHeight
+                            })
+                        });
+
                         
                         // this._.forEach(this.bcnsData, (beacon) => {
                         //     if (beacon.marker.isVisible()) {
@@ -165,6 +180,9 @@
                         //     }
                         // });
                     });
+                    this.map.on('click', (e) => {
+                        this.speakerInfoWindowItems = {};
+                    })
                 });
             },
             initBeaconLocationHandler(info) {
@@ -185,8 +203,9 @@
                         'items': `<div class="custom_menu"><div class="plus-symbol"></div>
                             <div class="deviceText">Device</div><div class="addText">ADD</div>
                             <div class="additem">
-                            <div class="scanneritem">Add SCANNER</div>
-                            <div class="camitem">Add IPCAM</div></div></div>`,
+                            <div id="scanneritem">Add SCANNER</div>
+                            <div id="camitem">Add IPCAM</div>
+                            <div id="speakeritem">Add SPEAKER</div></div></div>`,
                         dx: -75,
                         animation: 'fade'
                     };
@@ -196,14 +215,76 @@
                         this.map.closeMenu();
                         this.map.setMenu(this.contextMenuOption).openMenu(e.coordinate);
     
-                        document.getElementsByClassName('scanneritem')[0].onclick = () => {
-                            this.handleAddHub(e.coordinate);
+                        document.getElementById('scanneritem').onclick = () => {
+                            this.handleAddItem('hub', e.coordinate);
                         }
     
-                        document.getElementsByClassName('camitem')[0].onclick = () => {
-                            this.handleAddIPCam(e.coordinate);
+                        document.getElementById('camitem').onclick = () => {
+                            this.handleAddItem('ipcam', e.coordinate);
+                        }
+    
+                        document.getElementById('speakeritem').onclick = () => {
+                            this.handleAddItem('speaker', e.coordinate);
                         }
                     });
+                }
+            },
+            handleAddItem(kind, coordinate) {
+                this.showItemList(kind, coordinate, (id) => {
+                    this.map.closeMenu(id);
+                    let drawMethod = null;
+                    if (kind === window.CONSTANTS.PRODUCT_KIND.HUB) {
+                        drawMethod = this.drawHub;
+                    } else if (kind === window.CONSTANTS.PRODUCT_KIND.IPCAM) {
+                        drawMethod = this.drawIpam;
+                    } else if (kind === window.CONSTANTS.PRODUCT_KIND.SPEAKER)  {
+                        drawMethod = this.drawSpeaker;
+                    }
+                    if (!!drawMethod) {
+                        drawMethod(id, coordinate, false);
+                    }
+                });
+            },
+            showItemList(kind, coordinate, selectedCallback) {
+                let list = null,
+                    kindName = '',
+                    markers = {};
+                if (kind === window.CONSTANTS.PRODUCT_KIND.HUB) {
+                    list = this.$store.getters.getHubs;
+                    kindName = 'SCANNER';
+                    markers = this.markerMap.hubs;
+                } else if (kind === window.CONSTANTS.PRODUCT_KIND.IPCAM) {
+                    list = this.$store.getters.getIpCams;
+                    kindName = 'IPCAM';
+                    markers = this.markerMap.cams;
+                } else if (kind === window.CONSTANTS.PRODUCT_KIND.SPEAKER)  {
+                    list = this.$store.getters.getSpeakers;
+                    kindName = 'SPEAKER';
+                    markers = this.markerMap.speakers;
+                }
+                const context = `<div class="custom_menu"><div class="plus-symbol"></div>
+                                <div class="addText"${ kindName }</div>
+                                <div class="additem"></div></div>`;
+                this.map.setMenu({
+                    'custom': true,
+                    'items': context
+                }).openMenu(coordinate);
+    
+                this._.forEach(list, (item, index) => {
+                    if (!this._.has(markers, item.id)) {
+                        let childElement = document.createElement('div');
+                        childElement.id = `item${ index }`;
+                        childElement.innerText = item.name;
+                        childElement.onclick = () => {
+                            selectedCallback(item.id);
+                        }
+                        document.getElementsByClassName("additem")[0].appendChild(childElement);
+                    }
+                });
+                if (!!!document.getElementsByClassName("additem")[0].children.length) {
+                    let childElement = document.createElement('div');
+                    childElement.innerText = `No ${ kindName }`;
+                    document.getElementsByClassName("additem")[0].appendChild(childElement);
                 }
             },
             loadDetectedGadgets() {
@@ -212,9 +293,9 @@
                         this._handleDetectedGadgets(list);
                     })
                     
-                    this._.forEach(this.markerMap.hubs, (marker, hid) => {
-                        this.countGadgetOnHub(hid);
-                    })
+                    // this._.forEach(this.markerMap.hubs, (marker, hid) => { //TODO: 디텍트 된 비콘들의 개수를 허브 위치에 숫자로 표현 가능
+                    //     this.countGadgetOnHub(hid);
+                    // })
                     console.log("Sucess to detect gadgets");
                 });
             },
@@ -224,21 +305,22 @@
                 const gadgets = this.$store.getters.getGadgetListDetectedByOneHub(hid);
                 if (!!hubMarker) {
                     if (this.isShowingByStage(window.CONSTANTS.USER_STAGE.SK_ADMIN)) {
-                        dy = -25;
+                        dy = 25;
                     } else {
-                        dy = -45;   
+                        dy = 25;
                     }
-                    
-                    hubMarker.updateSymbol({
-                        textName: this._.size(gadgets),
-                        textWeight : 'bold',
-                        textFill: '#fff',
-                        textHaloFill : '#00BFFF',
-                        textHaloRadius : 4,
-                        textSize : 20,
-                        textWrapCharacter : '\n',
-                        textDy: dy
-                    })
+                    if (this._.size(gadgets) > 1) {
+                        hubMarker.updateSymbol({
+                            textName: this._.size(gadgets),
+                            textWeight : 'bold',
+                            textFill: '#fff',
+                            textHaloFill : '#00BFFF',
+                            textHaloRadius : 4,
+                            textSize : 15,
+                            textWrapCharacter : '\n',
+                            textDy: dy
+                        })
+                    }
                 }
             },
             loadItems(info) {
@@ -267,7 +349,47 @@
                         this.$store.commit('addIpcam', ipcam);
                     });
                     this.drawIpCams(ipcams, true);
-                })
+                });     
+
+                // this.services.getGroupData(groups => { //TODO: group에 따른 speaker layer을 생성할 수 있게 함
+                //     console.log("Sucess to get Groups", groups);
+                //     this._.forEach(groups, group => {
+                //         this.addGroupLayer(group.id);
+                //         this.$store.commit('addGroup', group);
+                //     })
+
+                //     this.services.getSpeakers(speakers => {
+                //         console.log("Sucesss to get Speakers", speakers);
+                //         this._.forEach(speakers, speaker => {
+                //             this.$store.commit('addSpeaker', speaker);
+                //         })
+                //         this.drawSpeakers(speakers);
+                //     });
+                // }, (error) => {
+                //     console.log("Failed to get Groups", error);
+                // });
+
+                this.services.getSpeakers(speakers => {
+                    console.log("Sucesss to get Speakers", speakers);
+                    this._.forEach(speakers, speaker => {
+                        this.$store.commit('addSpeaker', speaker);
+                    })
+                    this.drawSpeakers(speakers);
+                });
+
+                // this.services.getAlarmList(alarms => {
+                //     console.log("Sucess to get Alarms", alarms);
+                //     this._.forEach(alarms, (alarm) => {
+                //         this.$store.commit('addAlarms', alarm);
+                //     })
+                // }, (error) => {
+                //     console.log("Failed to get Alarms", error);
+                // });
+            },
+            addGroupLayer(id) {
+                if (!this._.has(this.speakerLayer, id)) {
+                    this.speakerLayer[id] = new maptalks.VectorLayer(`speaker${ id }vector`).addTo(this.map);
+                }
             },
             drawItems() {
                 const hubs = this.$store.getters.getHubs,
@@ -317,54 +439,8 @@
                 }
                 this.drawIpCams(ipcams, true);
             },
-            handleAddHub(coordinate) {
-                this.showhubList(coordinate, (selectedId) => { //TODO 지우기
-                    this.map.closeMenu(selectedId);
-                    let hubData = this.$store.getters.getHub(selectedId);
-                    hubData.custom.map_location = {
-                        x: coordinate.x,
-                        y: coordinate.y
-                    }
-                    this.$store.commit('updateHubData', hubData);
-                    this.drawHub(selectedId, this.contextCoordinate, false);
-                });
-            },
-            _updateHubData(hubDatas, resultCallback) {
-                // console.log("update hub data");
-                this.services.updateData(hubDatas, window.CONSTANTS.PRODUCT_KIND.HUB, (failedList) => {
-                    resultCallback(failedList);
-                });
-            },
-            _updateGadgetData(gadget, successCallback) {
-                this.services.updateData(gadget, window.CONSTANTS.PRODUCT_KIND.MIBSSKEC, successCallback);
-            },
-            showhubList(coordinate, selectedCallback) {
-                const hubList = this.$store.getters.getHubs;
-                let context = `<div class="custom_menu"><div class="plus-symbol"></div>
-                                <div class="addText">Scanner</div>
-                                <div class="additem"></div></div>`;
-                this.map.setMenu({
-                    'custom': true,
-                    'items': context
-                }).openMenu(coordinate);
-    
-                this._.forEach(hubList, (hub, index) => {
-                    if (!this._.has(this.markerMap.hubs, hub.id)) {
-                        let childElement = document.createElement('div');
-                        childElement.id = `hubitem${ index }`;
-                        childElement.innerText = hub.name;
-                        childElement.onclick = () => {
-                            selectedCallback(hub.id);
-                        }
-                        document.getElementsByClassName("additem")[0].appendChild(childElement);
-                    }
-                });
-                if (!!!document.getElementsByClassName("additem")[0].children.length) {
-                    let childElement = document.createElement('div');
-                    childElement.className = 'noScanner';
-                    childElement.innerText = 'No Scanner';
-                    document.getElementsByClassName("additem")[0].appendChild(childElement);
-                }
+            handleInfoWindowClose() {
+                this.speakerInfoWindowItems = {};
             },
             drawHub(hubId, coordinate, isUpdatedData) {
                 let marker = null,
@@ -419,7 +495,7 @@
                     }
                     // this.markerMap.hubs[hubId] = marker;
     
-                    if (this.isShowingByStage(window.CONSTANTS.USER_STAGE.SK_ADMIN)) { //TODO
+                    if (this.isShowingByStage(window.CONSTANTS.USER_STAGE.SK_ADMIN)) {
                         if (!hubData.status) {
                             marker.updateSymbol({
                                 markerFile: `${ window.CONSTANTS.URL.BASE_IMG }icon-hub1.svg`
@@ -432,7 +508,7 @@
                         this.$store.commit('updateHubData', hubData);
                         
                         if (!isUpdatedData) {
-                            this._updateHubData([hubData], (failedList) => {
+                            this._updateData([hubData], 'hub', (failedList) => {
                                 if (!this._.isEmpty(failedList)) {
                                     this.sweetbox.fire('Sorry, Hub location update failed');
                                 } else {
@@ -466,8 +542,8 @@
                             this.hasSameGadget();
                             this.drawWorkers(hubId, hubMarkerLocation);
     
-                            if (!this._.has(this.hubSetIntervalData, hubId)) {
-                                this.setHubTimeOut(hubId);
+                            if (!this._.has(this.setIntervalData, hubId)) {
+                                this.setLocationTimeOut(hubId, 'hub');
                             }
 
                             if (!!marker._menuOptions) {
@@ -485,9 +561,9 @@
                             }
                         }
                     } else {
-                        marker.on('click', () => {
-                            this.showNormalHubInfoWindow(hubId, marker);
-                        });
+                        // marker.on('click', () => {       //TODO: 비콘리스트만 나오는 인포창 생성
+                        //     this.showNormalHubInfoWindow(hubId, marker);
+                        // });
                     } 
 
                     if (this.isShowingByStage(window.CONSTANTS.USER_STAGE.SK_NORMAL)) {
@@ -497,17 +573,23 @@
                     } 
                 }
             },
-            setHubTimeOut(hid) {
-                this.hubSetIntervalData[hid] = setTimeout(() => {
-                    var hubLocation = this.$store.getters.getHub(hid),
-                        marker = this.markerMap.hubs[hid];
-                    if (this._.has(hubLocation.custom, "map_location")) {
-                        this._updateHubData([hubLocation], (failedIdList) => {
-                            if (!this._.isEmpty(failedIdList)) {
-                                this.sweetbox.fire('Sorry, Hub location update failed');
-                            } else {
-                                delete this.hubSetIntervalData[hid];
-                            }
+            setLocationTimeOut(id, kind) {
+                this.setIntervalData[id] = setTimeout(() => {
+                    let data = null,
+                        marker = null;
+                    if (kind === window.CONSTANTS.PRODUCT_KIND.HUB) {
+                        data = this.$store.getters.getHub(id);
+                        marker = this.markerMap.hubs[id];
+                    } else if (kind === window.CONSTANTS.PRODUCT_KIND.IPCAM) {
+                        data = this.$store.getters.getIpCam(id);
+                        marker = this.markerMap.cams[id];
+                    } else if (kind === window.CONSTANTS.PRODUCT_KIND.SPEAKER) {
+                        data = this.$store.getters.getSpeaker(id);
+                        marker = this.markerMap.speakers[id];
+                    }
+                    if (this._.has(data.custom, "map_location")) {
+                        this._updateData([data], kind, (failedIdList) => {
+                            delete this.setIntervalData[id];
                         });
                     }
                 }, 3000);
@@ -523,7 +605,7 @@
                         delete hub.custom.map_location;
                         delete hub.custom.is_counted_hub;
                         delete this.drawnGadgetList[hubId];
-                        this._updateHubData([hub], (failedIdList) => {
+                        this._updateData([hub], 'hub', (failedIdList) => {
                             if (!this._.isEmpty(failedIdList)) {
                                 this.sweetbox.fire('Sorry, Hub location update failed');
                             } else {
@@ -611,7 +693,7 @@
                                 markerFile: fileUrl
                             });
                         }
-                        this._updateHubData([hubData], (failedIdList) => {
+                        this._updateData([hub], 'hub', (failedIdList) => {
                             if (!this._.isEmpty(failedIdList)) {
                                 this.sweetbox.fire('Sorry, Hub location update failed');
                             } else {
@@ -975,44 +1057,6 @@
                     });
                 }
             },
-            handleAddIPCam(coordinate) {
-                this.showIpCamList(coordinate, (selectedId) => {
-                    this.map.closeMenu(selectedId);
-                    this.drawIpcam(selectedId, this.contextCoordinate, false);
-                })
-            },
-            showIpCamList(coordinate, selectedCallback) {
-                const camList = this.$store.getters.getIpCams;
-                let context = `<div class="custom_menu"><div class="plus-symbol"></div>
-                                <div class="addText">IPCAM</div>
-                                <div class="additem"></div></div>`;
-                this.map.setMenu({
-                    'custom': true,
-                    'items': context
-                }).openMenu(coordinate);
-                if (!this._.isEmpty(camList)) {
-                    this._.forEach(camList, (cam, index) => {
-                        if (!this._.has(this.markerMap.cams, cam.id)) {
-                            if (this._.first(cam.tags) !== "2") {
-                                // draw only no location cams.
-                                let childElement = document.createElement('div');
-                                childElement.id = `camitem${ index }`;
-                                childElement.innerText = cam.name;
-                                childElement.onclick = () => {
-                                    selectedCallback(cam.id);
-                                }
-                                document.getElementsByClassName("additem")[0].appendChild(childElement);
-                            }
-                        }
-                    });
-                }
-                if (!!!document.getElementsByClassName("additem")[0].children.length) {
-                    let childElement = document.createElement('div');
-                    childElement.className = 'noIpcam';
-                    childElement.innerText = 'No Ipcam';
-                    document.getElementsByClassName("additem")[0].appendChild(childElement);
-                }
-            },
             drawIpCams(camList, isUpdatedData) {
                 this._.forEach(camList, (ipcam) => {
                     if (!this._.isEmpty(ipcam.custom) && !this._.isEmpty(ipcam.custom.map_location)) {
@@ -1100,8 +1144,8 @@
                                 }
                                 this.$store.commit('updateIpcamData', ipcamData);
     
-                                if (!this._.has(this.ipcamSetIntervalData, ipcamId)) {
-                                    this.setIpcamTimeOut(ipcamId);
+                                if (!this._.has(this.setIntervalData, ipcamId)) {
+                                    this.setLocationTimeOut(ipcamId, 'ipcam');
                                 }
                                 if (!!marker._menuOptions) {
                                     marker.closeMenu();
@@ -1115,7 +1159,7 @@
                                 ipcamData.custom.is_visible_moi = false;
                             }
                             if (!isUpdatedData) {
-                                this._updateIpcamData([ipcamData], (failedList) => {
+                                this._updateData([ipcamData], 'ipcam',(failedList) => {
                                     if (!this._.isEmpty(failedList)) {
                                         this.sweetbox.fire('Sorry, Ipcam location update failed');
                                     }
@@ -1126,20 +1170,94 @@
                     }
                 }
             },
-            setIpcamTimeOut(ipcamId) {
-                this.ipcamSetIntervalData[ipcamId] = setTimeout(() => {
-                    var ipcamLocation = this.$store.getters.getIpCam(ipcamId),
-                        marker = this.markerMap.cams[ipcamId];
-                    if (this._.has(ipcamLocation.custom, "map_location")) {
-                        this._updateIpcamData([ipcamLocation], (failedIdList) => {
-                            if (!this._.isEmpty(failedIdList)) {
-                                this.sweetbox.fire('Sorry, Ipcam location update failed');
-                            } else {
-                                delete this.ipcamSetIntervalData[ipcamId];
-                            }
-                        });
+            drawSpeakers(speakerList, isUpdatedData) {
+                this._.forEach(speakerList, (speaker) => {
+                    if (!this._.isEmpty(speaker.custom) && !this._.isEmpty(speaker.custom.map_location)) {
+                        this.drawSpeaker(speaker.id, speaker.custom.map_location, isUpdatedData);
                     }
-                }, 3000);
+                });
+            },
+            drawSpeaker(speakerId, coordinate, isUpdatedData) {
+                // console.debug('Try draw ipcam, id: ', ipcamId);
+                let marker = null,
+                    speakerData = this.$store.getters.getSpeaker(speakerId),
+                    groupData = this.$store.getters.getGroupList;
+                //TODO
+                this.zoomLv = 50 * (this.map.getZoom() / 11);
+                let fileUrl = `${ window.CONSTANTS.URL.BASE_IMG }speaker.svg`; // if changed, declare const
+    
+                if (this._.has(this.markerMap.speakers, speakerId)) {
+                    if (!(this.markerMap.speakers[speakerId]._coordinates.x === coordinate.x) && !(this.markerMap.speakers[speakerId]._coordinates.y === coordinate.y)) {
+                        marker = this.markerMap.speakers[speakerId];
+                        marker.removeInfoWindow();
+                        marker.setCoordinates(coordinate);
+                        this.markerMap.speakers[speakerId] = marker;
+                    }
+                } else {
+                    marker = new maptalks.Marker(
+                        [coordinate.x, coordinate.y], {
+                            'symbol': {
+                                markerFile: fileUrl,
+                                markerWidth: this.zoomLv,
+                                markerHeight: this.zoomLv,
+                            },
+                            draggable: this.isShowingByStage(window.CONSTANTS.USER_STAGE.SK_ADMIN)
+                        }
+                    )
+                    let tagData = this._.first(speakerData.tags),
+                    customLayer = null;
+                    // console.log(`this.speaker${ tagData }Layer`);
+                    if (!!tagData && this._.has(groupData, tagData)) {
+                        customLayer = this.speakerLayer[tagData];
+                    } else {
+                        customLayer = this.noGroupSpeakerkLayer;
+                    }
+                    marker.addTo(customLayer);
+                    marker.on('click', (e) => {
+                        e.domEvent.stopPropagation();
+                        this.speakerInfoWindowItems = speakerData;
+                    });
+                    this.markerMap.speakers[speakerId] = marker;
+                    if (!this.isShowingByStage(window.CONSTANTS.USER_STAGE.SK_NORMAL)) {
+                        if (!!speakerData.custom && !speakerData.custom.is_visible_moi) {
+                            marker.hide();
+                        }
+                    } else {
+                        if (this.isShowingByStage(window.CONSTANTS.USER_STAGE.SK_ADMIN)) {
+                            marker.on('contextmenu', () => {
+                                marker.closeInfoWindow();
+                                this.showContextMenu(speakerId, 2, marker);
+                            });
+                            marker.on('dragstart', () => {
+                                marker.closeInfoWindow();
+                            });
+                            marker.on('dragend', (e) => {
+                                const speakerMarkerLocation = this.markerMap.speakers[speakerId]._coordinates;
+                                speakerData.custom.map_location = {
+                                    x: speakerMarkerLocation.x,
+                                    y: speakerMarkerLocation.y
+                                }
+                                this.$store.commit('updateSpeakerData', speakerData);
+    
+                                if (!this._.has(this.setIntervalData, speakerId)) {
+                                    this.setLocationTimeOut(speakerId, 'speaker');
+                                }
+                            });
+                            speakerData.custom.map_location = {
+                                x: coordinate.x,
+                                y: coordinate.y
+                            }
+                            if (!isUpdatedData) {
+                                this._updateData([speakerData], 'speaker', (failedList) => {
+                                    if (!this._.isEmpty(failedList)) {
+                                        this.sweetbox.fire('Sorry, speaker location update failed');
+                                    }
+                                    this.$store.commit('updateSpeakerData', speakerData);
+                                });
+                            }
+                        }
+                    }
+                }
             },
             showIpcamWindow(ipcamId, marker) {
                 let content = '',
@@ -1248,13 +1366,12 @@
                             }
                         });
                     }
-                })  
-
+                });
                 this.ipcamInfoWindow = {
                     id: ipcamId,
                     item: marker._infoWindow
-                }
-
+                };
+    
                 this._.last(document.getElementsByClassName('close-button')).onclick = () => {
                     marker.removeInfoWindow();
                 }
@@ -1306,7 +1423,7 @@
                         delete ipcam.custom.map_location;
                         delete ipcam.custom.is_visible_moi;
                         this.$store.commit('removeIpcamIdAttachedOnBeacon', ipcamId);
-                        this._updateIpcamData([ipcam], (failedIdList) => {
+                        this._updateData([ipcam], 'ipcam', (failedIdList) => {
                             if (!this._.isEmpty(failedIdList)) {
                                 this.sweetbox.fire('Sorry, Ipcam remove failed');
                             }
@@ -1318,8 +1435,166 @@
                     console.warn(`Failed to remove ipcam marker, cannot found ipcam by given id: ${ ipcamId }`);
                 }
             },
-            _updateIpcamData(data, resultCallback) {
-                this.services.updateData(data, window.CONSTANTS.PRODUCT_KIND.IPCAM, (failedIdList) => {
+            // showSpeakerWindow(id, marker) {
+            //     let content = '',
+            //         speaker = this.$store.getters.getSpeaker(id),
+            //         name = null;
+            //     if (!!this.speakerInfoWindowItem) {
+            //         if (this.speakerInfoWindowItem.id === id) {
+            //             marker.removeInfoWindow();
+            //         }
+            //     }
+            //     // <div class="playContainer"><div class="play-button"></div><div class="pause-button"></div></div>
+            //     marker.setInfoWindow({
+            //         content: `<div class="top-speaker-container">
+            //                     <div class="speaker-left-container">
+            //                         <div class="speakerName">SPEAKER</div>
+            //                         <div class="speaker-name" title="${ speaker.name }">${ speaker.name }</div>
+            //                         <div class="custom-speaker-button">
+            //                             <div class="mic-button"><div class="mic-button-title">WANRNING 1</div><div class="playContainer"></div></div>
+            //                             <div class="mic-button"><div class="mic-button-title">WANRNING 2</div></div>
+            //                             <div class="mic-button"><div class="mic-button-title">WANRNING 3</div></div>
+            //                         </div>
+            //                     </div>
+            //                     <div class="speaker-right-container">
+            //                     <div class="speaker-on-off"></div>
+            //                     <img class="speakerImg" src="${ window.CONSTANTS.URL.BASE_IMG }construction-site.png"></img>
+            //                     </div>
+            //                     <div class="speaker-close-button"></div>
+            //                 </div>`,
+            //         custom: true,
+            //         dy: -250,
+            //         autoPan: false
+            //     });
+            //     marker.openInfoWindow();
+            //     document.getElementsByClassName('mic-button-title')[0].onclick = () => {
+            //         var restContainer = document.getElementsByClassName('playContainer')[0];
+            //         if (!!restContainer.classList.length > 1) {
+            //             restContainer.classList.remove('speaker-stop-button'); 
+            //         } else if (!!restContainer.innerHTML) {
+            //             restContainer.innerHTML = "";
+            //         }
+
+            //         this._checkAccessMicrophone((permissionState) => {
+            //             if (permissionState === window.CONSTANTS.MICROPHONE_ACCESS_STATE.DENIED) {
+            //                 console.log("Denied microphone access");
+            //                 this.sweetbox.fire('Denied microphone access by system or user');
+            //             } else {
+            //                 this._requireAccess();
+            //             }
+            //         });
+            //     }
+
+            //     document.getElementsByClassName('speaker-close-button')[0].onclick = () => {
+            //         marker.removeInfoWindow();
+            //     }
+            // },
+            _checkAccessMicrophone(resultCallback) {
+                navigator.permissions.query({
+                    name: 'microphone'
+                }).then(result => {
+                    resultCallback(result.state);
+                });
+            },
+            _requireAccess() {
+                var playContainerContent = document.getElementsByClassName('playContainer')[0],
+                    onoffClassList = document.getElementsByClassName('speaker-on-off')[0].classList,
+                    content = `<div class="record-button"></div><div class="broadcast-button"></div>`;
+                navigator.mediaDevices.getUserMedia({
+                    audio: true
+                }).then((stream) => {
+                    // const context = new AudioContext(),
+                    //       input = context.createMediaStreamSource(stream),
+                    //       processor = context.createScriptProcessor(4096, 2, 2);
+                    // input.connect(processor);
+                    // // node.connect(context.destination);
+                    // processor.onaudioprocess = function(e){
+                    //     // Do something with the data, i.e Convert this to WAV
+                    //     console.log(e.inputBuffer);
+                    // };
+                    // // node.connect(processor)
+                    // const options = {mimeType: 'video/webm;codecs=vp9'};
+                    const mediaRecorder = new MediaRecorder(stream);
+                    mediaRecorder.ondataavailable = (e) => {
+                        this._playRecordedData(e);
+                    }
+                    mediaRecorder.start();
+                    playContainerContent.innerHTML = content;
+                    document.getElementsByClassName('record-button')[0].onclick = () => {
+                        var speakerStopButton = `<div class="speaker-stop-button"></div>`
+                        playContainerContent.innerHTML = "";
+                        playContainerContent.innerHTML = speakerStopButton;
+                        onoffClassList.add('speaker-on');
+                        document.getElementsByClassName('speaker-stop-button')[0].onclick = () => {
+                            mediaRecorder.stop();
+                            playContainerContent.innerHTML = "";
+                            onoffClassList.remove('speaker-on');
+                            onoffClassList.add('speaker-off');
+                            setTimeout(() => {
+                                onoffClassList.remove('speaker-off');
+                            }, 3000);
+                        }
+                    }
+
+                    document.getElementsByClassName('broadcast-button')[0].onclick = () => {
+                        playContainerContent.innerHTML = "";
+                    }
+
+                    // console.log(processor);
+                }).catch(e => console.log(e));
+            },
+            _playRecordedData(result) {
+                const audioUrl = URL.createObjectURL(result.data),
+                      audio = new Audio(audioUrl);
+                var context = `<div class="play-button"></div>
+                            <div class="pause-button"></div>
+                            <div class="save-button"></div>`,
+                    reader = new window.FileReader(),
+                    base64data = '',
+                    res = '';
+                reader.readAsDataURL(result.data);
+                reader.onloadend = (e) => {
+                    base64data = reader.result,
+                    res = base64data.split(',')[1];
+                    // console.log("speaker res: ", res);
+                }
+                document.getElementsByClassName('playContainer')[0].innerHTML = context;
+
+                document.getElementsByClassName('play-button')[0].onclick = () => {
+                    audio.play();
+                }
+
+                document.getElementsByClassName('pause-button')[0].onclick = () => {
+                    audio.pause();
+                }
+
+                document.getElementsByClassName('save-button')[0].onclick = () => {
+                    this.sweetbox.fire('Success to save record');
+                }
+            },
+            removeSpeakerMarker(id) {
+                let marker = this.markerMap.speakers[id];
+                if (!!marker) {
+                    let speaker = this.$store.getters.getSpeaker(id);
+                    marker.remove();
+                    if (!!speaker && !!speaker.custom.map_location) {
+                        delete speaker.custom.map_location;
+                        delete speaker.custom.is_visible_moi;
+                        delete this.markerMap.speakers[id];
+                        //TODO: change
+                        this.$store.commit('updateSpeakerData', speaker);
+                        this._updateData([speaker], 'speaker', (failedIdList) => { //TODO
+                            if (!this._.isEmpty(failedIdList)) {
+                                this.sweetbox.fire('Sorry, speaker remove failed');
+                            }
+                        });
+                    } else {
+                        console.warn(`Failed to clear speaker location, cannot found speaker model by given id: ${ id }`);
+                    }
+                }
+            },
+            _updateData(data, kind, resultCallback) {
+                this.services.updateData(data, kind, (failedIdList) => {
                     resultCallback(failedIdList);
                 });
             },
@@ -1382,6 +1657,9 @@
                 if (this.checkedMoiFilter) {
                    document.getElementsByClassName('filterMoiIcon')[0].classList.add('moiFilter');
                 } 
+                if (this.checkSpeakerFilter) {
+                    document.getElementsByClassName('filterSpeakerIcon')[0].classList.add('speakerFilter');
+                }
                 document.getElementsByClassName('filterHubIcon')[0].onclick = () => {
                     this.filterItems(1);
                 };
@@ -1393,8 +1671,15 @@
                     this.filterItems(2);
                 };
                 document.getElementsByClassName('filterSpeakerIcon')[0].onclick = () => {
-                    // this.filterItems(3);
-                    this.sweetbox.close();
+                    // this.filterItems(3);                                     //TODO: layer에 따른 filter를 가능하게 함
+                    this.checkSpeakerFilter = !this.checkSpeakerFilter;         //TODO: 8줄 삭제
+                    if (this.checkSpeakerFilter) {
+                        this.noGroupSpeakerkLayer.hide();
+                        document.getElementsByClassName('filterSpeakerIcon')[0].classList.add('speakerFilter');
+                    } else {
+                        this.noGroupSpeakerkLayer.show();
+                        document.getElementsByClassName('filterSpeakerIcon')[0].classList.remove('speakerFilter');
+                    }
                 },
                 document.getElementsByClassName('filterMoiIcon')[0].onclick = () => {
                     this.checkedMoiFilter = !this.checkedMoiFilter;
@@ -1449,6 +1734,18 @@
                             <label id="tn"><input class="secondSelectOption item${ type }-${ type + 1 }" type="checkbox">
                             ${ context.secondSelectOption }</label></div>
                             <button id="filter-Reset-Button" class="filter-Reset-Button">Reset</button>`
+                } else if (type === 3) {
+                    const groupData = this.$store.getters.getGroupList;
+                    console.log("groupData", groupData);
+                    content += '<div class="filter-content">';
+                    this._.forEach(groupData, (group, index) => {
+                        layers[index] = this.speakerLayer[group.id];
+                        context = group.name;
+                        content += `<div class="selectTn">
+                            <label id="tn"><input class="firstSelectOption item${ type }-${ index }" type="checkbox">
+                            ${ group.name }</label></div>`;
+                    })
+                    content += `</div><button id="filter-Reset-Button" class="filter-Reset-Button">Reset</button>`;
                 }
                 this.sweetbox.mixin({
                     showConfirmButton: false,
@@ -1460,44 +1757,65 @@
                     title: 'Choose the Tunnel',
                     html: content
                 }])
-               
-                document.getElementById('filter-Reset-Button').onclick = () => {
-                    document.getElementsByClassName(`item${ type }-${ type }`)[0].checked = 0;
-                    document.getElementsByClassName(`item${ type }-${ type + 1 }`)[0].checked = 0;
-                    layers.firstOption.show();
-                    layers.secondOption.show();
-                    if (!!document.getElementsByClassName(`item${ type }-${ type + 2 }`)[0]) {
-                        document.getElementsByClassName(`item${ type }-${ type + 2 }`)[0].checked = 0;
-                        layers.thirdOption.show();
-                    }
-                }
-                document.getElementsByClassName(`item${ type }-${ type }`)[0].checked = !layers.firstOption.isVisible();
-                document.getElementsByClassName(`item${ type }-${ type }`)[0].onchange = () => {
-                    const checked = document.getElementsByClassName(`item${ type }-${ type }`)[0].checked;
-                    if (checked) {
-                        layers.firstOption.hide();
-                    } else {
+
+                if (type === 1 || type === 2) {
+                    document.getElementById('filter-Reset-Button').onclick = () => {
+                        document.getElementsByClassName(`item${ type }-${ type }`)[0].checked = 0;
+                        document.getElementsByClassName(`item${ type }-${ type + 1 }`)[0].checked = 0;
                         layers.firstOption.show();
-                    }
-                }
-                document.getElementsByClassName(`item${ type }-${ type + 1 }`)[0].checked = !layers.secondOption.isVisible();
-                document.getElementsByClassName(`item${ type }-${ type + 1 }`)[0].onchange = () => {
-                    const checked = document.getElementsByClassName(`item${ type }-${ type + 1 }`)[0].checked;
-                    if (checked) {
-                        layers.secondOption.hide();
-                    } else {
                         layers.secondOption.show();
-                    }
-                }
-                if (!!document.getElementsByClassName(`item${ type }-${ type + 2 }`)[0]) {
-                    document.getElementsByClassName(`item${ type }-${ type + 2 }`)[0].checked = !layers.thirdOption.isVisible();
-                    document.getElementsByClassName(`item${ type }-${ type + 2}`)[0].onchange = () => {
-                        const checked = document.getElementsByClassName(`item${ type }-${ type + 2 }`)[0].checked;
-                        if (checked) {
-                            layers.thirdOption.hide();
-                        } else {
+                        if (!!document.getElementsByClassName(`item${ type }-${ type + 2 }`)[0]) {
+                            document.getElementsByClassName(`item${ type }-${ type + 2 }`)[0].checked = 0;
                             layers.thirdOption.show();
                         }
+                    }
+                    document.getElementsByClassName(`item${ type }-${ type }`)[0].checked = !layers.firstOption.isVisible();
+                    document.getElementsByClassName(`item${ type }-${ type }`)[0].onchange = () => {
+                        const checked = document.getElementsByClassName(`item${ type }-${ type }`)[0].checked;
+                        if (checked) {
+                            layers.firstOption.hide();
+                        } else {
+                            layers.firstOption.show();
+                        }
+                    }
+                    document.getElementsByClassName(`item${ type }-${ type + 1 }`)[0].checked = !layers.secondOption.isVisible();
+                    document.getElementsByClassName(`item${ type }-${ type + 1 }`)[0].onchange = () => {
+                        const checked = document.getElementsByClassName(`item${ type }-${ type + 1 }`)[0].checked;
+                        if (checked) {
+                            layers.secondOption.hide();
+                        } else {
+                            layers.secondOption.show();
+                        }
+                    }
+                    if (!!document.getElementsByClassName(`item${ type }-${ type + 2 }`)[0]) {
+                        document.getElementsByClassName(`item${ type }-${ type + 2 }`)[0].checked = !layers.thirdOption.isVisible();
+                        document.getElementsByClassName(`item${ type }-${ type + 2}`)[0].onchange = () => {
+                            const checked = document.getElementsByClassName(`item${ type }-${ type + 2 }`)[0].checked;
+                            if (checked) {
+                                layers.thirdOption.hide();
+                            } else {
+                                layers.thirdOption.show();
+                            }
+                        }
+                    }
+                } else {
+                    const groupData = this.$store.getters.getGroupList;
+                    this._.forEach(groupData, (group, index) => {
+                        document.getElementsByClassName(`item${ type }-${ index }`)[0].checked = !layers[index].isVisible();
+                        document.getElementsByClassName(`item${ type }-${ index }`)[0].onchange = () => {
+                            const checked = document.getElementsByClassName(`item${ type }-${ index }`)[0].checked;
+                            if (checked) {
+                                layers[index].hide();
+                            } else {
+                                layers[index].show();
+                            }
+                        }
+                    })
+                    document.getElementById('filter-Reset-Button').onclick = () => {
+                       this._.forEach(groupData, (group, index) => {
+                            document.getElementsByClassName(`item${ type }-${ index }`)[0].checked = 0; 
+                            layers[index].show();
+                       }); 
                     }
                 }
                 document.getElementsByClassName('swal2-content')[0].classList.add('filterItems'); 
@@ -1509,7 +1827,7 @@
                 this.$emit('map-load', false);
             },
             showContextMenu(id, type, marker) {
-                var _type = '',
+                let _type = '',
                     _name = '',
                     _removeMethod = null, 
                     _lock = '';
@@ -1530,6 +1848,14 @@
                             _name = data.name;
                         }
                         _removeMethod = this.removeIpcamMarker;
+                        break;
+                    case window.CONSTANTS.CONTEXT_TYPE.SPEAKER:
+                        data = this.$store.getters.getSpeaker(id);
+                        _type = 'SPEAKER';
+                        if (!!data) {
+                            _name = data.name;
+                        }
+                        _removeMethod = this.removeSpeakerMarker;
                         break;
                 }
                 
@@ -1561,11 +1887,11 @@
                     switch (type) {
                         case window.CONSTANTS.CONTEXT_TYPE.SCANNER:
                             this.$store.commit('updateHubData', data);
-                            this._updateHubData([data], (failedList) => {});
+                            this._updateData([data], 'hub', (failedList) => {});
                         break;
                         case window.CONSTANTS.CONTEXT_TYPE.IPCAM:
                             this.$store.commit('updateIpcamData', data);
-                            this._updateIpcamData([data], (failedList) => {});
+                            this._updateData([data], 'ipcam', (failedList) => {});
                         break;
                     }
                 }
@@ -1589,6 +1915,7 @@
                         this.removeHubItems();
                         this.removeGadgetItems();
                         this.removeIpcamItems();
+                        this.removeSpeakerItems();
                         this.isRemoveAll = false;
                     }
                 })
@@ -1607,7 +1934,7 @@
                     }
                 });
                 if (!!hubList) {
-                    this._updateHubData(hubList, (failedIdList) => {
+                    this._updateData(hubList, 'hub', (failedIdList) => {
                         console.debug("Succeed to remove hub data");
                     });
                 }
@@ -1636,13 +1963,36 @@
                     }
                 });
                 if (!!ipcamList) {
-                    this._updateIpcamData(ipcamList, (failedIdList) => {
+                    this._updateData(ipcamList, 'ipcam', (failedIdList) => {
                         console.debug("Succeed to remove ipcam data");
                     })
                 }
                 this._.forEach(this.markerMap.cams, (marker, ipcamId) => {
                     this.removeIpcamMarker(ipcamId);
                 });
+            },
+            removeSpeakerItems() {
+                let speakerList = [];
+                this._.forEach(this.markerMap.speakers, (marker, speakerId) => {
+                    let speaker = this._.cloneDeep(this.$store.getters.getSepaker(speakerId));
+                    if (!this._.isEMpty(speaker)) {
+                        delete speaker.custom.map_location;
+                        delete speaker.custom.is_visible_moi;
+                        this.$store.commit('updateSpeakerData', speaker);
+                        this.markerMap.speakers[speakerId].remove();
+                        delete this.markerMap.spakers[speakerId];
+                        speakerList.push(speaker);
+                    }
+                });
+                if (!!speakerList) {
+                    this._updateData(speakerList, 'speaker', (failedIdList) => {
+                        console.debug("Succedd to remove speaker data");
+                    })
+
+                    this._.forEach(this.markerMap.speakers, (marker, speakerId) => {
+                        this.removeSpeakerMarker(speakerId);
+                    })
+                }
             },
             getHubInfoWindowContent(hubId) {
                 const gadgets = this.$store.getters.getGadgetListDetectedByOneHub(hubId),
@@ -1708,9 +2058,9 @@
             isShowingByStage(stage) {
                 return this.userStage <= stage;
             },
-            _getMarkerSize(tag) {
-                let markerWidth = this.zoomLv,
-                    markerHeight = this.zoomLv;
+            _getMarkerSize(tag) {   //TODO: 마커들의 크기를 tag별로 꺼내는 함수
+                let markerWidth = 18,
+                    markerHeight = 18;
                 if (this._.includes(this.tags.xll, tag)) {
                     markerHeight *= 2.0;
                     if (this._.isEqual(tag, "8")) {
@@ -1827,7 +2177,7 @@
                             }
                             
                             _gadget.custom.is_visible_moi = isVisible;
-                            this._updateGadgetData([_gadget], (failedList) => {
+                            this._updateData([_gadget], 'mibsskec', (failedList) => {
                                 if (!this._.isEmpty(failedList)) {
                                     this.sweetbox.fire('Sorry, Gadget data update failed');
                                 }
@@ -1845,11 +2195,11 @@
                                 document.getElementById(`${ gadget.gid }-streaming-slider`).innerText = 'ON';
                             }
                             _ipcam.custom.is_visible_moi = is_visible_moi;
-                            this._updateIpcamData([_ipcam], (failedList) => {
+                            this._updateData([_ipcam], 'ipcam', (failedList) => {
                                 if (!this._.isEmpty(failedList)) {
                                     this.sweetbox.fire('Sorry, Ipcam data update failed');
                                 } 
-                            });
+                            })
                         }
                     }
                 }
@@ -2023,9 +2373,13 @@
                     this._handleAddHub(data.v);
                 } else if (this.isIpcam(data.kind)) {
                     this._handleAddIpcam(data.v);
-                } else {
+                } else if (this.isBeacon(data.kind)) {
                     this._handleAddGadget(data.v);
-                } 
+                } else if (this.isSpeaker(data.kind)) {
+                    this._handleAddSpeaker(data.v);
+                } else {
+                    this._handleAddAlarm(data.v);
+                }
             },
             _handleAddHub(data) {
                 this.$store.commit('addHub', data);
@@ -2039,13 +2393,21 @@
             _handleAddIpcam(data) {
                 this.$store.commit('addIpcam', data);
             },
+            _handleAddSpeaker(data) {
+                this.$store.commit('addSpeaker', data);
+            },
+            _handleAddAlarm(data) {
+                this.$store.commit('addAlarms', data);
+            },
             _handleUpdated(data) {
                 if (this.isScanner(data.kind)) { // 허브 업데이트
                     this._handleUpdatedHub(data.v);
                 } else if (this.isIpcam(data.kind)) { //아이피캠 업데이트 
                     this._handleUpdatedIpcam(data.v);
+                } else if (this.isBeacon(data.kind)) {
+                    this._handleUpdatedBeacon(data.v); //비콘 업데이트
                 } else {
-                    this._handleUpdatedBeacon(data.v) //비콘 업데이트
+                    this._handleUpdatedSpeaker(data.v); //스피커 업데이트
                 } 
             },
             _handleUpdatedHub(data) {
@@ -2061,7 +2423,6 @@
                         this.hasSameGadget();
                         this.drawWorkers(data.id, data.custom.map_location);
                     } else {
-                        let hubMarker = this.markerMap.hubs[data.id];
                         if (!!hubMarker) {
                             hubMarker.remove();
                             delete this.markerMap.hubs[data.id];
@@ -2163,7 +2524,6 @@
                     if (this._.has(data.custom, 'map_location')) {
                         this.drawIpcam(data.id, data.custom.map_location, true);
                     } else {
-                        let ipcamMarker = this.markerMap.cams[data.id];
                         if (!!ipcamMarker) {
                             ipcamMarker.remove();
                             delete this.markerMap.cams[data.id];
@@ -2342,13 +2702,41 @@
                     }
                 }
             },
+            _handleUpdatedSpeaker(data) {
+                let speakerMarker = this.markerMap.speakers[data.id],
+                    speakerData = this._.cloneDeep(this.$store.getters.getSpeaker(data.id));
+
+                this._.extend(speakerData, data);
+                this.$store.commit('updateSpeakerData', speakerData);
+
+                if (!!data.custom) {
+                    if (this._.has(data.custom, 'map_location')) {
+                        this.drawSpeaker(data.id, data.custom.map_location, true);
+                    } else {
+                        if (!!speakerMarker) {
+                            speakerMarker.remove();
+                            delete this.markerMap.speakers[data.id];
+                        }
+                    }
+                }
+
+                if (!!data.name) {
+                    if (!!this.speakerInfoWindowItems) {
+
+                    }
+                }
+            },
             _handleRemoved(data) {
                 if (this.isScanner(data.kind)) { // 허브 업데이트
                     this._handleHubRemoved(data.v);
                 } else if (this.isIpcam(data.kind)) { //아이피캠 업데이트 
                     this._handleIpcamRemoved(data.v);
-                } else {
+                } else if (this.isBeacon(data.kind)) {
                     this._handleGadgetRemoved(data.v);
+                } else if (this.isSpeaker(data.kind)) {
+                    this._handleSpeakerRemoved(data.v);
+                } else {
+                    this._handleAlarmRemoved(data.v);
                 }
             },
             _handleHubRemoved(data) {
@@ -2366,6 +2754,13 @@
                 this.$store.commit('removeGadget', data.id)
                 this.removeGadget(data.id);
             },
+            _handleSpeakerRemoved(data) {
+                this.$store.commit('removeSpeaker', data.id);
+                this.removeSpeakerMarker(data.id);
+            },
+            _handleAlarmRemoved(data) {
+                this.$store.commit('removeAlarms', data.id);
+            },
             _handleDetectedGadgets(list) {
                 const currentTime = new Date() / 1000.0;
                 this._.forEach(list, (detectedData) => {
@@ -2375,7 +2770,7 @@
                         const hubMarker = this.markerMap.hubs[detectedData.hid];
                         if (!!hubMarker) {
                             this.drawWorker(detectedData, hubMarker._coordinates);
-                            this.countGadgetOnHub(detectedData.hid);
+                            // this.countGadgetOnHub(detectedData.hid);
                         }
                         if (!!this.hubInfoWindow) {
                             if (this.isShowingByStage(window.CONSTANTS.USER_STAGE.SK_ADMIN)) {
@@ -2534,6 +2929,31 @@
                     });
                 }
             },
+            _handleUpdateAlarmList(data) {
+                const list = data.v;
+                if (data.kind === 'add') {
+
+                } else if (data.kind === 'remove') {
+
+                } else if (data.kind === 'update') {
+
+                }
+            },
+            _handleUpdateGroupList(data) {
+                const list = data.v;
+                this._.forEach(list, item => {
+                    if (data.kind === 'add') {
+                        this.$store.commit('addGroup', item);
+                        this.addGroupLayer(item.id);
+                    } else if (data.kind === 'remove') {
+                        this.$store.commit('removeGroup', item);
+                    } else if (data.kind === 'update') {
+                        const group = this.$store.getters.getGroup(item.id);
+                        group.name = item.name;
+                        this.$store.commit('updateGroup', group);
+                    }
+                });
+            },
             _subscribe() {
                 this.services.subscribe(this.info.internal, {
                     added: (data) => {
@@ -2573,6 +2993,12 @@
                     },
                     reopenStream: (data) => {
                         this._handleReopenStream(data.v);
+                    },
+                    updateAlarmList: (data) => {
+                        this._handleUpdateAlarmList(data);
+                    },
+                    updateGroupList: (data) => {
+                        this._handleUpdateGroupList(data);
                     }
                 });
             }
@@ -2580,6 +3006,10 @@
         computed: {
             isEmptyUrl() {
                 return this._.isEmpty(this.mapUrl);
+            },
+            isShowingInfoWindow() {
+                return !this._.isEmpty(this.speakerInfoWindowItems);
+                // return true;
             }
         },
         created() {
@@ -2667,6 +3097,14 @@
         overflow: hidden
     }
     
+    .main-container {
+        position: absolute;
+        width: 100%;
+        height: 95%;
+        top: 50px;
+        left: 0;
+    }
+
     .tunnelSelect {
         height: 50px;
     }
@@ -2711,7 +3149,7 @@
 
     .infoFilterMoi{
         display: inline-block;
-        transform: translateX(-255%);
+        transform: translateX(-235%);
         top: 65%;
         position: absolute;
     }
@@ -2787,6 +3225,10 @@
         border: none; 
         background-repeat: no-repeat;
         background-image: url('../../public/static/location/imgs/icon-moi-tab.svg');
+    }
+
+    .speakerFilter {
+        background-image: url('../../public/static/location/imgs/speaker-tab.svg');
     }
 
     .moiFilter {
@@ -3132,7 +3574,13 @@
         transform: translateY(-50%);
         margin-right: 10px !important;
     }
-
+    
+    .filter-content {
+        overflow: scroll;
+        max-height: 150px;
+        text-align: left;
+    }
+    
     #tn {
         font-size: 25px
     }
@@ -3936,7 +4384,254 @@
         position: relative;
         width: 100%;
     }
+    .top-speaker-container {
+        box-shadow: 10px 10px 25px #aaaaaa;
+        border-radius: 10px;
+        overflow: hidden;
+    }
+
+    .speaker-left-container {
+        width: 240px;
+        height: 270px;
+        color: black;
+        font-weight: 500;
+        background-color: rgb(250, 115, 120);
+        font-size: large;
+        position: absolute;
+        border-top-left-radius: 10px;
+        border-bottom-left-radius: 10px;
+        letter-spacing: 1px;
+        overflow: hidden;
+    }
+
+    .speakerName {
+        text-align: left;
+        font-size: 15px;
+        padding-top: 25px;
+        padding-bottom: 4px;
+        opacity: .5; 
+        color: white;
+        padding-left: 20px;
+    }
+
+    .speaker-name {
+        text-align: left;
+        font-size: 15px;
+        padding-right: 10px;
+        font-weight: 900;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        color: white;
+        padding-left: 20px;
+    }
     
+    .speaker[title]:hover::after,
+    .speaker[title]:focus::after {
+        content: attr(title);
+        position: absolute;
+        transform: translate3d(0, 50%, 0);
+        width: auto;
+        white-space: nowrap;
+        background: black;
+        opacity: 0.7;
+        color: #fff;
+        border-radius: 2px;
+        box-shadow: 1px 1px 5px 0 rgba(0, 0, 0, 0.4);
+        font-size: 14px;
+        padding: 3px 5px;
+        border-width: 0.5em 0 0.5em 0.5em;
+        border-color: transparent transparent transparent white;
+        -webkit-filter: drop-shadow(1px 2px 1px #bcbcbc);
+        filter: drop-shadow(1px 2px 1px #bcbcbc);
+    }
+
+    .custom-speaker-button {
+        height: 130px;
+        overflow: scroll;
+        text-align: left;
+        margin-top: 30%;
+        color: white;
+        background-color: rgb(227 95 95);
+    }
+
+    .custom-speaker-button div+div {
+        border-top: 3px solid rgb(250, 115, 120);
+    }
+
+    .mic-button {
+        height: 40px;
+        overflow: hidden;
+        text-align: left;
+        font-size: 15px;
+        padding-left: 12px;
+        font-weight: 900;
+        white-space: nowrap;
+        text-overflow: ellipsis;
+        position: relative;
+    }
+
+    .mic-button-title {
+        display: inline-block;
+        position: absolute;
+        top: 50%;
+        cursor: pointer;
+        transform: translateY(-50%);
+    }
+
+    .speaker-right-container {
+        height: 270px;
+        width: 300px;
+        margin-left: 240px;
+        border-top-right-radius: 10px;
+        border-bottom-right-radius: 10px;
+        background-color: white;
+    }
+
+    .speaker-stop-button {
+        background-image: url('../../public/static/location/imgs/record-stop.svg');
+        background-position: center;
+        background-repeat: no-repeat;
+        background-size: 25px;
+        border-radius: 50%;
+        display: inline-block;
+        margin-left: 50% !important;
+        width: 25px;
+        height: 25px;
+        cursor: pointer;
+    }
+
+    .speaker-on {
+        background-image: url('../../public/static/location/imgs/speaker-on.svg');
+        background-position: center;
+        background-repeat: no-repeat;
+        background-size: 40px;
+        display: inline-block;
+        position: absolute;
+        width: 70px;
+        height: 70px;
+        margin-left: 25%;
+        margin-top: 20%;
+        background-color: gray;
+        z-index: 4;
+        border-radius: 80%;
+        opacity: .7;
+    }
+
+    .speaker-off {
+        background-image: url('../../public/static/location/imgs/speaker-off.svg');
+        background-position: center;
+        background-repeat: no-repeat;
+        background-size: 40px;
+        display: inline-block;
+        position: absolute;
+        width: 70px;
+        height: 70px;
+        margin-left: 25%;
+        margin-top: 20%;
+        background-color: gray;
+        z-index: 4;
+        border-radius: 80%;
+        opacity: .7;
+    }
+
+    .playContainer {
+        transform: translateY(-50%);
+        top: 50%;
+        position: absolute;
+        margin-left: 40%;
+        border-top: 0 !important;
+    }
+
+    .record-button {
+        background-image: url('../../public/static/location/imgs/record-button.svg');
+        background-position: center;
+        background-repeat: no-repeat;
+        background-size: 15px;
+        display: inline-block;
+        border-top: 0 !important;
+        margin-left: 35%;
+        width: 20px;
+        height: 20px;
+        cursor: pointer;
+    }
+
+    .broadcast-button {
+        background-image: url('../../public/static/location/imgs/broadcast-button.svg');
+        background-position: center;
+        background-repeat: no-repeat;
+        background-size: 15px;
+        display: inline-block;
+        border-top: 0 !important;
+        margin-left: 35%;
+        width: 20px;
+        height: 20px;
+        cursor: pointer;
+    }
+
+    .play-button {
+        background-image: url('../../public/static/location/imgs/play-button.svg');
+        background-position: center;
+        background-repeat: no-repeat;
+        background-size: 15px;
+        display: inline-block;
+        border-top: 0 !important;
+        margin-left: 35%;
+        width: 20px;
+        height: 20px;
+        cursor: pointer;
+    }
+
+    .pause-button {
+        background-image: url('../../public/static/location/imgs/pause-button.svg');
+        background-position: center;
+        background-repeat: no-repeat;
+        background-size: 15px;
+        display: inline-block;
+        border-top: 0 !important;
+        margin-left: 11%;
+        width: 20px;
+        height: 20px; 
+        cursor: pointer;
+    }
+
+    .save-button {
+        background-image: url('../../public/static/location/imgs/save-button.svg');
+        background-position: center;
+        background-repeat: no-repeat;
+        background-size: 15px;
+        display: inline-block;
+        border-top: 0 !important;
+        margin-left: 11%;
+        width: 20px;
+        height: 20px; 
+        cursor: pointer;
+    }
+
+    .speakerImg {
+        height: 270px;
+        width: 300px;
+        border-top-right-radius: 10px;
+        border-bottom-right-radius: 10px;
+        background-color: white;
+    }
+
+    .speaker-close-button {
+        position: absolute;
+        background-size: 13px !important;
+        background-color: rgba(255 117 117) !important;
+        background-image: url(../../public/static/location/imgs/close.svg);
+        border-radius: 4px 4px 0 0!important;
+        z-index: -1;
+        height: 35px;
+        width: 35px;
+        background-repeat: no-repeat;
+        background-position: center center;
+        left: 91%;
+        top: -13%;
+        cursor: pointer;
+    }
+
     .bcns {
         box-shadow: 10px 10px 25px #aaaaaa;
         border-radius: 10px;
@@ -4097,7 +4792,6 @@
         white-space: nowrap;
         background: black;
         opacity: 0.7;
-        ;
         color: #fff;
         border-radius: 2px;
         box-shadow: 1px 1px 5px 0 rgba(0, 0, 0, 0.4);
@@ -4156,6 +4850,10 @@
     .context-menu-container.ipcam {
         background-color: rgb(87 160 134);
     }
+
+    .context-menu-container.speaker {
+        background-color: rgb(250, 115, 120);
+    }
     
     .context-menu-top-panel {
         position: relative;
@@ -4171,7 +4869,7 @@
     }
     
     .context-menu-type-text {
-        font-size: 0.5em;
+        font-size: 1em;
         font-weight: lighter;
     }
     
@@ -4205,6 +4903,11 @@
     .context-menu-button-frame.ipcam {
         background-color: rgb(107, 175, 134);
         border-top: thin solid rgb(87, 160, 134);
+    }
+
+    .context-menu-button-frame.speaker {
+        background-color: rgb(255, 140, 144);
+        border-top: thin solid rgb(250, 115, 120)
     }
 
     .context-menu-button-frame.lock {

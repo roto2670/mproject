@@ -33,7 +33,9 @@ export default {
             if (window.CONSTANTS.IS_DEV) {
                 url = '192.168.0.15';
                 // url = '192.168.1.171';
+                // url = '192.168.1.136';
                 // url = '0.0.0.0';
+                // url = '192.168.1.176';
             } 
             this.services.websocketConnect(url, 5555, () => {
                 this.isWebsocketConnected = true;

@@ -131,7 +131,7 @@ export class SocketClient {
                     this._handleResponse(data);
                 } else {            //Response 데이터
                     this._handleEvent(data);
-                }
+                } 
             }
         }
     }
@@ -170,6 +170,12 @@ export class SocketClient {
                 break;
                 case window.CONSTANTS.EVENT_TYPE.REOPEN_STREAM:
                     this._subscribeHandlers.reopenStream(data);
+                break;
+                case window.CONSTANTS.EVENT_TYPE.UPDATE_ALARM_LIST:
+                    this._subscribeHandlers.updateAlarmList(data);
+                break;
+                case window.CONSTANTS.EVENT_TYPE.UPDATE_GROUP_LIST:
+                    this._subscribeHandlers.updateGroupList(data);
                 break;
             }
         }

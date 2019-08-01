@@ -41,3 +41,9 @@
 * quart : https://pgjones.gitlab.io/quart/index.html
 * vuejs : https://vuejs.org/
 * flask-vuejs : https://github.com/yymm/flask-vuejs
+
+## Apply to Console
+
+``` shell
+> ./tools.sh build
+```

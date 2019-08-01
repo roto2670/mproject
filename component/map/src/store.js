@@ -11,10 +11,13 @@ export default new Vuex.Store({
 		gadgets: {},
 		detectedgadgets: {},
 		ipcams: {},
+		speakers: {},
 		hubListDetectOneGadget: {},
 		gadgetListDetectedByOneHub: {},
 		speaker: {},
-		ipcamIdAttachedOnBeacon: {}
+		ipcamIdAttachedOnBeacon: {},
+		alarms: {},
+		groupList: {}
 	},
 	getters: {
 		getHubs: (state) => {
@@ -78,7 +81,25 @@ export default new Vuex.Store({
 				return state.ipcamIdAttachedOnBeacon[ipcamId];
 			}
 			return {}
-		}
+		},
+		getSpeakers: (state) => {
+			return _.values(state.speakers);
+		},
+		getSpeaker: (state) => (id) => {
+			return state.speakers[id];
+		},
+		getAlarmList: (state) => (id) => {
+			return state.alarms[id];
+		},
+		getAlarms: (state) => {
+			return state.alarms;
+		},
+		getGroupList: (state) => {
+            return _.values(state.groupList);
+        },
+        getGroup: (state) => (id) => {
+            return state.groupList[id];
+        }
 	},
 	mutations: {
 		addHub(state, payload) {
@@ -187,6 +208,11 @@ export default new Vuex.Store({
 				_.extend(state.detectedgadgets[payload.id], payload);
 			}
 		},
+		updateSpeakerData(state, payload) {
+			if (!!state.speakers[payload.id]) {
+				state.speakers[payload.id] = payload;
+			}
+		},
 		removeGadgetLocation(state, gid) {
 			if (!!state.detectedgadgets[gid] && !!state.gadgets[gid]) {
 				state.detectedgadgets[gid].custom.map_location = {}
@@ -240,6 +266,43 @@ export default new Vuex.Store({
 			if (!!state.ipcams[payload.id]) {
 				state.ipcams[payload.id] = payload;
 			}
-		}
+		},
+		addSpeaker(state, payload) {
+			state.speakers[payload.id] = payload;
+		},
+		removeSpeaker(state, id) {
+			delete state.speakers[id];
+		},
+		updateSpeakerData(state, payload) {
+			if (_.has(state.speakers, payload.id)) {
+				_.extend(state.speakers[payload.id], payload);
+			}
+		},
+		addAlarms(state, payload) {
+			state.alarms[payload.id] = payload;
+		},
+		removeAlarms(state, payload) {
+			if (_.has(state.alarms, payload)) {
+				delete state.alarms[payload];
+			}
+		},
+		updateAlarms(state, payload) {
+			state.alarms[payload.id] = payload.data;
+		},
+		addGroup(state, payload) {
+            if (!_.has(state.groupList, payload.id)) {
+                state.groupList[payload.id] = payload;
+            }
+        },
+        removeGroup(state, id) {
+            if (_.has(state.groupList, id)) {
+                delete state.groupList[id];
+            }
+        },
+        updateGroup(state, payload) {
+            if (_.has(state.groupList, payload.id)) {
+                state.groupList[payload.id] = payload;
+            }
+        }
 	}
 })

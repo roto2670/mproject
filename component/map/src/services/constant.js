@@ -8,7 +8,8 @@ window.CONSTANTS = {
     URL : {
         BASE_IMG: 'static/location/imgs/',
         YOUR_CLOUD : 'https://c2.prota.space',
-        CONSOLE : ''
+        CONSOLE : '',
+        TEST_URL: 'http://192.168.1.176:5561'
     },
     HUB_INFO: {
         0: "Portal",
@@ -42,7 +43,8 @@ window.CONSTANTS = {
     },
     CONTEXT_TYPE: {
         SCANNER: 0,
-        IPCAM: 1
+        IPCAM: 1,
+        SPEAKER: 2
     },
     USER_STAGE: {
         SK_ADMIN: 0,
@@ -62,7 +64,9 @@ window.CONSTANTS = {
         UPDATE_DATA: "update_data",
         GET_DETECTED_LIST: "get_detected_list",
         OPEN_STREAM: "open_stream",
-        CLOSE_STREAM: "close_stream"
+        CLOSE_STREAM: "close_stream",
+        GET_ALARM_LIST: "get_alarm_list",
+        SET_ALARM: "set_alarm"
     },
     EVENT_TYPE: {
         ADDED: "added",
@@ -72,13 +76,21 @@ window.CONSTANTS = {
         ONLINE: "on",
         OFFLINE: "off",
         REFRESH: "refresh",
-        REOPEN_STREAM: 'reopen_stream'
+        REOPEN_STREAM: 'reopen_stream',
+        UPDATE_ALARM_LIST: 'update_alarm_list',
+        UPDATE_GROUP_LIST: 'update_group_list'
     },
     PRODUCT_KIND: {
         HUB: "hub",
         IPCAM: "ipcam",
         BEACON: "beacon",
-        MIBSSKEC: "mibsskec"
+        MIBSSKEC: "mibsskec",
+        SPEAKER: "speaker"
+    },
+    MICROPHONE_ACCESS_STATE: {
+        ALREADY_GRANT: 'granted',
+        NEED_REQUIRED: 'prompt',
+        DENIED: 'denied'
     },
     BEACON_DISTANCE_OFFSET: 5,
     STREAMING_ERROR_CODE: {
@@ -96,7 +108,8 @@ window.CONSTANTS = {
     IPCAM_FILTER_TEXT: {
         FIXED: "Fixed",
         MOBILE: "Mobile"
-    }
+    },
+    RECORD_TEXT: {id:"record"}
 };
 if (window.CONSTANTS.IS_DEV) {
     window.CONSTANTS.URL.CONSOLE = 'http://127.0.0.1:5000';
