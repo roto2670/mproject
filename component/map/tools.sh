@@ -17,10 +17,10 @@ then
     cp -r build_files/img ../../../console/src/dashboard/static/
     cp -r build_files/static/* ../../../console/src/dashboard/static/
 
-    # cp -r build_files/css ../../../console/src/moi/static/
-    # cp -r build_files/js ../../../console/src/moi/static/
-    # cp -r build_files/img ../../../console/src/moi/static/
-    # cp -r build_files/static/* ../../../console/src/moi/static/
+    cp -r build_files/css ../../../console/src/moi/static/
+    cp -r build_files/js ../../../console/src/moi/static/
+    cp -r build_files/img ../../../console/src/moi/static/
+    cp -r build_files/static/* ../../../console/src/moi/static/
 fi
 
 if [ $cmd = serve ]
