@@ -142,16 +142,16 @@
                             })
                         });
                         
-                        this._.forEach(this.bcnsData, (beacon) => {
-                            if (beacon.marker.isVisible()) {
-                                const tag = beacon.tags,
-                                      size = this._getMarkerSize(tag);
-                                beacon.marker.updateSymbol({
-                                    markerWidth: size.width,
-                                    markerHeight: size.height
-                                });
-                            }
-                        });
+                        // this._.forEach(this.bcnsData, (beacon) => {
+                        //     if (beacon.marker.isVisible()) {
+                        //         const tag = beacon.tags,
+                        //               size = this._getMarkerSize(tag);
+                        //         beacon.marker.updateSymbol({
+                        //             markerWidth: size.width,
+                        //             markerHeight: size.height
+                        //         });
+                        //     }
+                        // });
                     });
                 });
             },
@@ -204,8 +204,10 @@
             },
             loadItems(info) {
                 this.services.getBeacons(info.product_id, (bcnData) => {
+                    console.log("Success to get Beacons", bcnData);
                     this.$store.commit('addGadgets', bcnData);
                     this.services.getHubs((hubList) => {
+                        console.log("Success to get Hubs", hubList);
                         this._.forEach(hubList, (hub) => {
                             this.$store.commit('addHub', hub);
                             if (!this._.isEmpty(hub.custom) && !this._.isEmpty(hub.custom.map_location)) {
@@ -216,6 +218,7 @@
                     });
                 });
                 this.services.getIpcams((ipcams) => {
+                    console.log("Success to get Ipcams", ipcams);
                     this._.forEach(ipcams, ipcam => {
                         this.$store.commit('addIpcam', ipcam);
                     });
@@ -375,7 +378,6 @@
                         }
     
                         marker.on('click', () => {
-                            console.log("hubid: ",hubId);
                             this.showHubInfoWindow(hubId, marker);
                         });
                         marker.on('contextMenu', () => {
@@ -2055,7 +2057,7 @@
             });
     
             window.addEventListener("beforeunload", () => {
-                // this.services.unsubscribe();
+                this.services.unsubscribe();
             });
     
             if (this.isConnected) {

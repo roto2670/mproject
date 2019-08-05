@@ -79,7 +79,8 @@ window.CONSTANTS = {
         IPCAM: "ipcam",
         BEACON: "beacon",
         MIBSSKEC: "mibsskec"
-    }
+    },
+    BEACON_DISTANCE_OFFSET: 5
 };
 if (window.CONSTANTS.IS_DEV) {
     window.CONSTANTS.URL.CONSOLE = 'http://127.0.0.1:5000';
