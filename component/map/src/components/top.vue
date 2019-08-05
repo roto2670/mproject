@@ -2,24 +2,24 @@
     <div id="topContainer">
         <div id="leftContainer">
             <div id="zoom">
-                <div class="clickbtn" title="map_zoom_In">
+                <div class="clickbtn" title="Zoom In">
                 <img id="clickbtnPlus" src="static/location/imgs/icon-plus.svg" @click="zoomIn">
                 </div>
-                <div class="clickbtn" title="map_zoom_Out">
+                <div class="clickbtn" title="Zoom Out">
                     <img id="clickbtnMinus" src="static/location/imgs/icon-minus.svg" @click="zoomOut">
                 </div>
             </div>
-            <div v-if="isShowingByStage(1)" id="filter" class="clickbtn" title="filter_Beacons">
+            <div v-if="isShowingByStage(1)" id="filter" class="clickbtn" title="Filter Beacons">
                 <img id="clickbtnFilter" src="static/location/imgs/icon-filter.svg" @click="filter">
             </div>
             <div v-if="isShowingByStage(0)" id="top-remove">
-                <div id="removebtn" @click="remove" class="clickbtn3" title="remove_all_items"></div>
+                <div id="removebtn" @click="remove" class="clickbtn3" title="Remove All"></div>
             </div>
         </div>
         <div v-if="isShowingByStage(0)" id="rightContainer">
             <div id="upload">
                 <button id="clickbtn" @click="$refs.file.click()">
-                    <div id="btntitle" class="clickbtn4" title="upload_map_file">Upload <i class="fa fa-upload"></i></div>
+                    <div id="btntitle" class="clickbtn4" title="Upload Map File">Upload <i class="fa fa-upload"></i></div>
                 </button>
                 <input type="file" id="file" ref="file" @change="onFileChange" accept="image/jpeg, image/png, image/gif" />
             </div>
@@ -190,6 +190,7 @@
     
     #top-remove {
         display: inline-block;
+        position: absolute;
     }
     
     #clickbtnFilter {
