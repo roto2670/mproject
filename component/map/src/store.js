@@ -122,7 +122,7 @@ export default new Vuex.Store({
 						index = _.findIndex(hubList, (item) => {
 							return item.hid === detectedGadget.hid;
 						})
-						if (index < 2 || Math.abs(beforeDetectedGadget.dist - detectedGadget.dist) > 0.1) {
+						if (index < 2 || Math.abs(beforeDetectedGadget.dist - detectedGadget.dist) > window.CONSTANTS.BEACON_DISTANCE_OFFSET) {
 							state.hubListDetectOneGadget[detectedGadget.gid][detectedGadget.hid] = detectedGadget;
 						}
 					}
