@@ -2723,7 +2723,7 @@
     .workerImg {
         height: 100%;
     }
-    
+
     .hub {
         width: 50px;
         height: 50px;
