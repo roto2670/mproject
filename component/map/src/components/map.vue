@@ -863,7 +863,23 @@
                 if (this._.has(this.markerMap.cams, ipcamId)) {
                     if (!(this.markerMap.cams[ipcamId]._coordinates.x === coordinate.x) && !(this.markerMap.cams[ipcamId]._coordinates.y === coordinate.y)) {
                         marker = this.markerMap.cams[ipcamId];
-                        marker.removeInfoWindow();
+                        if (!!this.ipcamInfoWindow) {
+                            if (!this._.isEqual(this.ipcamInfoWindow.id, ipcamId)) {
+                                const ipcamId = this.ipcamInfoWindow.id;
+                                this.ipcamInfoWindow = null;
+                                marker.removeInfoWindow();
+                                this.closeIpcamStreaming([ipcamId], (res) => {
+                                    this._.forEach(res, (data, gid) => {
+                                        if (!this._.isEmpty(data)) {
+                                            this.sweetbox.fire('Sorry, disconnect Ipcam Streaming failed');
+                                        } else {
+                                            console.log("success to disconnect ipcam streaming");
+                                        }
+                                    });
+                                });
+                                
+                            }
+                        }
                         marker.setCoordinates(coordinate);
                         this.markerMap.cams[ipcamId] = marker;
                     }
@@ -947,7 +963,19 @@
                 }
                 if (!!this.ipcamInfoWindow) {
                     if (!this._.isEqual(this.ipcamInfoWindow.id, ipcamId)) {
+                        const ipcamId = this.ipcamInfoWindow.id;
+                        this.ipcamInfoWindow = null;
                         marker.removeInfoWindow();
+                        this.closeIpcamStreaming([ipcamId], (res) => {
+                            this._.forEach(res, (data, gid) => {
+                                if (!this._.isEmpty(data)) {
+                                    this.sweetbox.fire('Sorry, disconnect Ipcam Streaming failed');
+                                } else {
+                                    console.log("success to disconnect ipcam streaming");
+                                }
+                            });
+                        });
+                        
                     }
                 }
     
@@ -1017,16 +1045,18 @@
                 }
 
                 this.ipcamInfoWindow.item.on('remove', () => {
-                    this.ipcamInfoWindow = null;
-                    this.closeIpcamStreaming([ipcamId], (res) => {
-                        this._.forEach(res, (data, gid) => {
-                            if (!this._.isEmpty(data)) {
-                                this.sweetbox.fire('Sorry, disconnect Ipcam Streaming failed');
-                            } else {
-                                console.log("success to disconnect ipcam streaming");
-                            }
+                    if (!!this.ipcamInfoWindow) {
+                        this.ipcamInfoWindow = null;
+                        this.closeIpcamStreaming([ipcamId], (res) => {
+                            this._.forEach(res, (data, gid) => {
+                                if (!this._.isEmpty(data)) {
+                                    this.sweetbox.fire('Sorry, disconnect Ipcam Streaming failed');
+                                } else {
+                                    console.log("success to disconnect ipcam streaming");
+                                }
+                            });
                         });
-                    });
+                    }
                 });
             },
             openIpcamStreaming(ipcamId, resultCallback) {
