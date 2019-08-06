@@ -32,6 +32,17 @@ export const updateData = (data, kind, handler) => { //hub, ipcam, mibsskec ë°ì
     }, handler);
 }
 
+export const updateMoiData = (data, kind, handler) => {
+    socket.call({
+        e: window.CONSTANTS.REQUEST_TYPE.UPDATE_MOI_DATA,
+        kwargs: {
+            kind: kind,
+            data: data
+        },
+        _t: _getTimestamp()
+    }, handler);
+}
+
 export const getMapFile = (readyCallback) => {
     const baseImageUrl = `${ window.CONSTANTS.URL.BASE_IMG }map.png`;
     axios({
@@ -72,21 +83,6 @@ export const postMapFile = (file, successCallback, failCallback) => {
     } else {
         failCallback();
     }
-}
-
-export const updateGadgetData = (beacon, successCallback, failCallback) => {
-    axios
-    .post(`${ window.CONSTANTS.URL.CONSOLE }/dash/beacons/update`, {'beacon': beacon}, {
-        headers: {
-            'Content-Type': 'application/json'
-        }
-    })
-    .then(e => {
-        successCallback();
-    })
-    .catch(e => {
-        failCallback();
-    });
 }
 
 export const getInfo = (readyCallback) => {
