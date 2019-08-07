@@ -60,6 +60,7 @@ window.CONSTANTS = {
         SET_MAP_FILE: "set_map_file",
         GET_DATA: "get_data",
         UPDATE_DATA: "update_data",
+        UPDATE_MOI_DATA: "update_moi_data",
         GET_DETECTED_LIST: "get_detected_list",
         OPEN_STREAM: "open_stream",
         CLOSE_STREAM: "close_stream"

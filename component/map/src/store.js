@@ -12,7 +12,8 @@ export default new Vuex.Store({
 		detectedgadgets: {},
 		ipcams: {},
 		hubListDetectOneGadget: {},
-		gadgetListDetectedByOneHub: {}
+		gadgetListDetectedByOneHub: {},
+		speaker: {}
 	},
 	getters: {
 		getHubs: (state) => {

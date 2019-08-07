@@ -51,10 +51,7 @@
                 bcnsData: {},
                 drawnGadgetList: {},
                 isRemoveAll: false,
-                options: {
-                    custom: null,
-                    items: []
-                },
+                ipcamStreamData: {},
                 markerMap: {
                     hubs: {},
                     cams: {}
@@ -287,7 +284,6 @@
             },
             showhubList(coordinate, selectedCallback) {
                 const hubList = this.$store.getters.getHubs;
-                this.options.items = [];
                 let context = `<div class="custom_menu"><div class="plus-symbol"></div>
                                 <div class="addText">Scanner</div>
                                 <div class="additem"></div></div>`;
@@ -814,7 +810,6 @@
             },
             showIpCamList(coordinate, selectedCallback) {
                 const camList = this.$store.getters.getIpCams;
-                this.options.items = [];
                 let context = `<div class="custom_menu"><div class="plus-symbol"></div>
                                 <div class="addText">IPCAM</div>
                                 <div class="additem"></div></div>`;
@@ -859,25 +854,16 @@
                 if (ipcamData.custom.is_visible_moi) {
                     fileUrl = `${ window.CONSTANTS.URL.BASE_IMG }icon-ipcam-checked.svg`;
                 }
-    
+
                 if (this._.has(this.markerMap.cams, ipcamId)) {
                     if (!(this.markerMap.cams[ipcamId]._coordinates.x === coordinate.x) && !(this.markerMap.cams[ipcamId]._coordinates.y === coordinate.y)) {
                         marker = this.markerMap.cams[ipcamId];
                         if (!!this.ipcamInfoWindow) {
                             if (!this._.isEqual(this.ipcamInfoWindow.id, ipcamId)) {
-                                const ipcamId = this.ipcamInfoWindow.id;
+                                const ipcam_id = this.ipcamInfoWindow.id;
                                 this.ipcamInfoWindow = null;
+                                this._destroyStreaming(ipcam_id);
                                 marker.removeInfoWindow();
-                                this.closeIpcamStreaming([ipcamId], (res) => {
-                                    this._.forEach(res, (data, gid) => {
-                                        if (!this._.isEmpty(data)) {
-                                            this.sweetbox.fire('Sorry, disconnect Ipcam Streaming failed');
-                                        } else {
-                                            console.log("success to disconnect ipcam streaming");
-                                        }
-                                    });
-                                });
-                                
                             }
                         }
                         marker.setCoordinates(coordinate);
@@ -910,9 +896,14 @@
                                 this.showContextMenu(ipcamId, 1, marker);
                             });
                             marker.on('dragstart', () => {
-                                marker.closeInfoWindow();
+                                marker.removeInfoWindow();
+                                if (!!this.ipcamInfoWindow) {
+                                    this.ipcamInfoWindow = null;
+                                    this._destroyStreaming(ipcamId);
+                                }
                             });
                             marker.on('dragend', (e) => {
+                                // this.showIpcamWindow(ipcamId, marker); 
                                 ipcamData.custom.map_location = {
                                     x: e.coordinate.x,
                                     y: e.coordinate.y
@@ -926,6 +917,9 @@
                             ipcamData.custom.map_location = {
                                 x: coordinate.x,
                                 y: coordinate.y
+                            }
+                            if (!this._.has(ipcamData.custom, 'is_visible_moi')) {
+                                ipcamData.custom.is_visible_moi = false;
                             }
                             if (!isUpdatedData) {
                                 this._updateIpcamData([ipcamData], (failedList) => {
@@ -963,19 +957,10 @@
                 }
                 if (!!this.ipcamInfoWindow) {
                     if (!this._.isEqual(this.ipcamInfoWindow.id, ipcamId)) {
-                        const ipcamId = this.ipcamInfoWindow.id;
+                        const ipcam_id = this.ipcamInfoWindow.id;
                         this.ipcamInfoWindow = null;
+                        this._destroyStreaming(ipcam_id) ;
                         marker.removeInfoWindow();
-                        this.closeIpcamStreaming([ipcamId], (res) => {
-                            this._.forEach(res, (data, gid) => {
-                                if (!this._.isEmpty(data)) {
-                                    this.sweetbox.fire('Sorry, disconnect Ipcam Streaming failed');
-                                } else {
-                                    console.log("success to disconnect ipcam streaming");
-                                }
-                            });
-                        });
-                        
                     }
                 }
     
@@ -1000,20 +985,26 @@
                             <input class="moi-toggle-button" type="checkbox">
                             <span class="moi-toggle-slider round"></span></label>`;
                         parentEl.append(el);
-                        document.getElementsByClassName('moi-toggle-button')[0].checked = !!ipcamData.custom.is_visible_moi;
+                        document.getElementsByClassName('moi-toggle-button')[0].checked = ipcamData.custom.is_visible_moi;
                         document.getElementsByClassName('moi-toggle-button')[0].onchange = () => {
                             ipcamData.custom.is_visible_moi = document.getElementsByClassName('moi-toggle-button')[0].checked;
-                            let fileUrl = `${ window.CONSTANTS.URL.BASE_IMG }icon-ipcam-default.svg`;
-                            if (ipcamData.custom.is_visible_moi) {
-                                fileUrl = `${ window.CONSTANTS.URL.BASE_IMG }icon-ipcam-checked.svg`;
-                            }
-                            let marker = this.markerMap.cams[ipcamData.id];
-                            if (!!marker) {
-                                marker.updateSymbol({
-                                    markerFile: fileUrl
-                                });
-                            }
-                            this._updateIpcamData([ipcamData], () => {
+                            this._updateIpcamMoiData([ipcamData], (failedList) => {
+                                if (!this._.isEmpty(failedList)) {
+                                    this.sweetbox.fire('Sorry, Ipcam Moi Client is Maximum');
+                                    document.getElementsByClassName('moi-toggle-button')[0].checked = !ipcamData.custom.is_visible_moi;
+                                } else {
+                                    let fileUrl = `${ window.CONSTANTS.URL.BASE_IMG }icon-ipcam-default.svg`;
+                                    if (ipcamData.custom.is_visible_moi) {
+                                        fileUrl = `${ window.CONSTANTS.URL.BASE_IMG }icon-ipcam-checked.svg`;
+                                    }
+                                    let marker = this.markerMap.cams[ipcamData.id];
+                                    if (!!marker) {
+                                        marker.updateSymbol({
+                                            markerFile: fileUrl
+                                        });
+                                    }
+                                }
+                                ipcamData.custom.is_visible_moi = document.getElementsByClassName('moi-toggle-button')[0].checked;
                                 this.$store.commit('updateIpcamData', ipcamData);
                             });
                         }
@@ -1029,35 +1020,29 @@
                 this.openIpcamStreaming([ipcamId], (urls) => {
                     let firstUrl = this._.first(urls);
                     if (!!firstUrl) {
-                        this._playStreaming(firstUrl[ipcamId]);
+                        this._playStreaming(firstUrl[ipcamId], ipcamId);
                     } else {
                         this.sweetbox.fire('Sorry, connect Ipcam Streaming failed');
                     }
                 })  
-    
+
                 this.ipcamInfoWindow = {
                     id: ipcamId,
                     item: marker._infoWindow
                 }
-    
+
                 this._.last(document.getElementsByClassName('close-button')).onclick = () => {
                     marker.removeInfoWindow();
                 }
 
                 this.ipcamInfoWindow.item.on('remove', () => {
                     if (!!this.ipcamInfoWindow) {
+                        const ipcam_id = this.ipcamInfoWindow.id;
                         this.ipcamInfoWindow = null;
-                        this.closeIpcamStreaming([ipcamId], (res) => {
-                            this._.forEach(res, (data, gid) => {
-                                if (!this._.isEmpty(data)) {
-                                    this.sweetbox.fire('Sorry, disconnect Ipcam Streaming failed');
-                                } else {
-                                    console.log("success to disconnect ipcam streaming");
-                                }
-                            });
-                        });
+                        this._destroyStreaming(ipcam_id);
                     }
                 });
+
             },
             openIpcamStreaming(ipcamId, resultCallback) {
                 this.services.openIpcamStream(ipcamId, (url) => {
@@ -1095,7 +1080,12 @@
                     resultCallback(failedIdList);
                 });
             },
-            
+            _updateIpcamMoiData(data, resultCallback) {
+                // this.services.updateMoiData(data, window.CONSTANTS.PRODUCT_KIND.IPCAM, (failedIdList) => { //TODO
+                this.services.updateData(data, window.CONSTANTS.PRODUCT_KIND.IPCAM, (failedIdList) => {
+                    resultCallback(failedIdList);
+                }); 
+            },
             filterBeacon() {
                 let context = '';
                 this._.forEach(this.gadgetInfoNumber, (index) => {
@@ -1641,20 +1631,37 @@
                     }
                 )
             },
-            _playStreaming(url) {
-                const hls = new Hls(),
-                      video = document.getElementById('video_player');
-                if (!!video) {
-                    hls.attachMedia(video);
-                    hls.on(Hls.Events.MANIFEST_PARSED, () => {
-                        video.play();
-                    });
-                    hls.loadSource(url);
-                    hls.on(Hls.Events.ERROR, (event, data) => {
-                        console.log("Failed to load ipcam streaming");
-                        // this.sweetbox.fire('Failed to load Ipcam Streaming'); 
-                    });
+            _playStreaming(url, ipcamId) {
+                if (!this._.has(this.ipcamStreamData, ipcamId)) {
+                    this.ipcamStreamData[ipcamId] = {
+                        hls: new Hls(),
+                        video: document.getElementById('video_player')
+                    };
+                    if (!!this.ipcamStreamData[ipcamId].video) {
+                        this.ipcamStreamData[ipcamId].hls.attachMedia(this.ipcamStreamData[ipcamId].video);
+                        this.ipcamStreamData[ipcamId].hls.on(Hls.Events.MANIFEST_PARSED, () => {
+                           this.ipcamStreamData[ipcamId].video.play();
+                        });
+                        this.ipcamStreamData[ipcamId].hls.loadSource(url);
+                        this.ipcamStreamData[ipcamId].hls.on(Hls.Events.ERROR, (event, data) => {
+                            console.log("error", event,data);
+                            console.log("Failed to load ipcam streaming");   
+                            // this.sweetbox.fire('Failed to load Ipcam Streaming'); 
+                        });
+                    }
                 }
+            },
+            _destroyStreaming(ipcam_id) {
+                this.closeIpcamStreaming([ipcam_id], (res) => {
+                    if (!this._.isEmpty(res)) {
+                        this.sweetbox.fire('Sorry, disconnect Ipcam Streaming failed');
+                    } else {
+                        this.ipcamStreamData[ipcam_id].hls.destroy();
+                        this.ipcamStreamData[ipcam_id] = {};
+                        delete this.ipcamStreamData[ipcam_id];
+                        console.log("success to disconnect ipcam streaming");
+                    }
+                });
             },
             _handleAdded(data) {
                 if (this.isScanner(data.kind)) {
@@ -1663,7 +1670,7 @@
                     this._handleAddIpcam(data.v);
                 } else {
                     this._handleAddGadget(data.v);
-                }
+                } 
             },
             _handleAddHub(data) {
                 this.$store.commit('addHub', data);
@@ -1681,7 +1688,7 @@
                     this._handleUpdatedIpcam(data.v);
                 } else {
                     this._handleUpdatedBeacon(data.v) //비콘 업데이트
-                }
+                } 
             },
             _handleUpdatedHub(data) {
                 let hubMarker = this.markerMap.hubs[data.id],
@@ -1701,15 +1708,15 @@
                             hubMarker.remove();
                             delete this.markerMap.hubs[data.id];
                         }
-                        // if (!!this.gadgetInfoWindow) { //TODO
-                        //     const hubData = this.$store.getters.getHubListDetectOneGadget(this.gadgetInfoWindow.id);
-                        //     if (!!hubData) {
-                        //         if (this._.includes(this._.keys(hubData), data.id)) {
-                        //             let el = document.getElementById(`${ data.id }-scanner`);
-                        //             el.remove();
-                        //         }
-                        //     }
-                        // }
+                        if (!!this.gadgetInfoWindow) { //TODO
+                            const hubData = this.$store.getters.getHubListDetectOneGadget(this.gadgetInfoWindow.id);
+                            if (!!hubData) {
+                                if (this._.includes(this._.keys(hubData), data.id)) {
+                                    let el = document.getElementById(`${ data.id }-scanner`);
+                                    el.remove();
+                                }
+                            }
+                        }
                     }
     
                     // hub is_counted가 바뀐경우
