@@ -7,7 +7,6 @@ import store from './store';
 import sweetalert from 'sweetalert2';
 import '@/services/constant.js';
 import * as services from '@/services/services.js';
-import * as SocketClient from '@/services/websocket.js';
 
 Vue.prototype.$http = axios;
 Vue.prototype.services = services;
