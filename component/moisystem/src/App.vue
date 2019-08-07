@@ -1,11 +1,16 @@
 <template>
     <div id="app">
-        <router-view v-if="isConnected"></router-view>
+        <!-- <router-view v-if="isConnected"></router-view> -->
+        <Main v-if="isConnected"></Main>
     </div>
 </template>
 <script>
+import Main from '@/views/Main';
 export default {
     name: 'app',
+    components: {
+        Main
+    },
     data() {
         return {
             isConnected: false
