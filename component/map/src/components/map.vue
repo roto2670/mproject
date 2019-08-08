@@ -1540,10 +1540,10 @@
                     panel = document.getElementById(`${ gadget.gid }loading-panel`);
                 let gadgetData = this.$store.getters.getGadget(gadget.gid);
                 if (!!gadgetData) {
-                    if (this._.has(gadgetData, 'img_url')) {
+                    if (!!gadgetData.img_url) {
                         let imgElement = document.getElementById(`${ gadget.gid }img`);
-                        if (!!url && !this._.isEmpty(imgElement)) {
-                            imgElement.src = url;
+                        if (!this._.isEmpty(imgElement)) {
+                            imgElement.src = gadgetData.img_url;
                         }
                     }
                 }
