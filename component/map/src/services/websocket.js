@@ -56,16 +56,16 @@ export class SocketClient {
         this.send(data);
     }
 
-    subscribe(handlers, callback) {
+    subscribe(internal, handlers) {
         this.call({
             e: window.CONSTANTS.REQUEST_TYPE.SUBSCRIBE,
             kwargs:{
-                client_kind: "L"
+                client_kind: "L",
+                internal: internal
             },
             _t: new Date() / 1000.0
         }, (clientId) => {
             this.clientId = clientId;
-            callback();
             // console.log("Succeed to subsribe for session id");
         });
         this._subscribeHandlers = handlers;
