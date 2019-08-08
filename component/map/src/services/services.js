@@ -32,17 +32,6 @@ export const updateData = (data, kind, handler) => { //hub, ipcam, mibsskec ë°ì
     }, handler);
 }
 
-export const updateMoiData = (data, kind, handler) => {
-    socket.call({
-        e: window.CONSTANTS.REQUEST_TYPE.UPDATE_MOI_DATA,
-        kwargs: {
-            kind: kind,
-            data: data
-        },
-        _t: _getTimestamp()
-    }, handler);
-}
-
 export const getMapFile = (readyCallback) => {
     const baseImageUrl = `${ window.CONSTANTS.URL.BASE_IMG }map.png`;
     axios({
@@ -90,7 +79,8 @@ export const getInfo = (readyCallback) => {
         readyCallback({
             interval: 10,
             product_id: 'mibsskec',
-            stage: 0
+            stage: 0,
+            internal: true
         });
     } else {
         axios({

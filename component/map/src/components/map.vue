@@ -988,7 +988,7 @@
                         document.getElementsByClassName('moi-toggle-button')[0].checked = ipcamData.custom.is_visible_moi;
                         document.getElementsByClassName('moi-toggle-button')[0].onchange = () => {
                             ipcamData.custom.is_visible_moi = document.getElementsByClassName('moi-toggle-button')[0].checked;
-                            this._updateIpcamMoiData([ipcamData], (failedList) => {
+                            this._updateIpcamData([ipcamData], (failedList) => {
                                 if (!this._.isEmpty(failedList)) {
                                     this.sweetbox.fire('Sorry, Ipcam Moi Client is Maximum');
                                     document.getElementsByClassName('moi-toggle-button')[0].checked = !ipcamData.custom.is_visible_moi;
@@ -1079,12 +1079,6 @@
                 this.services.updateData(data, window.CONSTANTS.PRODUCT_KIND.IPCAM, (failedIdList) => {
                     resultCallback(failedIdList);
                 });
-            },
-            _updateIpcamMoiData(data, resultCallback) {
-                // this.services.updateMoiData(data, window.CONSTANTS.PRODUCT_KIND.IPCAM, (failedIdList) => { //TODO
-                this.services.updateData(data, window.CONSTANTS.PRODUCT_KIND.IPCAM, (failedIdList) => {
-                    resultCallback(failedIdList);
-                }); 
             },
             filterBeacon() {
                 let context = '';
@@ -2031,7 +2025,7 @@
                 }
             },
             _subscribe() {
-                this.services.subscribe({
+                this.services.subscribe(this.info.internal, {
                     added: (data) => {
                         if (!this.isRemoveAll) {
                             this._handleAdded(data);
