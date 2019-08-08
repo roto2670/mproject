@@ -53,6 +53,7 @@ cmd.dat
 
 #For Test
 *.rec
+build_files
 
 #test
 ca.srl
