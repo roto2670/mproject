@@ -990,7 +990,10 @@
                             this._updateIpcamData([ipcamData], (failedList) => {
                                 if (!this._.isEmpty(failedList)) {
                                     this.sweetbox.fire('Sorry, Ipcam Moi Client is Maximum');
-                                    document.getElementsByClassName('moi-toggle-button')[0].checked = !ipcamData.custom.is_visible_moi;
+                                    if (this._.isEqual(this.ipcamInfoWindow.id, ipcamId)) {
+                                        document.getElementsByClassName('moi-toggle-button')[0].checked = !ipcamData.custom.is_visible_moi;
+                                    }
+                                    ipcamData.custom.is_visible_moi = !ipcamData.custom.is_visible_moi;
                                 } else {
                                     let fileUrl = `${ window.CONSTANTS.URL.BASE_IMG }icon-ipcam-default.svg`;
                                     if (ipcamData.custom.is_visible_moi) {
@@ -1003,7 +1006,6 @@
                                         });
                                     }
                                 }
-                                ipcamData.custom.is_visible_moi = document.getElementsByClassName('moi-toggle-button')[0].checked;
                                 this.$store.commit('updateIpcamData', ipcamData);
                             });
                         }
