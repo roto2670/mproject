@@ -63,12 +63,12 @@ export default {
     },
     created() {
         this.services.getInfo(info => {
-        if (this._.isObject(info)) {
-            this.info = info;
-            //start
-            this.websocketConnect();
-            this.startInterval();
-        }
+            if (this._.isObject(info)) {
+                this.info = info;
+                //start
+                this.websocketConnect();
+                this.startInterval();
+            }
         });
     }
 }

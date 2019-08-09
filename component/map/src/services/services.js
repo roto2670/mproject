@@ -94,9 +94,9 @@ export const getInfo = (readyCallback) => {
                 console.warn('File is not exist')
                 readyCallback();
             }
-            }).catch(error => {
-                console.warn("Failed to get info ", error);
-                readyCallback();
+        }).catch(error => {
+            console.warn("Failed to get info ", error);
+            readyCallback();
         });
     }
 }
