@@ -9,6 +9,7 @@
 import Map from '@/components/map';
 import Top from '@/components/top';
 import services from '@/services/services';
+
 export default {
     components: {
         Map,

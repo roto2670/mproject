@@ -385,10 +385,11 @@
                             marker.closeInfoWindow();
                         });
     
-                        marker.on('dragend', (e) => {
+                        marker.on('dragend', () => {
+                            const hubMarkerLocation = this.markerMap.hubs[hubId]._coordinates;
                             hubData.custom.map_location = {
-                                x: e.coordinate.x,
-                                y: e.coordinate.y
+                                x: hubMarkerLocation.x,
+                                y: hubMarkerLocation.y
                             }
                             this.$store.commit('updateHubData', hubData);
                             this.hasSameGadget();
@@ -859,11 +860,10 @@
                     if (!(this.markerMap.cams[ipcamId]._coordinates.x === coordinate.x) && !(this.markerMap.cams[ipcamId]._coordinates.y === coordinate.y)) {
                         marker = this.markerMap.cams[ipcamId];
                         if (!!this.ipcamInfoWindow) {
-                            if (!this._.isEqual(this.ipcamInfoWindow.id, ipcamId)) {
-                                const ipcam_id = this.ipcamInfoWindow.id;
-                                this.ipcamInfoWindow = null;
-                                this._destroyStreaming(ipcam_id);
+                            if (this._.isEqual(this.ipcamInfoWindow.id, ipcamId)) {
+                                this._destroyStreaming(ipcamId);
                                 marker.removeInfoWindow();
+                                this.ipcamInfoWindow = null;
                             }
                         }
                         marker.setCoordinates(coordinate);
@@ -903,10 +903,10 @@
                                 }
                             });
                             marker.on('dragend', (e) => {
-                                // this.showIpcamWindow(ipcamId, marker); 
+                                const camMarkerLocation = this.markerMap.cams[ipcamId]._coordinates;
                                 ipcamData.custom.map_location = {
-                                    x: e.coordinate.x,
-                                    y: e.coordinate.y
+                                    x: camMarkerLocation.x,
+                                    y: camMarkerLocation.y
                                 }
                                 this.$store.commit('updateIpcamData', ipcamData);
     
@@ -957,10 +957,9 @@
                 }
                 if (!!this.ipcamInfoWindow) {
                     if (!this._.isEqual(this.ipcamInfoWindow.id, ipcamId)) {
-                        const ipcam_id = this.ipcamInfoWindow.id;
-                        this.ipcamInfoWindow = null;
-                        this._destroyStreaming(ipcam_id) ;
+                        this._destroyStreaming(this.ipcamInfoWindow.id) ;
                         marker.removeInfoWindow();
+                        this.ipcamInfoWindow = null;
                     }
                 }
     
@@ -1020,7 +1019,7 @@
                 this.openIpcamStreaming([ipcamId], (urls) => {
                     let firstUrl = this._.first(urls);
                     if (!!firstUrl) {
-                        this._playStreaming(firstUrl[ipcamId], ipcamId);
+                        this._playStreaming(firstUrl[ipcamId], ipcamId); 
                     } else {
                         this.sweetbox.fire('Sorry, connect Ipcam Streaming failed');
                     }
@@ -1037,9 +1036,8 @@
 
                 this.ipcamInfoWindow.item.on('remove', () => {
                     if (!!this.ipcamInfoWindow) {
-                        const ipcam_id = this.ipcamInfoWindow.id;
+                        this._destroyStreaming(this.ipcamInfoWindow.id);
                         this.ipcamInfoWindow = null;
-                        this._destroyStreaming(ipcam_id);
                     }
                 });
 
@@ -1634,28 +1632,24 @@
                     if (!!this.ipcamStreamData[ipcamId].video) {
                         this.ipcamStreamData[ipcamId].hls.attachMedia(this.ipcamStreamData[ipcamId].video);
                         this.ipcamStreamData[ipcamId].hls.on(Hls.Events.MANIFEST_PARSED, () => {
-                           this.ipcamStreamData[ipcamId].video.play();
+                            this.ipcamStreamData[ipcamId].video.play();
                         });
                         this.ipcamStreamData[ipcamId].hls.loadSource(url);
                         this.ipcamStreamData[ipcamId].hls.on(Hls.Events.ERROR, (event, data) => {
-                            console.log("error", event,data);
                             console.log("Failed to load ipcam streaming");   
                             // this.sweetbox.fire('Failed to load Ipcam Streaming'); 
                         });
                     }
                 }
             },
-            _destroyStreaming(ipcam_id) {
-                this.closeIpcamStreaming([ipcam_id], (res) => {
+            _destroyStreaming(ipcamId) {
+                this.ipcamStreamData[ipcamId].hls.destroy();
+                this.ipcamStreamData = {};
+                this.closeIpcamStreaming([ipcamId], (res) => {
                     if (!this._.isEmpty(res)) {
                         this.sweetbox.fire('Sorry, disconnect Ipcam Streaming failed');
-                    } else {
-                        this.ipcamStreamData[ipcam_id].hls.destroy();
-                        this.ipcamStreamData[ipcam_id] = {};
-                        delete this.ipcamStreamData[ipcam_id];
-                        console.log("success to disconnect ipcam streaming");
                     }
-                });
+               });
             },
             _handleAdded(data) {
                 if (this.isScanner(data.kind)) {
@@ -1794,26 +1788,28 @@
                     }
     
                     if (this._.has(data.custom, 'is_visible_moi')) {
-                        if (!!ipcamMarker) {
-                            let fileUrl = `${ window.CONSTANTS.URL.BASE_IMG }icon-ipcam-default.svg`;
-                            if (data.custom.is_visible_moi) {
-                                fileUrl = `${ window.CONSTANTS.URL.BASE_IMG }icon-ipcam-checked.svg`;
-                            }
-                            ipcamMarker.updateSymbol({
-                                markerFile: fileUrl
-                            });
-    
-                            if (!this.isShowingByStage(window.CONSTANTS.USER_STAGE.SK_NORMAL)) {
-                                if (!ipcamMarker.isVisible() && data.custom.is_visible_moi) {
-                                    ipcamMarker.show();
-                                } else if (ipcamMarker.isVisible() && !data.custom.is_visible_moi) {
-                                    ipcamMarker.hide();
+                        if (!this._.isEqual(data.custom.is_visible_moi, ipcamData.custom.is_visible_moi)) {
+                            if (!!ipcamMarker) {
+                                let fileUrl = `${ window.CONSTANTS.URL.BASE_IMG }icon-ipcam-default.svg`;
+                                if (data.custom.is_visible_moi) {
+                                    fileUrl = `${ window.CONSTANTS.URL.BASE_IMG }icon-ipcam-checked.svg`;
+                                }
+                                ipcamMarker.updateSymbol({
+                                    markerFile: fileUrl
+                                });
+        
+                                if (!this.isShowingByStage(window.CONSTANTS.USER_STAGE.SK_NORMAL)) {
+                                    if (!ipcamMarker.isVisible() && data.custom.is_visible_moi) {
+                                        ipcamMarker.show();
+                                    } else if (ipcamMarker.isVisible() && !data.custom.is_visible_moi) {
+                                        ipcamMarker.hide();
+                                    }
                                 }
                             }
-                        }
-                        if (!!this.ipcamInfoWindow) {
-                            if (this._.isEqual(this.ipcamInfoWindow.id, data.id)) {
-                                document.getElementsByClassName('moi-toggle-button')[0].checked = !!data.custom.is_visible_moi;
+                            if (!!this.ipcamInfoWindow) {
+                                if (this._.isEqual(this.ipcamInfoWindow.id, data.id)) {
+                                    document.getElementsByClassName('moi-toggle-button')[0].checked = !!data.custom.is_visible_moi;
+                                }
                             }
                         }
                     }
@@ -2064,7 +2060,7 @@
                     reopenStream: (data) => {
                         this._handleReopenStream(data.v);
                     }
-                }, () => {});
+                });
             }
         },
         computed: {
