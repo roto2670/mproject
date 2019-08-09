@@ -1017,11 +1017,16 @@
                 const runtimePlayers = document.getElementsByClassName('ipcam-right-panel')[0];
                 runtimePlayers.appendChild(video);
                 this.openIpcamStreaming([ipcamId], (urls) => {
-                    let firstUrl = this._.first(urls);
-                    if (!!firstUrl) {
-                        this._playStreaming(firstUrl[ipcamId], ipcamId); 
+                    if (this._.isArray(urls)) {
+                        let firstUrl = this._.first(urls),
+                            url = firstUrl[ipcamId];
+                        if (!!url) {
+                            this._playStreaming(url, ipcamId); 
+                        } else if (!!this.ipcamInfoWindow && this.ipcamInfoWindow.id === ipcamId) {
+                            this.sweetbox.fire('Sorry, connect Ipcam Streaming failed');
+                        }
                     } else {
-                        this.sweetbox.fire('Sorry, connect Ipcam Streaming failed');
+                       this.sweetbox.fire('Streaming Server is disconnected'); 
                     }
                 })  
 
@@ -1643,13 +1648,15 @@
                 }
             },
             _destroyStreaming(ipcamId) {
-                this.ipcamStreamData[ipcamId].hls.destroy();
-                this.ipcamStreamData = {};
-                this.closeIpcamStreaming([ipcamId], (res) => {
-                    if (!this._.isEmpty(res)) {
-                        this.sweetbox.fire('Sorry, disconnect Ipcam Streaming failed');
-                    }
-               });
+                if (this._.has(this.ipcamStreamData, ipcamId)) {
+                    this.ipcamStreamData[ipcamId].hls.destroy();
+                    this.ipcamStreamData = {};
+                    this.closeIpcamStreaming([ipcamId], (res) => {
+                        if (!this._.isEmpty(res)) {
+                            this.sweetbox.fire('Sorry, disconnect Ipcam Streaming failed');
+                        }
+                    });
+                }
             },
             _handleAdded(data) {
                 if (this.isScanner(data.kind)) {
