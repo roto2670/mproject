@@ -385,7 +385,7 @@
                             marker.closeInfoWindow();
                         });
     
-                        marker.on('dragend', () => {
+                        marker.on('dragend', (e) => {
                             const hubMarkerLocation = this.markerMap.hubs[hubId]._coordinates;
                             hubData.custom.map_location = {
                                 x: hubMarkerLocation.x,
@@ -393,7 +393,7 @@
                             }
                             this.$store.commit('updateHubData', hubData);
                             this.hasSameGadget();
-                            this.drawWorkers(hubId, e.coordinate);
+                            this.drawWorkers(hubId, hubMarkerLocation);
     
                             if (!this._.has(this.hubSetIntervalData, hubId)) {
                                 this.setHubTimeOut(hubId);
