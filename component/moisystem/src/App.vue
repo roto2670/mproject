@@ -1,7 +1,7 @@
 <template>
     <div id="app">
         <!-- <router-view v-if="isConnected"></router-view> -->
-        <Main v-if="isConnected"></Main>
+        <Main v-if="isConnected" :info="info"></Main>
     </div>
 </template>
 <script>
@@ -13,7 +13,8 @@ export default {
     },
     data() {
         return {
-            isConnected: false
+            isConnected: false,
+            info : {}
         }
     },
     methods: {
@@ -49,8 +50,14 @@ export default {
         }
     },
     created() {
-        this.websocketConnect();
-        this.startInterval();
+        this.services.getInfo(info => {
+            if (this._.isObject(info)) {
+                this.info = info;
+                //start
+                this.websocketConnect();
+                this.startInterval();
+            }
+        });
     }
 }
 </script>

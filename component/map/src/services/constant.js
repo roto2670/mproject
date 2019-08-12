@@ -80,7 +80,13 @@ window.CONSTANTS = {
         BEACON: "beacon",
         MIBSSKEC: "mibsskec"
     },
-    BEACON_DISTANCE_OFFSET: 5
+    BEACON_DISTANCE_OFFSET: 5,
+    STREAMING_ERROR_CODE: {
+        IPCAM_DISCONNECT: 1,
+        STREAMING_FAILED: 2,
+        STREAMING_SERVER_DISCONNECT: 3,
+        LIMIT_STREAMING_ACCESS: 4
+    }
 };
 if (window.CONSTANTS.IS_DEV) {
     window.CONSTANTS.URL.CONSOLE = 'http://127.0.0.1:5000';

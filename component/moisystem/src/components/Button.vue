@@ -36,7 +36,7 @@ export default {
         }
     },
     created() {
-        console.log("Created button ", this.type);
+        // console.log("Created button ", this.type);
     }
 }
 </script>

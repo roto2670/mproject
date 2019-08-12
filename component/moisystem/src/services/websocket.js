@@ -55,16 +55,16 @@ export class SocketClient {
         this.send(data);
     }
 
-    subscribe(handlers, callback) {
+    subscribe(internal, handlers) {
         this.call({
             e: window.CONSTANTS.REQUEST_TYPE.SUBSCRIBE,
             kwargs: {
-                client_kind: 'M'
+                client_kind: 'M',
+                internal: internal
             },
             _t: new Date() / 1000.0
         }, (clientId) => {
             this.clientId = clientId;
-            callback();
         });
         this._subscribeHandlers = handlers;
     }
