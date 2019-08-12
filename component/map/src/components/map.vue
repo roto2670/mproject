@@ -798,7 +798,7 @@
                     gadgetCount = 1;
                 if (sameGadgetListSize > 0) {
                     this._.forEach(sameGadgetList, (gadget, gadgetid) => {
-                        var list = this.$store.getters.getHubListDetectOneGadget(gadgetid);
+                        const list = this.$store.getters.getHubListDetectOneGadget(gadgetid);
                         this.setGadgetLocation(list);
                     });
                 }
@@ -1660,6 +1660,13 @@
                     });
                 }
             },
+            _getSortList(data, key) {
+                let sortData = data;
+                sortData = _.sortBy(sortData, key);
+                sortData = _.reverse(sortData); 
+                sortData = _.values(sortData);
+                return sortData;
+            },
             _handleAdded(data) {
                 if (this.isScanner(data.kind)) {
                     this._handleAddHub(data.v);
@@ -1973,29 +1980,41 @@
             },
             _handleDataRefresh() {
                 const currentTime = new Date() / 1000.0;
-                this._.forEach(this.markerMap.hubs, (hub, hid) => {
-                    var list = this.$store.getters.getGadgetListDetectedByOneHub(hid);
-                    this._.forEach(list, (item, gid) => {
+                this._.forEach(this.bcnsData, (data, gid) => {
+                    let hubObj = this.$store.getters.getHubListDetectOneGadget(gid),
+                        hubList = this._getSortList(hubObj, ['_t']),
+                        size = this._.size(hubList);
+    
+                    this._.forEach(hubList, (item, index) => {
                         const differentTime = currentTime - item._t;
                         if (differentTime > 25 && differentTime < 50) {
-                            if (!!this.bcnsData[gid]) {
-                                this._setBeaconOpacity(this.bcnsData[gid].marker, 300, 0.5);
+                            if (index === 0) {
+                                this._setBeaconOpacity(data.marker, 300, 0.5);
                             }
                         } else if (differentTime >= 50) {
                             this.$store.commit('removeDetectedGadgetWithHub', item);
-                            this.$store.commit('removeGadgetLocation', gid);
-                            const data = this.bcnsData[gid];
-                            if (!!data) {
-                                this._setBeaconOpacity(data.marker, 600, 0, () => {
-                                    data.marker.remove();
-                                    data.marker.removeInfoWindow();
-                                    delete this.bcnsData[gid];
-                                });
-                            }
+                            this.$store.commit('removeGadgetLocation', item.gid);
                         }
-                    });
+                    })
+                    hubObj = this.$store.getters.getHubListDetectOneGadget(gid);
+                    hubList = this._getSortList(hubObj, ['_t']);
+                    size = this._.size(hubList);
+                    if (size <= 0) {
+                        this._setBeaconOpacity(data.marker, 600, 0, () => {
+                            data.marker.remove();
+                            data.marker.removeInfoWindow();
+                            delete this.bcnsData[gid];
+                        });
+                    } else {
+                        if (size > 1) {
+                            this.setGadgetLocation(hubList); 
+                        }
+                        const hubMarker =this.markerMap.hubs[hubList[0].hid];
+                        if (!!hubMarker) {
+                            this.drawWorker(hubList[0], hubMarker._coordinates);
+                        }
+                    }
                 });
-                this.hasSameGadget();
             },
             _handleHubOnline(data) {
                 let hubMarker = this.markerMap.hubs[data.id],
