@@ -54,7 +54,6 @@ export class SocketClient {
         });
         this._registerHandler(ident, handler)
         this.send(data);
-        console.log("call", data);
     }
 
     subscribe(internal, handlers) {
@@ -129,7 +128,6 @@ export class SocketClient {
         } finally {
             if (!!data) {
                 if (_.has(data,"i")) { //Event 데이터
-                    console.log("revcie", data);
                     this._handleResponse(data);
                 } else {            //Response 데이터
                     this._handleEvent(data);

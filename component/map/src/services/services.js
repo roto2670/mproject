@@ -119,7 +119,7 @@ export const getHubs = (handler) => {
             kind: window.CONSTANTS.PRODUCT_KIND.HUB
         },
         _t: _getTimestamp()
-    }, handler);
+    }, handler)
 }
 
 export const getBeacons = (product_id, handler) => {
