@@ -3,7 +3,8 @@
     :class="{ checked: checked }" @click="handleSelectedItem">
         <div class="list-item-frame">
             <div class="list-item-checkbox">
-                <check-icon :selected="checked"/>
+                <loading-icon v-if="isShowingLoading"/>
+                <check-icon v-else :selected="checked"/>
             </div>
             <div class="list-item-name-panel">
                 <div class="list-item-name-text"
@@ -14,10 +15,12 @@
 </template>
 <script>
 import CheckIcon from '@/components/icons/CheckIcon';
+import LoadingIcon from '@/components/icons/LoadingIcon';
 export default {
     name: 'ListItem',
     components: {
-        CheckIcon
+        CheckIcon,
+        LoadingIcon
     },
     props: {
         ipcam: {
@@ -25,17 +28,25 @@ export default {
         },
         checked: {
             type: Boolean
+        },
+        selectedIpcamId: {
+            type: String
         }
     },
     methods: {
         handleSelectedItem() {
-            this.$emit('select-item', this.ipcam.id);
+            if (!!!this.selectedIpcamId) {
+                this.$emit('select-item', this.ipcam.id);
+            }
         }
     },
     computed: {
         isCheckMoi() {
             return !!this.ipcam.custom && this.ipcam.custom.is_visible_moi;
             // return true;
+        },
+        isShowingLoading() {
+           return this.selectedIpcamId === this.ipcam.id;
         }
     },
     created() {
@@ -95,4 +106,5 @@ export default {
 .list-item-name-text.checked {
     color: rgb(0, 0, 0, 0.5);
 }
+
 </style>

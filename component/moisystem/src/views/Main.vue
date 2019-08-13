@@ -58,12 +58,10 @@ export default {
         handleSelectedItem(id) {
             if (!this._.includes(this.selectedShowScreenList, id)) {
                 if (this._.size(this.selectedShowScreenList) < window.CONSTANTS.MAX_SHOWING_SCREEN) {
-                    this.selectedShowScreenList.push(id);
                     this.openStreaming(id);
                 }
             } else {
                 this.closeStreaming(id)
-                this.selectedShowScreenList = this._.without(this.selectedShowScreenList, id);
             }
         },
         handleSelectedCloseList() {
@@ -78,6 +76,7 @@ export default {
                             if (this._.isString(resData)) {
                                 this.$store.commit('addStreamingURL', item);
                                 EventBus.$emit('openStreamURL', gadgetId);
+                                this.selectedShowScreenList.push(gadgetId);
                             } else {
                                 this.handleErrorStreaming(resData, () => {
                                     this.selectedShowScreenList = this._.without(this.selectedShowScreenList, gadgetId);
@@ -118,10 +117,10 @@ export default {
         closeStreaming(gadgetId) {
             this.services.closeStreaming([gadgetId], (streamingUrlList) => {
                 if (!this._.isEmpty(streamingUrlList)) {
-                    this._.forEach(streamingUrlList, (url) => {
-                        this.$store.commit('removeStreamingURL', gadgetId);
-                    });
+                    this.sweetbox.fire('Sorry, disconnect Ipcam Streaming failed');
                 }
+                this.$store.commit('removeStreamingURL', gadgetId);
+                this.selectedShowScreenList = this._.without(this.selectedShowScreenList, gadgetId);
             });
         },
         _handleAdded(data) {
