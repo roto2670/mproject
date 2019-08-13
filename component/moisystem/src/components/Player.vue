@@ -43,6 +43,7 @@ export default {
         }
     },
     beforeDestroy() {
+        this.hls.destroy();
     },
     watch: {
         size: function() {

@@ -10,6 +10,7 @@
             <div class="list-content-frame">
                 <list-item v-for="ipcam in ipcams" :key="ipcam.id"
                 :ipcam="ipcam" :checked="isSelected(ipcam.id)"
+                :selectedIpcamId="selectedId"
                 @select-item="handleSelectedItem"/>
             </div>
         </div>
@@ -32,12 +33,14 @@ export default {
     data() {
         return {
             ipcams: [],
-            title: 'Selected videos'
+            title: 'Selected videos',
+            selectedId: ''
         }
     },
     methods: {
         handleSelectedItem(id) {
             this.$emit('select-item', id);
+            this.selectedId = id;
         },
         handleCloseButton() {
             this.$emit('select-close-list');
@@ -49,6 +52,11 @@ export default {
     created() {
         this.ipcams = this.$store.getters.getIpcams;
         console.log("Create list view ", this.ipcams);
+    },
+    watch: {
+        selectedList: function() {
+            this.selectedId = '';
+        }
     }
 }
 </script>
