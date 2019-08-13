@@ -34,12 +34,14 @@ export default {
         return {
             ipcams: [],
             title: 'Selected videos',
-            selectedId: ''
+            selectedId: '',
+            onTimeoutData: null
         }
     },
     methods: {
         handleSelectedItem(id) {
             this.$emit('select-item', id);
+            this.startLoadingTimeout();
             this.selectedId = id;
         },
         handleCloseButton() {
@@ -47,7 +49,21 @@ export default {
         },
         isSelected(id) {
             return this._.includes(this.selectedList, id);
-        }
+        },
+        startLoadingTimeout() {
+            if (!!!this.onTimeoutData) {
+                this.onTimeoutData = setTimeout(() => {
+                    this.selectedId = '';
+                    this.onTimeoutData = null; 
+                }, window.CONSTANTS.TIMEOUT_SEC);
+            }
+        },
+        stopLoadingTimeout() {
+            if (!!this.onTimeoutData) {
+                clearTimeout(this.onTimeoutData);
+                this.onTimeoutData = null;
+            }
+        },
     },
     created() {
         this.ipcams = this.$store.getters.getIpcams;
@@ -56,6 +72,7 @@ export default {
     watch: {
         selectedList: function() {
             this.selectedId = '';
+            this.stopLoadingTimeout();
         }
     }
 }

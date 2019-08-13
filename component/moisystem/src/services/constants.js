@@ -38,7 +38,8 @@ window.CONSTANTS = {
     },
     URL: {
         CONSOLE: ''
-    }
+    },
+    TIMEOUT_SEC: 15 * 1000
 };
 if (window.CONSTANTS.IS_DEV) {
     window.CONSTANTS.URL.CONSOLE = 'http://127.0.0.1:5000';
