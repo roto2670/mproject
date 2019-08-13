@@ -27,7 +27,7 @@ export default new Vuex.Store({
     },
     getStreamingURL(state) {
       return (id) => {
-        return state.streamingUrls[id];
+        return state.streamingUrls[id] || '';
       }
     }
   },
