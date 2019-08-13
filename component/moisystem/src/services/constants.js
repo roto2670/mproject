@@ -4,10 +4,10 @@ window.CONSTANTS = {
         WEBSOCKET_CONNECTION: 10 * 1000
     },
     BUTTON_TYPE: {
-        LIST: 0,
-        PARTITION: 1
+        LIST: 0
+        // PARTITION: 1
     },
-    MAX_SHOWING_SCREEN: 4,
+    MAX_SHOWING_SCREEN: 20,
     REQUEST_TYPE: {
         SUBSCRIBE: 'subscribe',
         UNSUBSCRIBE: 'unsubscribe',
