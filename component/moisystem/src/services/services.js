@@ -39,7 +39,7 @@ export const getIpcams = (handler) => {
                 custom: {ip: "192.168.0.20", password: "admin", id: "admin", map_location: {}, is_visible_moi: true},
                 firmware_version: "10.0.0",
                 hub_id: "001-smockxxxxxxxxxxxxxxxxxxxxxxx",
-                id: `0${i}-imockxxxxxxxxxxxxxxxxxxxxxxx`,
+                id: `00${i}-imockxxxxxxxxxxxxxxxxxxxxxxx`,
                 kind: "ipcam",
                 locale: "mock",
                 mac: "000-imockxxx",
