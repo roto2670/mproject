@@ -33,6 +33,12 @@ export default {
         FullScreen,
         GridScreen
     },
+    props: {
+        info: {
+            type: Object,
+            required: true
+        }
+    },
     data() {
         return {
             buttonType: window.CONSTANTS.BUTTON_TYPE,
@@ -64,15 +70,49 @@ export default {
             this.selectedButtonType = -1;
         },
         openStreaming(gadgetId) {
-            this.services.openStreaming([gadgetId], (streamingItems) => {
+            this.openIpcamStreaming([gadgetId], (streamingItems) => {
                 if (!this._.isEmpty(streamingItems)) {
                     this._.forEach(streamingItems, (item) => {
-                        if (!!item) {
-                            this.$store.commit('addStreamingURL', item);
-                            EventBus.$emit('openStreamURL', gadgetId);
+                        let resData = item[gadgetId];
+                        if (!!resData) {
+                            if (this._.isString(resData)) {
+                                this.$store.commit('addStreamingURL', item);
+                                EventBus.$emit('openStreamURL', gadgetId);
+                            } else {
+                                this.handleErrorStreaming(resData, () => {
+                                    this.selectedShowScreenList = this._.without(this.selectedShowScreenList, gadgetId);
+                                });
+                            }
                         }
                     });
                 }
+            });
+        },
+        openIpcamStreaming(ipcamId, resultCallback) {
+            this.services.openStreaming(ipcamId, (res) => {
+                resultCallback(res);
+            })
+        },
+        handleErrorStreaming(result, resultCallback) {
+            let text = '';
+            switch(result) {
+                case window.CONSTANTS.STREAMING_ERROR_CODE.IPCAM_DISCONNECT:
+                    text = 'Disconnected with this IPcam'
+                break;
+                case window.CONSTANTS.STREAMING_ERROR_CODE.STREAMING_FAILED:
+                    text = 'Failed to open IPcam streaming'; 
+                break;
+                case window.CONSTANTS.STREAMING_ERROR_CODE.STREAMING_SERVER_DISCONNECT:
+                    text = 'Disconnected with streaming server';
+                break;
+                case window.CONSTANTS.STREAMING_ERROR_CODE.LIMIT_STREAMING_ACCESS:
+                    text = 'Exceeded the number of users who can access the IPcam';
+                break;
+            }
+            this.sweetbox.fire({
+                title: text
+            }).then((res) => {
+                resultCallback();
             });
         },
         closeStreaming(gadgetId) {
@@ -122,7 +162,7 @@ export default {
             });
         },
         _subscribe() {
-            this.services.subscribe({
+            this.services.subscribe(this.info.internal, {
                 added: (data) => {
                     this._handleAdded(data.v);
                 },
@@ -135,7 +175,7 @@ export default {
                 reopenStreaming: (data) => {
                     this._handleReopenStreaming(data.v);
                 }
-            }, () => {});
+            });
         }
     },
     computed: {

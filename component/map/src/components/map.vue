@@ -724,6 +724,11 @@
                 if (this._.has(this.bcnsData, gid)) {
                     this.bcnsData[gid].marker.remove();
                     delete this.bcnsData[gid];
+                    this._.forEach(this.markerMap.hubs, (marker, hid) => {
+                        if (this._.includes(this.drawnGadgetList, gid)) {
+                            this.drawnGadgetList[hubId] = this._.without(this.drawnGadgetList[hubId], gid);
+                        }
+                    })
                 }
                 this.$store.commit('removeGadget', gid);
             },
@@ -1018,17 +1023,15 @@
                 video.setAttribute("class", "mediaplayer");
                 const runtimePlayers = document.getElementsByClassName('ipcam-right-panel')[0];
                 runtimePlayers.appendChild(video);
-                this.openIpcamStreaming([ipcamId], (urls) => {
-                    if (this._.isArray(urls)) {
-                        let firstUrl = this._.first(urls),
-                            url = firstUrl[ipcamId];
-                        if (!!url) {
-                            this._playStreaming(url, ipcamId); 
-                        } else if (!!this.ipcamInfoWindow && this.ipcamInfoWindow.id === ipcamId) {
-                            this.sweetbox.fire('Sorry, connect Ipcam Streaming failed');
+                this.openIpcamStreaming([ipcamId], (list) => {
+                    let resObj = this._.first(list),
+                        resData = resObj[ipcamId];
+                    if (!!this.ipcamInfoWindow && this.ipcamInfoWindow.id === ipcamId) {
+                        if (this._.isString(resData)) {
+                            this._playStreaming(resData, ipcamId); 
+                        } else {
+                            this.handleErrorStreaming(resData);
                         }
-                    } else {
-                       this.sweetbox.fire('Streaming Server is disconnected'); 
                     }
                 })  
 
@@ -1058,6 +1061,22 @@
                 this.services.closeIpcamStream(ipcamId, (res) => {
                     resultCallback(res);
                 })
+            },
+            handleErrorStreaming(errorCode) {
+                switch(errorCode) {
+                    case window.CONSTANTS.STREAMING_ERROR_CODE.IPCAM_DISCONNECT:
+                        this.sweetbox.fire('Disconnected with this IPcam');
+                    break;
+                    case window.CONSTANTS.STREAMING_ERROR_CODE.STREAMING_FAILED:
+                        this.sweetbox.fire('Failed to open IPcam streaming'); 
+                    break;
+                    case window.CONSTANTS.STREAMING_ERROR_CODE.STREAMING_SERVER_DISCONNECT:
+                        this.sweetbox.fire('Disconnected with streaming server');
+                    break;
+                    case window.CONSTANTS.STREAMING_ERROR_CODE.LIMIT_STREAMING_ACCESS:
+                        this.sweetbox.fire('Exceeded the number of users who can access the IPcam');
+                    break;
+                }
             },
             removeIpcamMarker(ipcamId) {
                 let ipcamMarker = this.markerMap.cams[ipcamId];
@@ -1877,11 +1896,6 @@
                                 document.getElementsByClassName("bcnKind")[0].innerText = gadgetKind;
                                 document.getElementById(`${ gadget.id }img`).src = `${ window.CONSTANTS.URL.BASE_IMG }item${ tag }.png`;
                             }
-                        }
-                        if (this._.includes(this.setFilteredBeacons, tag)) {
-                            bcnMarker.hide();
-                        } else {
-                            bcnMarker.show();
                         }
                     }
                     if (!!data.custom) {

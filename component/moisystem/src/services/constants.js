@@ -29,5 +29,18 @@ window.CONSTANTS = {
         HUB_OFFLINE: 'off',
         REFRESH: 'refresh',
         REOPEN_STREAMING: "reopen_stream"
+    },
+    STREAMING_ERROR_CODE: {
+        IPCAM_DISCONNECT: 1,
+        STREAMING_FAILED: 2,
+        STREAMING_SERVER_DISCONNECT: 3,
+        LIMIT_STREAMING_ACCESS: 4
+    },
+    URL: {
+        CONSOLE: ''
     }
+};
+if (window.CONSTANTS.IS_DEV) {
+    window.CONSTANTS.URL.CONSOLE = 'http://127.0.0.1:5000';
+    // window.CONSTANTS.URL.CONSOLE = 'http://192.168.0.15:5000';
 }

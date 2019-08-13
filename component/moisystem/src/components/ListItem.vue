@@ -35,10 +35,11 @@ export default {
     computed: {
         isCheckMoi() {
             return !!this.ipcam.custom && this.ipcam.custom.is_visible_moi;
+            // return true;
         }
     },
     created() {
-        console.log("Create list item ", this.ipcam);
+        // console.log("Create list item ", this.ipcam);
     }
 }
 </script>
@@ -46,7 +47,7 @@ export default {
 .list-item-container {
     position: relative;
     width: 100%;
-    height: 2.5em;
+    height: 3em;
     padding: 0 5% 0 5%;
     border-bottom: thin solid rgba(0, 0, 0, 0.1);
 }
@@ -67,6 +68,10 @@ export default {
     height: 1em;
     display: inline-block;
     vertical-align: top;
+    position: absolute;
+    transform: translateY(-50%);
+    top: 50%;
+    cursor: pointer;
 }
 .list-item-name-panel {
     width: calc(90% - 2em);
@@ -78,8 +83,14 @@ export default {
     letter-spacing: .5px;
     text-overflow: ellipsis;
     overflow: hidden;
-    font-size: .9em;
+    font-size: 1.3em;
+    font-weight: 700;
     color: black;
+    position: absolute;
+    cursor: pointer;
+    transform: translateY(-50%);
+    top: 50%;
+    left: 15%;
 }
 .list-item-name-text.checked {
     color: rgb(0, 0, 0, 0.5);

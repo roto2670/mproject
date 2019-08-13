@@ -72,7 +72,7 @@ export default {
 .list-top-frame {
     position: relative;
     width: 100%;
-    height: 2.5em;
+    height: 3em;
     background-color: rgb(25, 195, 180);
 }
 .list-text {
@@ -82,12 +82,12 @@ export default {
     transform: translateY(-50%);
     color: white;
     font-weight: bold;
-    font-size: .8em;
+    font-size: 1.1em;
     letter-spacing: .4px;
 }
 .list-button {
     position: absolute;
-    width: .6em;
+    width: .7em;
     height: .7em;
     top: 40%;
     transform: translateY(-50%);

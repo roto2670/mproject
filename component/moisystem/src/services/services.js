@@ -1,4 +1,5 @@
 import * as WebSocket from '@/services/websocket';
+import axios from 'axios';
 
 const socket = new WebSocket.SocketClient();
 const _getTimestamp = () => new Date() / 1000.0;
@@ -75,4 +76,29 @@ export const closeStreaming = (gadgetIdList, handler) => {
         },
         _t: _getTimestamp()
     }, handler)
+}
+
+export const getInfo = (readyCallback) => {
+    if (window.CONSTANTS.IS_DEV) {
+        readyCallback({
+            stage: 0,
+            internal: true
+        });
+    } else {
+        axios({
+            url: `${ window.CONSTANTS.URL.CONSOLE }/dash/location/info`,
+            method: 'GET',
+            responseType: 'text' // important
+        }).then(response => {
+            if (!!response.data) {
+                readyCallback(response.data);
+            } else {
+                console.warn('File is not exist')
+                readyCallback();
+            }
+        }).catch(error => {
+            console.warn("Failed to get info ", error);
+            readyCallback();
+        });
+    }
 }
