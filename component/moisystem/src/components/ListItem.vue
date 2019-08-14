@@ -19,6 +19,7 @@
 <script>
 import CheckIcon from '@/components/icons/CheckIcon';
 import LoadingIcon from '@/components/icons/LoadingIcon';
+
 export default {
     name: 'ListItem',
     components: {
@@ -102,7 +103,7 @@ export default {
     letter-spacing: .5px;
     text-overflow: ellipsis;
     overflow: hidden;
-    font-size: 1.1em;
+    font-size: 1em;
     font-weight: 700;
     color: black;
     position: absolute;
@@ -110,6 +111,7 @@ export default {
     transform: translateY(-50%);
     top: 50%;
     left: 12%;
+    width: 100px;
 }
 .list-item-name-text.checked {
     color: rgb(0, 0, 0, 0.5);
@@ -121,15 +123,14 @@ export default {
 .offline-icon {
     width: 50px;
     height: 20px;
-    background-color: gray;
-    color: white;
+    background-color: grey;
+    color: #fff;
     border-radius: 3em;
     font-size: x-small;
-    font-weight: 200;
-    letter-spacing: 1px;
+    letter-spacing: 0.5px;
     text-align: center;
     box-sizing: border-box;
-    padding-top: 4px;
+    padding-top: 2px;
 }
 .list-item-container.offline {
     background-color: lightgray;

@@ -770,7 +770,8 @@
                     }
                 }
                 marker.setZIndex(4);
-                marker.flash(500, 15, () => {
+                // Blinking icon
+                marker.flash(500, 5, () => {
                     marker.setZIndex(1);
                     // console.log("flash ended");
                 });
