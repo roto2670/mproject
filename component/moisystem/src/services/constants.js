@@ -7,7 +7,7 @@ window.CONSTANTS = {
         LIST: 0
         // PARTITION: 1
     },
-    MAX_SHOWING_SCREEN: 20,
+    MAX_SHOWING_SCREEN: 9,
     REQUEST_TYPE: {
         SUBSCRIBE: 'subscribe',
         UNSUBSCRIBE: 'unsubscribe',
