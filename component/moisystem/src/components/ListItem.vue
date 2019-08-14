@@ -1,13 +1,16 @@
 <template>
     <div v-if="isCheckMoi" id="list-item" class="list-item-container"
-    :class="{ checked: checked }" @click="handleSelectedItem">
+    :class="{ checked: checked , offline: isOffline }" @click="handleSelectedItem">
         <div class="list-item-frame">
             <div class="list-item-checkbox">
                 <loading-icon v-if="isShowingLoading"/>
                 <check-icon v-else :selected="checked"/>
             </div>
+            <div class="list-item-status">
+                <div class="offline-icon" v-if="isOffline">Offline</div>
+            </div>
             <div class="list-item-name-panel">
-                <div class="list-item-name-text"
+                <div class="list-item-name-text" 
                 :class="{ checked: checked }">{{ ipcam.name }}</div>
             </div>
         </div>
@@ -36,7 +39,9 @@ export default {
     methods: {
         handleSelectedItem() {
             if (!!!this.selectedIpcamId) {
-                this.$emit('select-item', this.ipcam.id);
+                if (!this.isOffline) {
+                    this.$emit('select-item', this.ipcam.id);
+                }
             }
         }
     },
@@ -47,6 +52,9 @@ export default {
         },
         isShowingLoading() {
            return this.selectedIpcamId === this.ipcam.id;
+        },
+        isOffline() {
+            return !this.ipcam.status;
         }
     },
     created() {
@@ -94,17 +102,36 @@ export default {
     letter-spacing: .5px;
     text-overflow: ellipsis;
     overflow: hidden;
-    font-size: 1.3em;
+    font-size: 1.1em;
     font-weight: 700;
     color: black;
     position: absolute;
     cursor: pointer;
     transform: translateY(-50%);
     top: 50%;
-    left: 15%;
+    left: 12%;
 }
 .list-item-name-text.checked {
     color: rgb(0, 0, 0, 0.5);
 }
-
+.list-item-status {
+    position: absolute;
+    margin-left: 60%
+}
+.offline-icon {
+    width: 50px;
+    height: 20px;
+    background-color: gray;
+    color: white;
+    border-radius: 3em;
+    font-size: x-small;
+    font-weight: 200;
+    letter-spacing: 1px;
+    text-align: center;
+    box-sizing: border-box;
+    padding-top: 4px;
+}
+.list-item-container.offline {
+    background-color: lightgray;
+}
 </style>

@@ -8,12 +8,13 @@
                     @select-button="handleSelectButton"></Button>
                 </div>
             </div>
-            <list 
-                :selectedList="selectedShowScreenList"
-                @select-item="handleSelectedItem"
-                @select-close-list="handleSelectedCloseList"/>
             <div class="moi-content-frame" ref="contentFrame">
                 <!-- <full-screen/> -->
+                <list 
+                :selectedList="selectedShowScreenList"
+                @select-item="handleSelectedItem"
+                @select-close-list="handleSelectedCloseList"
+                @select-close-all-list="handleCloseAllList"/>
                 <grid-screen :list="selectedShowScreenList"/>
             </div>
         </div>
@@ -42,7 +43,7 @@ export default {
     data() {
         return {
             buttonType: window.CONSTANTS.BUTTON_TYPE,
-            selectedButtonType: -1,
+            selectedButtonType: 1,
             screenWidth: 0,
             selectedShowScreenList: []
         }
@@ -50,9 +51,9 @@ export default {
     methods: {
         handleSelectButton(type) {
             if (this.selectedButtonType === type) {
-                this.selectedButtonType = -1;
+                this.selectedButtonType = 1;
             } else {
-                this.selectedButtonType = type;
+                this.selectedButtonType = 1;
             }
         },
         handleSelectedItem(id) {
@@ -65,20 +66,20 @@ export default {
             }
         },
         handleSelectedCloseList() {
-            this.selectedButtonType = -1;
+            this.selectedButtonType = 1;
         },
         openStreaming(gadgetId) {
             this.openIpcamStreaming([gadgetId], (streamingItems) => {
                 if (!this._.isEmpty(streamingItems)) {
                     this._.forEach(streamingItems, (item) => {
-                        let resData = item[gadgetId];
-                        if (!!resData) {
-                            if (this._.isString(resData)) {
+                        this.selectedShowScreenList.push(gadgetId);
+                        if (!!item) {
+                            if (this._.isString(item)) {
                                 this.$store.commit('addStreamingURL', item);
                                 EventBus.$emit('openStreamURL', gadgetId);
                                 this.selectedShowScreenList.push(gadgetId);
                             } else {
-                                this.handleErrorStreaming(resData, () => {
+                                this.handleErrorStreaming(item[gadgetId], () => {
                                     this.selectedShowScreenList = this._.without(this.selectedShowScreenList, gadgetId);
                                 });
                             }
@@ -107,6 +108,9 @@ export default {
                 case window.CONSTANTS.STREAMING_ERROR_CODE.LIMIT_STREAMING_ACCESS:
                     text = 'Exceeded the number of users who can access the IPcam';
                 break;
+                case window.CONSTANTS.STREAMING_ERROR_CODE.UNKNOWN_IPCAMID:
+                    text = 'Unknown Ipcam Id';
+                break;
             }
             this.sweetbox.fire({
                 title: text
@@ -122,6 +126,9 @@ export default {
                 this.$store.commit('removeStreamingURL', gadgetId);
                 this.selectedShowScreenList = this._.without(this.selectedShowScreenList, gadgetId);
             });
+        },
+        handleCloseAllList() {
+            this.selectedShowScreenList = [];
         },
         _handleAdded(data) {
             if (!this.$store.getters.isIpcam(data)) {

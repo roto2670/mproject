@@ -1,7 +1,7 @@
 <template>
     <div id="grid-screen" class="grid-main-container">
         <div class="grid-main-frame" ref="gridFrame" :class="gridRepeatFrame">
-            <div v-for="id in list" :key="id">
+            <div class="grid-player-container" v-for="id in list" :key="id">
                 <Player v-if="isMounted" :id="id" :size="screenSize"></Player>
             </div>
         </div>
@@ -85,14 +85,16 @@ export default {
 </script>
 <style>
 .grid-main-container {
-    width: 100%;
+    width: calc(100% - 250px);
     height: 100%;
+    margin-left: 250px;
 }
 .grid-main-frame {
     width: 100%;
     height: 100%;
     display: grid;
     grid-template-columns: repeat(2, 1fr);
+    box-sizing: border-box;
 }
 .grid-main-frame.repeat3 {
     grid-template-columns: repeat(3, 1fr);
@@ -102,5 +104,8 @@ export default {
 }
 .grid-main-frame.repeat5 {
     grid-template-columns: repeat(5, 1fr);
+}
+.grid-player-container {
+    border: solid 2px white;
 }
 </style>

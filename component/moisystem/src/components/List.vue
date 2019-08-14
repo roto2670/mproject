@@ -3,9 +3,12 @@
         <div class="list-main-frame">
             <div class="list-top-frame">
                 <div class="list-text">{{ title }}</div>
-                <div @click="handleCloseButton" class="list-button">
+                <!-- <div @click="handleCloseButton" class="list-button">
                     <CloseIcon color="white"/>
-                </div>
+                </div> -->
+                <!-- <div @click="handleSelectAllData" class="select-button">
+                    <SelectIcon :selectAll="selectedAllData"/>
+                </div> -->
             </div>
             <div class="list-content-frame">
                 <list-item v-for="ipcam in ipcams" :key="ipcam.id"
@@ -19,11 +22,13 @@
 <script>
 import ListItem from '@/components/ListItem'
 import CloseIcon from '@/components/icons/CloseIcon'
+import SelectIcon from '@/components/icons/SelectIcon'
 export default {
     name: 'List',
     components: {
         ListItem,
-        CloseIcon
+        CloseIcon,
+        SelectIcon
     },
     props: {
         selectedList: {
@@ -35,17 +40,40 @@ export default {
             ipcams: [],
             title: 'Selected videos',
             selectedId: '',
-            onTimeoutData: null
+            onTimeoutData: null,
+            selectedAllData: false
         }
     },
     methods: {
         handleSelectedItem(id) {
-            this.$emit('select-item', id);
-            this.startLoadingTimeout();
-            this.selectedId = id;
+            if (this._.size(this.selectedList) < window.CONSTANTS.MAX_SHOWING_SCREEN) {
+                this.$emit('select-item', id);
+                this.startLoadingTimeout();
+                this.selectedId = id;
+            } else {
+                this.sweetbox.fire('max ipcam streaming');
+            }
         },
         handleCloseButton() {
-            this.$emit('select-close-list');
+            this.$emit('select-close-all-list');
+        },
+        handleSelectAllData() {
+            this.selectedAllData = !this.selectedAllData;
+            this.handleSelectAll();
+            return this.selectedAllData;
+        },
+        handleSelectAll() {
+            if (this.handleSelectAllData) {
+                let cnt = 0;
+                this._.forEach(this.ipcams, (data) => {
+                    if (cnt < 9) {
+                        this.$emit('select-item', data.id);
+                    }
+                    cnt++;
+                })
+            } else {
+                this.$emit('select-close-all-list', true);
+            }
         },
         isSelected(id) {
             return this._.includes(this.selectedList, id);
@@ -64,9 +92,14 @@ export default {
                 this.onTimeoutData = null;
             }
         },
+        _sortIpcamStatus() {
+            this.ipcams = this._.sortBy(this.ipcams, ['status']); 
+            this.ipcams = this._.reverse(this.ipcams);
+        }
     },
     created() {
         this.ipcams = this.$store.getters.getIpcams;
+        this._sortIpcamStatus();
         console.log("Create list view ", this.ipcams);
     },
     watch: {
@@ -82,16 +115,14 @@ export default {
     position: absolute;
     width: 100%;
     height: 100%;
-    z-index: 2;
-    background-color: rgba(0, 0, 0, 0.75)
 }
 .list-main-frame {
     width: 250px;
-    height: 90%;
+    height: 100%;
     position: absolute;
-    top: 1em;
-    left: 1em;
-    border-radius: 15px;
+    /* top: 1em; */
+    /* left: 1em; */
+    /* border-radius: 15px; */
     overflow: hidden;
 }
 .list-top-frame {
@@ -107,7 +138,7 @@ export default {
     transform: translateY(-50%);
     color: white;
     font-weight: bold;
-    font-size: 1.1em;
+    font-size: 1.4em;
     letter-spacing: .4px;
 }
 .list-button {
@@ -125,5 +156,14 @@ export default {
     overflow-x: hidden;
     overflow-y: scroll;
     background: white;
+}
+.select-button {
+    position: absolute;
+    width: 1.3em;
+    height: 1.3em;
+    top: 48%;
+    transform: translateY(-50%);
+    right: 1em;
+    cursor: pointer;
 }
 </style>
