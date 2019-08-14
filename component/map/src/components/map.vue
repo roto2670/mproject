@@ -595,16 +595,25 @@
                     }
                     
                     size = this._getMarkerSize(tag);
+                    let symbol = {
+                        'markerFile': markerImg,
+                        'markerWidth': size.width,
+                        'markerHeight': size.height,
+                        'markerOpacity': 0,
+                        'markerDy': 10,
+                        'markerLineWidth': 3
+                    };
+                    if (beacon.custom.is_visible_moi &&
+                       this.isShowingByStage(window.CONSTANTS.USER_STAGE.SK_NORMAL)) {
+                        this._.extend(symbol, {
+                            textName: 'MOI',
+                            textSize: 15,
+                            textDy: 20
+                        });
+                    }
                     marker = new maptalks.Marker(
                         customLocation, {
-                            'symbol': {
-                                'markerFile': markerImg,
-                                'markerWidth': size.width,
-                                'markerHeight': size.height,
-                                'markerOpacity': 0,
-                                'markerDy': 10,
-                                'markerLineWidth': 3
-                            }
+                            'symbol': symbol
                         }
                     ).addTo(customLayer);
 
@@ -1902,12 +1911,24 @@
                         this.$store.commit('updateGadgetMoiData', {
                             id: data.id,
                             isVisible: data.custom.is_visible_moi
-                        })
+                        });
                         if (!this.isShowingByStage(window.CONSTANTS.USER_STAGE.SK_NORMAL)) {
                             if (!bcnMarker.isVisible() && data.custom.is_visible_moi) {
                                 bcnMarker.show();
                             } else if (bcnMarker.isVisible() && !data.custom.is_visible_moi) {
                                 bcnMarker.hide();
+                            }
+                        } else {
+                            if (data.custom.is_visible_moi) {
+                                bcnMarker.updateSymbol({
+                                    textName: 'MOI',
+                                    textSize: 15,
+                                    textDy: 20
+                                });
+                            } else {
+                                bcnMarker.updateSymbol({
+                                    textName: ''
+                                });
                             }
                         }
                         if (!!this.gadgetInfoWindow) {
