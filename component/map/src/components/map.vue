@@ -29,12 +29,13 @@
                 url: '',
                 toast: null,
                 zoomLv: '',
-                hubLayer: '',
+                hubPortalLayer: '',
                 hubAT1Layer: '',
                 hubAT2Layer: '',
-                camLayer: '',
-                camAT1Layer: '',
-                camAT2Layer: '',
+                lostTagHubLayer: '',
+                camFixedLayer: '',
+                camMobileLayer: '',
+                lostTagCamLayer: '',
                 workerLayer: [],
                 lostTagWorkerLayer: '',
                 ipcam: '',
@@ -102,19 +103,23 @@
                     });
                     this.map.once('baselayerload', () => {
                         // this._.first(document.getElementsByClassName('loader')).remove();
-                        this.hubLayer = new maptalks.VectorLayer('vector21').addTo(this.map);
+                        this.hubPortalLayer = new maptalks.VectorLayer('vector21').addTo(this.map);
                         this.hubAT1Layer = new maptalks.VectorLayer('vector22').addTo(this.map);
                         this.hubAT2Layer = new maptalks.VectorLayer('vector23').addTo(this.map);
-                        this.camLayer = new maptalks.VectorLayer('vector24').addTo(this.map);
+                        this.lostTagHubLayer = new maptalks.VectorLayer('vector28').addTo(this.map);
                         this._.forEach(this.gadgetInfoNumber, (index) => {
                             this.workerLayer[index] = new maptalks.VectorLayer(`vector${ index }`).addTo(this.map);
                             this.workerLayer[index].setZIndex(1);
                         })
                         this.lostTagWorkerLayer = new maptalks.VectorLayer('vector20').addTo(this.map);
                         this.lostTagWorkerLayer.setZIndex(1);
-                        this.hubLayer.setZIndex(3);
+                        this.hubPortalLayer.setZIndex(3);
                         this.hubAT1Layer.setZIndex(3);
                         this.hubAT2Layer.setZIndex(3);
+                        this.lostTagHubLayer.setZIndex(3);
+                        this.camFixedLayer = new maptalks.VectorLayer('vector25').addTo(this.map);
+                        this.camMobileLayer = new maptalks.VectorLayer('vector26').addTo(this.map);
+                        this.lostTagCamLayer = new maptalks.VectorLayer('vector27').addTo(this.map);
                         this.initContextMenu();
                         this.map.fitExtent();
                         this.loadItems(this.info);
@@ -339,8 +344,8 @@
                         tagData = parseInt(tagData) - 100;
                         tagData = tagData.toString();
                     }
-                    if (!!!tagData || tagData === "3" || tagData === "0") {
-                        marker.addTo(this.hubLayer);
+                    if (tagData === "0") {
+                        marker.addTo(this.hubPortalLayer);
                         this.markerMap.hubs[hubId] = marker;
                     } else if (tagData === "1") {
                         marker.addTo(this.hubAT1Layer);
@@ -348,7 +353,10 @@
                     } else if (tagData === "2") {
                         marker.addTo(this.hubAT2Layer);
                         this.markerMap.hubs[hubId] = marker;
-                    } 
+                    } else {
+                        marker.addTo(this.lostTagHubLayer);
+                        this.markerMap.hubs[hubId] = marker;
+                    }
                     // this.markerMap.hubs[hubId] = marker;
     
                     if (this.isShowingByStage(window.CONSTANTS.USER_STAGE.SK_ADMIN)) { //TODO
@@ -893,7 +901,21 @@
                             },
                             draggable: this.isShowingByStage(window.CONSTANTS.USER_STAGE.SK_ADMIN)
                         }
-                    ).addTo(this.camLayer);
+                    )
+
+                    let tagData = this._.first(ipcamData.tags);
+                    if (window.CONSTANTS.IS_MOCK) {
+                        tagData = parseInt(tagData) - 100;
+                        tagData = tagData.toString();
+                    }
+
+                    if (tagData === "0") {
+                        marker.addTo(this.camFixedLayer);
+                    } else if (tagData === "1") {
+                        marker.addTo(this.camMobileLayer)
+                    } else {
+                        marker.addTo(this.lostTagCamLayer);
+                    }
                     marker.on('click', () => {
                         marker.closeInfoWindow();
                         this.showIpcamWindow(ipcamId, marker);
@@ -985,22 +1007,33 @@
                         </div><div class="ipcam-right-panel">
                         </div><div class="bottom-shape"></div><div class="close-button"></div></div>`,
                     custom: true,
-                    dy: -403,
+                    dy: -333,
+                    dx: -4,
                     autoPan: false
                 });
                 marker.openInfoWindow();
                 if (this.isShowingByStage(window.CONSTANTS.USER_STAGE.SK_ADMIN)) {
+                    let toggle = '';
+                    if (ipcamData.custom.is_visible_moi) {
+                        toggle = "ON";
+                    } else {
+                        toggle = "OFF";
+                    }
                     const parentEl = document.getElementById('ipcam-main-container');
                     if (!!parentEl) {
                         const el = document.createElement('div');
                         el.innerHTML = `<div class="moi">MOI System</div>
                             <label class="moi-onoff-toggle">
                             <input class="moi-toggle-button" type="checkbox">
-                            <span class="moi-toggle-slider round"></span></label>`;
+                            <span class="moi-toggle-slider round">${ toggle }</span></label>`;
                         parentEl.append(el);
                         document.getElementsByClassName('moi-toggle-button')[0].checked = ipcamData.custom.is_visible_moi;
                         document.getElementsByClassName('moi-toggle-button')[0].onchange = () => {
                             ipcamData.custom.is_visible_moi = document.getElementsByClassName('moi-toggle-button')[0].checked;
+                            document.getElementsByClassName('moi-toggle-slider')[0].innerText = 'OFF';
+                            if (ipcamData.custom.is_visible_moi) {
+                                document.getElementsByClassName('moi-toggle-slider')[0].innerText = 'ON';
+                            }
                             this._updateIpcamData([ipcamData], (failedList) => {
                                 if (!this._.isEmpty(failedList)) {
                                     this.sweetbox.fire('Sorry, Ipcam Moi Client is Maximum');
@@ -1019,6 +1052,10 @@
                                             markerFile: fileUrl
                                         });
                                     }
+                                }
+                                document.getElementsByClassName('moi-toggle-slider')[0].innerText = 'OFF';
+                                if (ipcamData.custom.is_visible_moi) {
+                                    document.getElementsByClassName('moi-toggle-slider')[0].innerText = 'ON';
                                 }
                                 this.$store.commit('updateIpcamData', ipcamData);
                             });
@@ -1169,22 +1206,9 @@
                 document.getElementsByClassName('filterGadgetIcon')[0].onclick = () => {
                     this.filterBeacon();
                 };
-                if (this.ipcamFilterOn === 1) {
-                    document.getElementsByClassName('filterIpcamIcon')[0].classList.add('ipcamFilterOn');
-                } else {
-                    document.getElementsByClassName('filterIpcamIcon')[0].classList.remove('ipcamFilterOn');
-                }
+                
                 document.getElementsByClassName('filterIpcamIcon')[0].onclick = () => {
-                    // this.filterItems(2);
-                    if (this.ipcamFilterOn === 0) {
-                        this.camLayer.hide();
-                        this.ipcamFilterOn = 1;
-                        document.getElementsByClassName('filterIpcamIcon')[0].classList.add('ipcamFilterOn');
-                    } else {
-                        this.camLayer.show();
-                        this.ipcamFilterOn = 0;
-                        document.getElementsByClassName('filterIpcamIcon')[0].classList.remove('ipcamFilterOn');
-                    }
+                    this.filterItems(2);
                 };
                 document.getElementsByClassName('filterSpeakerIcon')[0].onclick = () => {
                     // this.filterItems(3);
@@ -1192,154 +1216,98 @@
                 }
             },
             filterItems(type) {
-                let layers = {};
+                let layers = {},
+                    context = {},
+                    content = '';
                 if (type === 1) {
                     layers = {
-                        AT1: this.hubAT1Layer,
-                        AT2: this.hubAT2Layer,
-                        others: this.hubLayer
+                        firstOption: this.hubPortalLayer,
+                        secondOption: this.hubAT1Layer,
+                        thirdOption: this.hubAT2Layer
                     }
+                    context = {
+                        firstSelectOption: window.CONSTANTS.HUB_FILTER_TEXT.PORTAL,
+                        secondSelectOption: window.CONSTANTS.HUB_FILTER_TEXT.AT1,
+                        thirdSelectOption: window.CONSTANTS.HUB_FILTER_TEXT.AT2
+                    }
+                    content = `<div class="selectTn">
+                            <label id="tn"><input class="firstSelectOption item${ type }-${ type }" type="checkbox">
+                            ${ context.firstSelectOption }</label></div>
+                            <div class="selectTn">
+                            <label id="tn"><input class="secondSelectOption item${ type }-${ type + 1 }" type="checkbox">
+                            ${ context.secondSelectOption }</label></div>
+                            <div class="selectTn">
+                            <label id="tn"><input class="thirdSelectOption item${ type }-${ type + 2 }" type="checkbox">
+                            ${ context.thirdSelectOption }</label></div>
+                            <button id="filter-Reset-Button" class="filter-Reset-Button">Reset</button>`
+                } else if (type === 2) {
+                   layers = {
+                        firstOption: this.camFixedLayer,
+                        secondOption: this.camMobileLayer
+                    }
+                    context = {
+                        firstSelectOption: window.CONSTANTS.IPCAM_FILTER_TEXT.FIXED,
+                        secondSelectOption: window.CONSTANTS.IPCAM_FILTER_TEXT.MOBILE
+                    }
+                    content = `<div class="selectTn">
+                            <label id="tn"><input class="firstSelectOption item${ type }-${ type }" type="checkbox">
+                            ${ context.firstSelectOption }</label></div>
+                            <div class="selectTn">
+                            <label id="tn"><input class="secondSelectOption item${ type }-${ type + 1 }" type="checkbox">
+                            ${ context.secondSelectOption }</label></div>
+                            <button id="filter-Reset-Button" class="filter-Reset-Button">Reset</button>`
                 }
-                // } else if (type === 2) {
-                //    layers = {
-                //         AT1: this.camAT1Layer,
-                //         AT2: this.camAT2Layer,
-                //         others: this.camLayer
-                //     } 
-                // } else {
-                //     layers = {
-                //         AT1: this.speakerAT1Layer,
-                //         AT2: this.speakerAT2Layer,
-                //         others: this.speakerLayer
-                //     }
-                // }
                 this.sweetbox.mixin({
                     showConfirmButton: false,
                     showCloseButton: true,
                     showCancelButton: false
-                    // progressSteps: ['1', '2']
                 }, onclose = () => {
                     document.getElementsByClassName('swal2-content')[0].classList.remove('filterItems');
                 }).queue([{
-                        title: 'Choose the Tunnel',
-                        html: `<div class="selectTn">
-                                <label id="tn"><input class="filterAT1 item${ type }-${ type }" type="checkbox">
-                                AT1</label></div>
-                                <div class="selectTn">
-                                <label id="tn"><input class="filterAT2 item${ type }-${ type + 1 }" type="checkbox">
-                                AT2</label></div>
-                                <div class="selectTn">
-                                <label id="tn"><input class="filterAll item${ type }-${ type + 2 }" type="checkbox">
-                                Portal</label></div>
-                                <button id="filter-Reset-Button" class="filter-Reset-Button">Reset</button>`
-                    }
-                    // {
-                    //     title : 'Choose the Depths',
-                    //     html :`<div class="selectDepth">
-                    //             <input type="checkbox">
-                    //             <label id="dpth">Tunnel 1</label></div>
-                    //             <div class="selectDepth">
-                    //             <input type="checkbox">
-                    //             <label id="dpth">Tunnel 2</label></div>
-                    //             <div class="selectDepth">
-                    //             <input type="checkbox">
-                    //             <label id="dpth">Tunnel 3</label>
-                    //                 </div>`
-                    // }
-                ])
+                    title: 'Choose the Tunnel',
+                    html: content
+                }])
                
                 document.getElementById('filter-Reset-Button').onclick = () => {
                     document.getElementsByClassName(`item${ type }-${ type }`)[0].checked = 0;
                     document.getElementsByClassName(`item${ type }-${ type + 1 }`)[0].checked = 0;
-                    document.getElementsByClassName(`item${ type }-${ type + 2 }`)[0].checked = 0;
-                    layers.AT1.show();
-                    layers.AT2.show();
-                    layers.others.show();
+                    layers.firstOption.show();
+                    layers.secondOption.show();
+                    if (!!document.getElementsByClassName(`item${ type }-${ type + 2 }`)[0]) {
+                        document.getElementsByClassName(`item${ type }-${ type + 2 }`)[0].checked = 0;
+                        layers.thirdOption.show();
+                    }
                 }
-                document.getElementsByClassName(`item${ type }-${ type }`)[0].checked = !layers.AT1.isVisible();
+                document.getElementsByClassName(`item${ type }-${ type }`)[0].checked = !layers.firstOption.isVisible();
                 document.getElementsByClassName(`item${ type }-${ type }`)[0].onchange = () => {
                     const checked = document.getElementsByClassName(`item${ type }-${ type }`)[0].checked;
                     if (checked) {
-                        layers.AT1.hide();
+                        layers.firstOption.hide();
                     } else {
-                        layers.AT1.show();
+                        layers.firstOption.show();
                     }
                 }
-                document.getElementsByClassName(`item${ type }-${ type + 1 }`)[0].checked = !layers.AT2.isVisible();
+                document.getElementsByClassName(`item${ type }-${ type + 1 }`)[0].checked = !layers.secondOption.isVisible();
                 document.getElementsByClassName(`item${ type }-${ type + 1 }`)[0].onchange = () => {
                     const checked = document.getElementsByClassName(`item${ type }-${ type + 1 }`)[0].checked;
                     if (checked) {
-                        layers.AT2.hide();
+                        layers.secondOption.hide();
                     } else {
-                        layers.AT2.show();
+                        layers.secondOption.show();
                     }
                 }
-                document.getElementsByClassName(`item${ type }-${ type + 2 }`)[0].checked = !layers.others.isVisible();
-                document.getElementsByClassName(`item${ type }-${ type + 2}`)[0].onchange = () => {
-                    const checked = document.getElementsByClassName(`item${ type }-${ type + 2 }`)[0].checked;
-                    if (checked) {
-                        layers.others.hide();
-                    } else {
-                        layers.others.show();
+                if (!!document.getElementsByClassName(`item${ type }-${ type + 2 }`)[0]) {
+                    document.getElementsByClassName(`item${ type }-${ type + 2 }`)[0].checked = !layers.thirdOption.isVisible();
+                    document.getElementsByClassName(`item${ type }-${ type + 2}`)[0].onchange = () => {
+                        const checked = document.getElementsByClassName(`item${ type }-${ type + 2 }`)[0].checked;
+                        if (checked) {
+                            layers.thirdOption.hide();
+                        } else {
+                            layers.thirdOption.show();
+                        }
                     }
                 }
                 document.getElementsByClassName('swal2-content')[0].classList.add('filterItems'); 
-            },
-            filterHubs(type) {
-                this.sweetbox.mixin({
-                    confirmButtonText: 'OK',
-                    showCancelButton: true,
-                    // progressSteps: ['1', '2']
-                }).queue([{
-                        title: 'Choose the Tunnel',
-                        html: `<div class="selectTn">
-                                <input class="filterAT1" type="checkbox">
-                                <label id="tn">AT1</label></div>
-                                <div class="selectTn">
-                                <input class="filterAT2" type="checkbox">
-                                <label id="tn">AT2</label></div></div>
-                                <div class="selectTn">
-                                <input class="filterAll" type="checkbox">
-                                <label id="tn">The Other Hub</label></div></div>`
-                    },
-                    // {
-                    //     title : 'Choose the Depths',
-                    //     html :`<div class="selectDepth">
-                    //             <input type="checkbox">
-                    //             <label id="dpth">Tunnel 1</label></div>
-                    //             <div class="selectDepth">
-                    //             <input type="checkbox">
-                    //             <label id="dpth">Tunnel 2</label></div>
-                    //             <div class="selectDepth">
-                    //             <input type="checkbox">
-                    //             <label id="dpth">Tunnel 3</label>
-                    //                 </div>`
-                    // }
-                ])
-                document.getElementsByClassName("filterAT1")[0].checked = !this.hubAT1Layer.isVisible();
-                document.getElementsByClassName("filterAT1")[0].onchange = () => {
-                    if (this.hubAT1Layer.isVisible()) {
-                        this.hubAT1Layer.hide();
-                    } else {
-                        this.hubAT1Layer.show();
-                    }
-                }
-                document.getElementsByClassName("filterAT2")[0].checked = !this.hubAT2Layer.isVisible();
-                document.getElementsByClassName("filterAT2")[0].onchange = () => {
-                    if (this.hubAT2Layer.isVisible()) {
-                        this.hubAT2Layer.hide();
-                    } else {
-                        this.hubAT2Layer.show();
-                    }
-                }
-                document.getElementsByClassName("filterAllHub")[0].checked = !this.hubLayer.isVisible();
-                document.getElementsByClassName("filterAllHub")[0].onchange = () => {
-                    if (this.hubLayer.isVisible()) {
-                        this.hubLayer.hide();
-                    } else {
-                        this.hubLayer.show();
-                    }
-                }
             },
             showLoading() {
                 this.$emit('map-load', true);
@@ -1818,7 +1786,9 @@
             _handleUpdatedIpcam(data) {
                 let ipcamMarker = this.markerMap.cams[data.id],
                     ipcamData = this._.clone(this.$store.getters.getIpCam(data.id));
-    
+
+                this._.extend(ipcamData, data);
+                this.$store.commit('updateIpcamData', ipcamData);
                 //맵에 ipcam이 있는데 로케이션값이 달라진 경우
                 if (!!data.custom) {
                     if (this._.has(data.custom, 'map_location')) {
@@ -1871,9 +1841,17 @@
                         }
                     }
                 }
-    
-                this._.extend(ipcamData, data);
-                this.$store.commit('updateIpcamData', ipcamData);
+                 
+                if (!!data.tags) {
+                    let ipcamData = this.$store.getters.getIpCam(data.id),
+                        ipcamMarker = this.markerMap.cams[data.id];
+                    if (!!ipcamMarker) {
+                        ipcamMarker.remove();
+                        delete this.markerMap.cams[data.id];
+                        this.drawIpcam(data.id, ipcamData.custom.map_location, true);
+                    }
+                }
+               
             },
             _handleUpdatedBeacon(data) { //TODO: data에 어떻게 변경된 값이 오는지 알아야 함
                 let bcnData = this.bcnsData[data.id];
@@ -2267,18 +2245,6 @@
         background-image: url('../../public/static/location/imgs/icon-ipcam-default.svg');
     }
     
-    .ipcamFilterOn {
-        width: 60px;
-        height: 60px;
-        cursor: pointer;
-        border-color: #fff;
-        margin-left: 25px;
-        margin-bottom: 20px;
-        margin-top: 15px;
-        background-repeat: no-repeat;
-        background-image: url('../../public/static/location/imgs/icon-ipcam.svg');
-    }
-    
     .filterSpeakerIcon {
         width: 60px;
         height: 60px;
@@ -2454,7 +2420,11 @@
         padding: 4px 25px 0 5px;
         font-size: 11px;
         font-weight: 600;
-        color: rgb(249 181 49);
+        color: rgb(60, 135, 65);
+    }
+
+    input:checked+.moi-toggle-slider.beacon {
+        color: rgb(255, 181, 48);
     }
     
     input:checked+.moi-toggle-slider:before {
@@ -2479,8 +2449,8 @@
     }
     
     .mediaplayer {
-        width: 600px;
-        height: 337px;
+        width: 450px;
+        height: 253px;
         border-radius: 10px 10px 0 0;
         outline: none;
     }
@@ -2508,7 +2478,7 @@
         margin-left: 30px !important;
     }
 
-    .filterAT1, .filterAT2, .filterAll{
+    .firstSelectOption, .secondSelectOption, .thirdSelectOption{
         bottom: 50%;
         transform: translateY(-50%);
         margin-right: 10px !important;
@@ -2694,7 +2664,7 @@
         font-size: large;
         color: white;
         position: absolute;
-        margin-left: 65%;
+        margin-left: 60%;
         bottom: 35%;
     }
     
@@ -2720,7 +2690,7 @@
     .ipcam-right-panel {
         position: absolute;
         right: 0;
-        height: 335px;
+        height: 253px;
         background-color: black;
         border-radius: 10px 10px 0 0;
     }
@@ -2958,8 +2928,8 @@
         width: 35px;
         background-repeat: no-repeat;
         background-position: center center;
-        left: 92%;
-        top: -8%;
+        left: 90%;
+        top: -9%;
         cursor: pointer;
     }
     
@@ -3036,8 +3006,8 @@
     }
     
     .ipcam_menu {
-        width: 600px;
-        height: 400px;
+        width: 450px;
+        height: 318px;
         list-style: none;
         padding: 0;
         margin-block-start: 0px !important;
@@ -3048,9 +3018,9 @@
     }
     
     .ipcam-container {
-        top: 335px;
+        top: 253px;
         height: 65px;
-        width: 600px;
+        width: 450px;
         position: absolute;
         background-color: rgb(60 135 65);
         border-bottom-left-radius: 10px;
@@ -3058,7 +3028,7 @@
     }
     
     .ipcamId {
-        width: 100px;
+        width: 150px;
         height: 50px;
         margin-left: 20px;
         margin-top: 15px;

@@ -86,6 +86,15 @@ window.CONSTANTS = {
         STREAMING_FAILED: 2,
         STREAMING_SERVER_DISCONNECT: 3,
         LIMIT_STREAMING_ACCESS: 4
+    },
+    HUB_FILTER_TEXT: {
+        AT1: "AT1",
+        AT2: "AT2",
+        PORTAL: "Portal"
+    },
+    IPCAM_FILTER_TEXT: {
+        FIXED: "Fixed",
+        MOBILE: "Mobile"
     }
 };
 if (window.CONSTANTS.IS_DEV) {
