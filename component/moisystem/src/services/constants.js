@@ -4,8 +4,8 @@ window.CONSTANTS = {
         WEBSOCKET_CONNECTION: 10 * 1000
     },
     BUTTON_TYPE: {
-        LIST: 0
-        // PARTITION: 1
+        // LIST: 0
+        PARTITION: 1
     },
     MAX_SHOWING_SCREEN: 9,
     REQUEST_TYPE: {
@@ -34,7 +34,8 @@ window.CONSTANTS = {
         IPCAM_DISCONNECT: 1,
         STREAMING_FAILED: 2,
         STREAMING_SERVER_DISCONNECT: 3,
-        LIMIT_STREAMING_ACCESS: 4
+        LIMIT_STREAMING_ACCESS: 4,
+        UNKNOWN_IPCAMID: 5
     },
     URL: {
         CONSOLE: ''

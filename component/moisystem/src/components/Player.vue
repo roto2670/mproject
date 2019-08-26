@@ -1,8 +1,5 @@
 <template>
 <div ref="playerContent" class="player-container">
-    <div v-if="hasStreamingURL" class="player-info-container">
-        <div class="player-info-name">{{ ipcam.name }}</div>
-    </div>
     <video ref="videoPlayer" class="video-player" controls="controls" autoplay="autoplay"></video>
 </div>
 </template>
@@ -76,21 +73,5 @@ export default {
     position: relative;
     width: 100%;
     height: 100%;
-}
-.player-info-container {
-    position: absolute;
-    width: 100%;
-    height: 3em;
-    z-index: 1;
-    background-color: rgba(130, 130, 130, 0.3);
-}
-.player-info-name {
-    position: absolute;
-    top: 50%;
-    transform: translateY(-50%);
-    right: 2em;
-    color: white;
-    font-size: .8em;
-    letter-spacing: .7px;
 }
 </style>
