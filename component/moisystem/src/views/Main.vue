@@ -8,12 +8,12 @@
                     @select-button="handleSelectButton"></Button>
                 </div>
             </div>
-            <div class="moi-content-frame" ref="contentFrame">
-                <!-- <full-screen/> -->
-                <list v-if="selectedButtonType === 0"
+            <list 
                 :selectedList="selectedShowScreenList"
                 @select-item="handleSelectedItem"
                 @select-close-list="handleSelectedCloseList"/>
+            <div class="moi-content-frame" ref="contentFrame">
+                <!-- <full-screen/> -->
                 <grid-screen :list="selectedShowScreenList"/>
             </div>
         </div>

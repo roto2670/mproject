@@ -178,7 +178,8 @@
         min-width: 80px;
         min-height: 25px;
         border: 1px solid rgb(85, 185, 250);
-        color: rgb(85, 185, 250)
+        color: rgb(85, 185, 250);
+        background-color: white;
     }
     
     

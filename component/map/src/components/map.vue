@@ -29,6 +29,7 @@
                 url: '',
                 toast: null,
                 zoomLv: '',
+                userStage: 0,
                 hubPortalLayer: '',
                 hubAT1Layer: '',
                 hubAT2Layer: '',
@@ -46,6 +47,7 @@
                 ipcamFilterOn: 0,
                 hubSetIntervalData: {},
                 ipcamSetIntervalData: {},
+                checkedMoiFilter: false,
                 gadgetCount: {},
                 gadgetInfoWindow: null,
                 gadgetInfoNumber: this._.keys(window.CONSTANTS.GADGET_INFO),
@@ -207,7 +209,12 @@
             loadItems(info) {
                 this.services.getBeacons(info.product_id, (bcnData) => {
                     console.log("Success to get Beacons", bcnData);
-                    this.$store.commit('addGadgets', bcnData);
+                    this._.forEach(bcnData, (bcn) => {
+                        this.$store.commit('addGadget', bcn);
+                        if (this._.has(bcn.custom, 'ipcamId')) {
+                            this.$store.commit('addIpcamIdAttachedOnBeacon', {ipcamId: bcn.custom.ipcamId, gid: bcn.id});
+                        }
+                    })                    
                     this.services.getHubs((hubList) => {
                         console.log("Success to get Hubs", hubList);
                         this._.forEach(hubList, (hub) => {
@@ -317,7 +324,8 @@
             },
             drawHub(hubId, coordinate, isUpdatedData) {
                 let marker = null,
-                    hubData = this.$store.getters.getHub(hubId);
+                    hubData = this.$store.getters.getHub(hubId),
+                    draggable = null;
     
                 if (this._.has(this.markerMap.hubs, hubId)) {
                     if (!(this.markerMap.hubs[hubId]._coordinates.x === coordinate.x) && !(this.markerMap.hubs[hubId]._coordinates.y === coordinate.y)) {
@@ -329,6 +337,8 @@
                 } else {
                     this.drawnGadgetList[hubId] = [];
                     this.zoomLv = 50 * (this.map.getZoom() / 11);
+                    draggable = this.isShowingByStage(window.CONSTANTS.USER_STAGE.SK_ADMIN) && !hubData.custom.lock;
+
                     marker = new maptalks.Marker(
                         [coordinate.x, coordinate.y], {
                             'symbol': {
@@ -336,7 +346,7 @@
                                 markerWidth: this.zoomLv,
                                 markerHeight: this.zoomLv,
                             },
-                            draggable: this.isShowingByStage(window.CONSTANTS.USER_STAGE.SK_ADMIN)
+                            draggable: draggable
                         }
                     )
                     let tagData = this._.first(hubData.tags);
@@ -391,6 +401,9 @@
     
                         marker.on('dragstart', () => {
                             marker.closeInfoWindow();
+                            if (!!this.hubInfoWindow) {
+                                this.hubInfoWindow = null;
+                            }
                         });
     
                         marker.on('dragend', (e) => {
@@ -406,6 +419,10 @@
                             if (!this._.has(this.hubSetIntervalData, hubId)) {
                                 this.setHubTimeOut(hubId);
                             }
+
+                            if (!!marker._menuOptions) {
+                                marker.closeMenu();
+                            }
                         });
     
                         if (!this._.has(hubData.custom, "is_counted_hub")) {
@@ -417,7 +434,12 @@
                                 });
                             }
                         }
+                    } else {
+                        if (marker.isVisible()) {
+                            marker.hide();
+                        }
                     }
+
                     if (this.isShowingByStage(window.CONSTANTS.USER_STAGE.SK_NORMAL)) {
                         marker.on('click', () => {
                             this.showHubInfoWindow(hubId, marker);
@@ -446,7 +468,7 @@
                 let hubMarker = this.markerMap.hubs[hubId],
                     gadgetList = this.$store.getters.getdetectedGadgetList;
                 if (!this._.isEmpty(hubMarker)) {
-                    let hub = this._.clone(this.$store.getters.getHub(hubId));
+                    let hub = this._.cloneDeep(this.$store.getters.getHub(hubId));
                     hubMarker.remove();
                     delete this.markerMap.hubs[hubId];
                     if (!this._.isEmpty(hub) && !!hub.custom.map_location) {
@@ -474,18 +496,25 @@
                     this.drawWorkers(hid, this.markerMap.hubs[hid]._coordinates);
                 })
             },
-    
             showHubInfoWindow(hubId, marker) {
                 let content = {},
                     length = 0,
                     toggle = '',
                     hubData = this.$store.getters.getHub(hubId);
                 
+                if(!this._.isEmpty(this.infoWindow)) {
+                    this.infoWindow.remove();
+                }
+                if (!!this.hubInfoWindow) {
+                    marker.removeInfoWindow();
+                    this.hubInfoWindow = null;
+                }
                 if (hubData.custom.is_counted_hub) {
                     toggle = 'ON';
                 } else {
                     toggle = 'OFF';
                 }
+
                 content = this.getHubInfoWindowContent(hubId);
                 marker.setInfoWindow({ // TODO: vue component
                     content: `<div class="worker_menu">
@@ -498,6 +527,7 @@
                             <input class="moi-toggle-button-hub" type="checkbox">
                             <span class="moi-toggle-slider-hub round-hub">${ toggle }</span>
                             </label>
+                            <div class="worker-status"></div>
                             </div>
                             <div id="worker-info-panel" class="workerInfo">${ content.context }</div>
                             <div class="close-button-custom"></div></div></div>`,
@@ -507,6 +537,11 @@
                     dy: -300
                 });
                 marker.openInfoWindow();
+                if (hubData.custom.lock) {
+                    document.getElementsByClassName('worker-status')[0].classList.add('lock-img');
+                } else {
+                    document.getElementsByClassName('worker-status')[0].classList.add('unlock-img');
+                }
                 this.hubInfoWindow = {
                     id: hubId,
                     item: marker._infoWindow
@@ -543,7 +578,9 @@
                     marker.removeInfoWindow();
                 }
                 this.hubInfoWindow.item.on('remove', () => {
-                    this.hubInfoWindow = null;
+                    if (!!this.hubInfoWindow) {
+                        this.hubInfoWindow = null;
+                    }
                 })
             },
             startDetector() {
@@ -578,7 +615,7 @@
                     this._setBeaconOpacity(marker, 600, 1);
                     marker.setCoordinates(customLocation);
                 } else {
-                    let markerImg = `${ window.CONSTANTS.URL.BASE_IMG }lostTag.svg`;
+                    let markerImg = this._selectBeaconFileUrl(beacon.gid).fileUrl;
                     if (!this._.isEmpty(beacon.tags)) {
                         tag = this._.first(beacon.tags);
                         if (window.CONSTANTS.IS_MOCK) {
@@ -597,7 +634,6 @@
                             }
                         }
                         
-                        markerImg = `${ window.CONSTANTS.URL.BASE_IMG }icon-worker${ tag }-tab.svg`;
                     } else {
                         customLayer = this.lostTagWorkerLayer;
                     }
@@ -611,14 +647,7 @@
                         'markerDy': 10,
                         'markerLineWidth': 3
                     };
-                    if (beacon.custom.is_visible_moi &&
-                       this.isShowingByStage(window.CONSTANTS.USER_STAGE.SK_NORMAL)) {
-                        this._.extend(symbol, {
-                            textName: 'MOI',
-                            textSize: 15,
-                            textDy: 20
-                        });
-                    }
+                   
                     marker = new maptalks.Marker(
                         customLocation, {
                             'symbol': symbol
@@ -651,6 +680,7 @@
             showGadgetInFoWindow(gadget, marker) {
                 let gadgetKind = null,
                     gadgetList = this.$store.getters.getHubListDetectOneGadget(gadget.gid),
+                    gadgetData = this.$store.getters.getDetectedGadget(gadget.gid),
                     hubIdList = this._.keys(gadgetList),
                     gadgetImageURL = null,
                     context = '',
@@ -690,9 +720,10 @@
                             <div class="bcnName1 bcnKind" title="${ gadgetKind }">${ !_.isEmpty(gadgetKind)? gadgetKind: 'Not Selected'}</div>
                             <div id="${ gadget.gid }name-data" class="scannerData">SCANNER(${ cnt })</div>
                             <div class="scannerNameList">${ context }</div></div>
+                            <div class="bcns-right-panel">
                             <div id="${gadget.gid }loading-panel" class="loading-panel"></div>
                             <div id="${ gadget.gid }loader" class="loader"><div></div><div></div><div></div><div></div></div>
-                            <img id="${ gadget.gid }img" class="bcnsImg1" src="${ window.CONSTANTS.URL.BASE_IMG }item${ tag }.png"></img>
+                            <img id="${ gadget.gid }img" class="bcnsImg1" src="${ window.CONSTANTS.URL.BASE_IMG }item${ tag }.png"></img></div>
                             <div class="close-button-custom"></div></div></div>`;
                 let showInfoWindow = {
                     'content': content,
@@ -709,6 +740,35 @@
                     item: new maptalks.ui.InfoWindow(showInfoWindow)
                 };
                 this.gadgetInfoWindow.item.addTo(this.map).show(this.map.getCenter());
+                
+                if (this._.has(gadgetData.custom, 'ipcamId')) { // TODO
+                    const ipcamData = this.$store.getters.getIpCam(gadgetData.custom.ipcamId);
+                    if (this.isShowingByStage(window.CONSTANTS.USER_STAGE.SK_NORMAL) || ipcamData.custom.is_visible_moi) {
+                        const playerId = 'video_player',
+                            video = document.createElement('video'),
+                            ipcamId = gadgetData.custom.ipcamId; // TODO
+                            // ipcamId = "006-imockxxxxxxxxxxxxxxxxxxxxxxx";
+                    
+                        this.gadgetInfoWindow.ipcamId = ipcamId;
+                        video.setAttribute("id", playerId);
+                        video.setAttribute("controls", "controls");
+                        video.setAttribute("class", "gadget_mediaplayer");
+                        const runtimePlayers = document.getElementsByClassName('bcns-right-panel')[0];
+                        runtimePlayers.innerHTML = null;
+                        runtimePlayers.appendChild(video);
+                        this.openIpcamStreaming([ipcamId], (list) => {
+                            let resObj = this._.first(list),
+                                resData = resObj[ipcamId];
+                            if (!!this.gadgetInfoWindow && this.gadgetInfoWindow.ipcamId === ipcamId) {
+                                if (this._.isString(resData)) {
+                                    this._playStreaming(resData, ipcamId); 
+                                } else {
+                                    this.handleErrorStreaming(resData);
+                                }
+                            }
+                        })  
+                    }
+                }
                 marker.setZIndex(4);
                 marker.flash(500, 15, () => {
                     marker.setZIndex(1);
@@ -718,7 +778,7 @@
                 if (this._.isString(gadget.custom)) {
                     gadget.custom = {};
                 }
-
+                
                 this._registerGadgetInfoWindowHandler(gadget);
                 this.registerHubHandlerInGadgetInfoWindow();
             },
@@ -766,7 +826,7 @@
                     let hubData = this.$store.getters.getHub(hub.hid);
                     if (this._.has(hubData.custom, 'map_location')) {
                         if (calcnt < 2) {
-                            toCalc[hub.hid] = this._.clone(hubData.custom.map_location);
+                            toCalc[hub.hid] = this._.cloneDeep(hubData.custom.map_location);
                             toCalc[hub.hid].dist = hub.dist;
                             toCalc[hub.hid].gid = hub.gid;
                             calcnt++;
@@ -843,14 +903,16 @@
                 if (!this._.isEmpty(camList)) {
                     this._.forEach(camList, (cam, index) => {
                         if (!this._.has(this.markerMap.cams, cam.id)) {
-                            // draw only no location cams.
-                            let childElement = document.createElement('div');
-                            childElement.id = `camitem${ index }`;
-                            childElement.innerText = cam.name;
-                            childElement.onclick = () => {
-                                selectedCallback(cam.id);
+                            if (this._.first(cam.tags) !== "2") {
+                                // draw only no location cams.
+                                let childElement = document.createElement('div');
+                                childElement.id = `camitem${ index }`;
+                                childElement.innerText = cam.name;
+                                childElement.onclick = () => {
+                                    selectedCallback(cam.id);
+                                }
+                                document.getElementsByClassName("additem")[0].appendChild(childElement);
                             }
-                            document.getElementsByClassName("additem")[0].appendChild(childElement);
                         }
                     });
                 }
@@ -870,14 +932,12 @@
             },
             drawIpcam(ipcamId, coordinate, isUpdatedData) {
                 // console.debug('Try draw ipcam, id: ', ipcamId);
-                let marker = null;
+                let marker = null,
+                    draggable = null,
+                    customLayer = null;;
                 var ipcamData = this.$store.getters.getIpCam(ipcamId);
                 this.zoomLv = 50 * (this.map.getZoom() / 11);
-                let fileUrl = `${ window.CONSTANTS.URL.BASE_IMG }icon-ipcam-default.svg`;
-                if (ipcamData.custom.is_visible_moi) {
-                    fileUrl = `${ window.CONSTANTS.URL.BASE_IMG }icon-ipcam-checked.svg`;
-                }
-
+               
                 if (this._.has(this.markerMap.cams, ipcamId)) {
                     if (!(this.markerMap.cams[ipcamId]._coordinates.x === coordinate.x) && !(this.markerMap.cams[ipcamId]._coordinates.y === coordinate.y)) {
                         marker = this.markerMap.cams[ipcamId];
@@ -892,17 +952,9 @@
                         this.markerMap.cams[ipcamId] = marker;
                     }
                 } else {
-                    marker = new maptalks.Marker(
-                        [coordinate.x, coordinate.y], {
-                            'symbol': {
-                                markerFile: fileUrl,
-                                markerWidth: this.zoomLv,
-                                markerHeight: this.zoomLv,
-                            },
-                            draggable: this.isShowingByStage(window.CONSTANTS.USER_STAGE.SK_ADMIN)
-                        }
-                    )
+                    draggable = this.isShowingByStage(window.CONSTANTS.USER_STAGE.SK_ADMIN) && !ipcamData.custom.lock;
 
+                    const fileUrl = this._selectIpcamFileUrl(ipcamId).fileUrl;
                     let tagData = this._.first(ipcamData.tags);
                     if (window.CONSTANTS.IS_MOCK) {
                         tagData = parseInt(tagData) - 100;
@@ -910,12 +962,24 @@
                     }
 
                     if (tagData === "0") {
-                        marker.addTo(this.camFixedLayer);
+                        customLayer = this.camFixedLayer;
                     } else if (tagData === "1") {
-                        marker.addTo(this.camMobileLayer)
+                        customLayer = this.camMobileLayer;
                     } else {
-                        marker.addTo(this.lostTagCamLayer);
+                        customLayer = this.lostTagCamLayer;
                     }
+                   
+                    marker = new maptalks.Marker(
+                        [coordinate.x, coordinate.y], {
+                            'symbol': {
+                                markerFile: fileUrl,
+                                markerWidth: this.zoomLv,
+                                markerHeight: this.zoomLv,
+                            },
+                            draggable: draggable
+                        }
+                    ).addTo(customLayer);
+
                     marker.on('click', () => {
                         marker.closeInfoWindow();
                         this.showIpcamWindow(ipcamId, marker);
@@ -948,6 +1012,9 @@
     
                                 if (!this._.has(this.ipcamSetIntervalData, ipcamId)) {
                                     this.setIpcamTimeOut(ipcamId);
+                                }
+                                if (!!marker._menuOptions) {
+                                    marker.closeMenu();
                                 }
                             });
                             ipcamData.custom.map_location = {
@@ -986,7 +1053,7 @@
             },
             showIpcamWindow(ipcamId, marker) {
                 let content = '',
-                    ipcamData = this.$store.getters.getIpCam(ipcamId),
+                    ipcamData = this._.cloneDeep(this.$store.getters.getIpCam(ipcamId)),
                     name = null;
                 if (!this._.isEmpty(this.infoWindow)) {
                     this.infoWindow.remove();
@@ -1012,6 +1079,7 @@
                     autoPan: false
                 });
                 marker.openInfoWindow();
+                
                 if (this.isShowingByStage(window.CONSTANTS.USER_STAGE.SK_ADMIN)) {
                     let toggle = '';
                     if (ipcamData.custom.is_visible_moi) {
@@ -1023,10 +1091,16 @@
                     if (!!parentEl) {
                         const el = document.createElement('div');
                         el.innerHTML = `<div class="moi">MOI System</div>
-                            <label class="moi-onoff-toggle">
+                            <label class="moi-onoff-toggle-ipcam">
                             <input class="moi-toggle-button" type="checkbox">
-                            <span class="moi-toggle-slider round">${ toggle }</span></label>`;
+                            <span class="moi-toggle-slider round">${ toggle }</span></label>
+                            <div class="worker-status-ipcam"></div>`;
                         parentEl.append(el);
+                        if (ipcamData.custom.lock) {
+                            document.getElementsByClassName('worker-status-ipcam')[0].classList.add('lock-img');
+                        } else {
+                            document.getElementsByClassName('worker-status-ipcam')[0].classList.add('unlock-img');
+                        }
                         document.getElementsByClassName('moi-toggle-button')[0].checked = ipcamData.custom.is_visible_moi;
                         document.getElementsByClassName('moi-toggle-button')[0].onchange = () => {
                             ipcamData.custom.is_visible_moi = document.getElementsByClassName('moi-toggle-button')[0].checked;
@@ -1034,30 +1108,19 @@
                             if (ipcamData.custom.is_visible_moi) {
                                 document.getElementsByClassName('moi-toggle-slider')[0].innerText = 'ON';
                             }
+                            this.$store.commit('updateIpcamData', ipcamData); 
                             this._updateIpcamData([ipcamData], (failedList) => {
                                 if (!this._.isEmpty(failedList)) {
-                                    this.sweetbox.fire('Sorry, Ipcam Moi Client is Maximum');
                                     if (this._.isEqual(this.ipcamInfoWindow.id, ipcamId)) {
                                         document.getElementsByClassName('moi-toggle-button')[0].checked = !ipcamData.custom.is_visible_moi;
                                     }
                                     ipcamData.custom.is_visible_moi = !ipcamData.custom.is_visible_moi;
-                                } else {
-                                    let fileUrl = `${ window.CONSTANTS.URL.BASE_IMG }icon-ipcam-default.svg`;
+                                    document.getElementsByClassName('moi-toggle-slider')[0].innerText = 'OFF';
                                     if (ipcamData.custom.is_visible_moi) {
-                                        fileUrl = `${ window.CONSTANTS.URL.BASE_IMG }icon-ipcam-checked.svg`;
+                                        document.getElementsByClassName('moi-toggle-slider')[0].innerText = 'ON';
                                     }
-                                    let marker = this.markerMap.cams[ipcamData.id];
-                                    if (!!marker) {
-                                        marker.updateSymbol({
-                                            markerFile: fileUrl
-                                        });
-                                    }
-                                }
-                                document.getElementsByClassName('moi-toggle-slider')[0].innerText = 'OFF';
-                                if (ipcamData.custom.is_visible_moi) {
-                                    document.getElementsByClassName('moi-toggle-slider')[0].innerText = 'ON';
-                                }
-                                this.$store.commit('updateIpcamData', ipcamData);
+                                    this.$store.commit('updateIpcamData', ipcamData); 
+                                } 
                             });
                         }
                     }
@@ -1077,7 +1140,23 @@
                             this._playStreaming(resData, ipcamId); 
                         } else {
                             this.handleErrorStreaming(resData);
+                            this.closeIpcamStreaming([ipcamId], (res) => {
+                                if (!this._.isEmpty(res)) {
+                                    console.log("Close stream Failed");
+                                } else {
+                                    console.log("Close stream succedd");
+                                }
+                            });
+                            marker.removeInfoWindow();
                         }
+                    } else {
+                        this.closeIpcamStreaming([ipcamId], (res) => {
+                            if (!this._.isEmpty(res)) {
+                                console.log("Close stream Failed");
+                            } else {
+                                console.log("Close stream succedd");
+                            }
+                        });
                     }
                 })  
 
@@ -1122,17 +1201,21 @@
                     case window.CONSTANTS.STREAMING_ERROR_CODE.LIMIT_STREAMING_ACCESS:
                         this.sweetbox.fire('Exceeded the number of users who can access the IPcam');
                     break;
+                    case window.CONSTANTS.STREAMING_ERROR_CODE.UNKNOWN_IPCAMID:
+                        this.sweetbox.fire('You sent unknown Ipcam Id');
+                    break;
                 }
             },
             removeIpcamMarker(ipcamId) {
                 let ipcamMarker = this.markerMap.cams[ipcamId];
                 if (!this._.isEmpty(ipcamMarker)) {
-                    let ipcam = this._.clone(this.$store.getters.getIpCam(ipcamId));
+                    let ipcam = this._.cloneDeep(this.$store.getters.getIpCam(ipcamId));
                     ipcamMarker.remove();
                     delete this.markerMap.cams[ipcamId];
                     if (!this._.isEmpty(ipcam) && !!ipcam.custom.map_location) {
                         delete ipcam.custom.map_location;
                         delete ipcam.custom.is_visible_moi;
+                        this.$store.commit('removeIpcamIdAttachedOnBeacon', ipcamId);
                         this._updateIpcamData([ipcam], (failedIdList) => {
                             if (!this._.isEmpty(failedIdList)) {
                                 this.sweetbox.fire('Sorry, Ipcam remove failed');
@@ -1191,15 +1274,24 @@
                 this.sweetbox.fire({
                     titleText: 'Choose the item to filter',
                     html: `<button id="filterItemGadget" class="filterGadgetIcon"></button>
+                    <div class="infoFilterGadget">Equipment</div>
                     <button id="filterItemHub" class="filterHubIcon"></button>
+                    <div class="infoFilterHub">Beacon Scanner</div>
                     <button id="filterItemIpcam" class="filterIpcamIcon"></button>
-                    <button id="filterItemSpeaker" class="filterSpeakerIcon"></button>`,
+                    <div class="infoFilterIpcam">IPCam</div>
+                    <button id="filterItemSpeaker" class="filterSpeakerIcon"></button>
+                    <div class="infoFilterSpeaker">Speaker</div>
+                    <button id="filterItemMoi" class="filterMoiIcon"></button>
+                    <div class="infoFilterMoi">MOI</div>`,
                     showCancelButton: false,
                     showConfirmButton: true,
                     confirmButtonColor: '#3085d6',
                     showCloseButton: true,
-                    width: 450
+                    width: 550
                 })
+                if (this.checkedMoiFilter) {
+                   document.getElementsByClassName('filterMoiIcon')[0].classList.add('moiFilter');
+                } 
                 document.getElementsByClassName('filterHubIcon')[0].onclick = () => {
                     this.filterItems(1);
                 };
@@ -1213,6 +1305,17 @@
                 document.getElementsByClassName('filterSpeakerIcon')[0].onclick = () => {
                     // this.filterItems(3);
                     this.sweetbox.close();
+                },
+                document.getElementsByClassName('filterMoiIcon')[0].onclick = () => {
+                    this.checkedMoiFilter = !this.checkedMoiFilter;
+                    if (this.checkedMoiFilter) {
+                        document.getElementsByClassName('filterMoiIcon')[0].classList.add('moiFilter');
+                        this.userStage = window.CONSTANTS.USER_STAGE.SK_HQ;
+                    } else {
+                        document.getElementsByClassName('filterMoiIcon')[0].classList.remove('moiFilter');
+                        this.userStage = this.info.stage; 
+                    }
+                    this._showItemsByStage();
                 }
             },
             filterItems(type) {
@@ -1318,24 +1421,32 @@
             showContextMenu(id, type, marker) {
                 var _type = '',
                     _name = '',
-                    _removeMethod = null;
+                    _removeMethod = null, 
+                    _lock = '';
+                let data = null;
                 switch (type) {
                     case window.CONSTANTS.CONTEXT_TYPE.SCANNER:
-                        var scanner = this.$store.getters.getHub(id);
+                        data = this.$store.getters.getHub(id);
                         _type = 'Scanner';
-                        if (!!scanner) {
-                            _name = scanner.name;
+                        if (!!data) {
+                            _name = data.name;
                         }
                         _removeMethod = this.removeHubMarker;
                         break;
                     case window.CONSTANTS.CONTEXT_TYPE.IPCAM:
-                        var ipcam = this.$store.getters.getIpCam(id);
+                        data = this.$store.getters.getIpCam(id);
                         _type = 'IPCam';
-                        if (!!ipcam) {
-                            _name = ipcam.name;
+                        if (!!data) {
+                            _name = data.name;
                         }
                         _removeMethod = this.removeIpcamMarker;
                         break;
+                }
+                
+                if (!data.custom.lock) {
+                    _lock = 'Lock';
+                } else {
+                    _lock = 'Unlock';
                 }
                 marker.setMenu({
                     items: `<div class="context-menu-container ${ _type.toLowerCase() }">
@@ -1344,17 +1455,31 @@
                         <div class="context-menu-name-text">${ _name }</div></div></div>
                         <div class="context-menu-bottom-panel">
                         <div id="move-button" class="context-menu-button-frame ${ _type.toLowerCase() }"><div class="context-menu-button-panel">
-                        <div id="move-button-text" class="context-menu-button-text">${ 'Move ' + _type.toLowerCase() }</div></div></div>
+                        <div id="move-button-text" class="context-menu-button-text">${ _lock }</div></div></div>
                         <div id="remove-button" class="context-menu-button-frame ${ _type.toLowerCase() }"><div class="context-menu-button-panel">
                         <div id="remove-button-text" class="context-menu-button-text">${ 'Remove ' + _type.toLowerCase() }</div></div></div></div></div>`,
                     width: 350,
                     custom: true,
-                    dy: -120,
+                    dy: -150,
                     animation: 'fade',
                     dx: -90
                 }).openMenu();
-    
-                document.getElementById('remove-button').onclick = function() {
+                document.getElementById('move-button').onclick = () => {
+                    data.custom.lock = !data.custom.lock;
+                    marker.config('draggable', !data.custom.lock);
+                    marker.closeMenu(); 
+                    switch (type) {
+                        case window.CONSTANTS.CONTEXT_TYPE.SCANNER:
+                            this.$store.commit('updateHubData', data);
+                            this._updateHubData([data], (failedList) => {});
+                        break;
+                        case window.CONSTANTS.CONTEXT_TYPE.IPCAM:
+                            this.$store.commit('updateIpcamData', data);
+                            this._updateIpcamData([data], (failedList) => {});
+                        break;
+                    }
+                }
+                document.getElementById('remove-button').onclick = () =>{
                     _removeMethod(id);
                     marker.closeMenu();
                 }
@@ -1381,7 +1506,7 @@
             removeHubItems() {
                 let hubList = [];
                 this._.forEach(this.markerMap.hubs, (marker, hid) => {
-                    let hub = this._.clone(this.$store.getters.getHub(hid));
+                    let hub = this._.cloneDeep(this.$store.getters.getHub(hid));
                     if (!this._.isEmpty(hub)) {
                         delete hub.custom.map_location;
                         delete hub.custom.is_counted_hub;
@@ -1410,7 +1535,7 @@
             removeIpcamItems() {
                 let ipcamList = [];
                 this._.forEach(this.markerMap.cams, (marker, ipcamId) => {
-                    let ipcam = this._.clone(this.$store.getters.getIpCam(ipcamId));
+                    let ipcam = this._.cloneDeep(this.$store.getters.getIpCam(ipcamId));
                     if (!this._.isEmpty(ipcam)) {
                         delete ipcam.custom.map_location;
                         delete ipcam.custom.is_visible_moi;
@@ -1491,7 +1616,7 @@
                 }
             },
             isShowingByStage(stage) {
-                return this.info.stage <= stage;
+                return this.userStage <= stage;
             },
             _getMarkerSize(tag) {
                 let markerWidth = this.zoomLv,
@@ -1533,7 +1658,10 @@
             _registerGadgetInfoWindowHandler(gadget) {
                 const el = document.getElementById(`${ gadget.gid }loader`),
                     panel = document.getElementById(`${ gadget.gid }loading-panel`);
-                let gadgetData = this.$store.getters.getGadget(gadget.gid);
+
+                let gadgetData = this.$store.getters.getGadget(gadget.gid),
+                    ipcamData = null,
+                    content = '';
                 if (!!gadgetData) {
                     if (!!gadgetData.img_url) {
                         let imgElement = document.getElementById(`${ gadget.gid }img`);
@@ -1546,21 +1674,38 @@
                     el.remove();
                     panel.remove();
                 }
-    
-                const scannerDataEl = document.getElementById(`${ gadget.gid }name-data`),
-                    moiContainer = document.getElementsByClassName('beacon-moi-container')[0];
-                if (!!scannerDataEl && !!!moiContainer) {
-                    const moiEl = document.createElement('div');
-                    moiEl.className = 'beacon-moi-container';
-                    moiEl.innerHTML = `<div class="bcnskey1">MOI System</div>
-                        <label class="moi-onoff-toggle beacon">
-                        <input id="${ gadget.gid }-moi-button" class="moi-toggle-button beacon" type="checkbox">
-                        <span id ="${ gadget.gid }-slider" class="moi-toggle-slider beacon round"></span></label>`;
-                    scannerDataEl.before(moiEl);
-                    document.getElementById(`${ gadget.gid }-moi-button`).disabled = !this.isShowingByStage(window.CONSTANTS.USER_STAGE.SK_ADMIN);
-                    document.getElementById(`${ gadget.gid }-moi-button`).checked = !!gadget.custom.is_visible_moi;
-                }
+                const closePanel = document.getElementsByClassName('close-button-custom')[0];
                 if (this.isShowingByStage(window.CONSTANTS.USER_STAGE.SK_ADMIN)) {
+                    if (this._.has(this.gadgetInfoWindow, 'ipcamId')) {
+                        document.getElementsByClassName('scannerNameList')[0].classList.add('extend-scannerNameList');
+                        content = `<div class="bcnsKey2">Ipcam</div>
+                                <label class="gadget-moi-streaming-onoff-toggle beacon">
+                                <input id="${ gadget.gid }-streaming-moi-button" class="gadget-streaming-moi-toggle-button beacon" type="checkbox">
+                                <span id ="${ gadget.gid }-streaming-slider" class="gadget-streaming-moi-toggle-slider beacon round"></span></label>`
+                        ipcamData = this.$store.getters.getIpCam(this.gadgetInfoWindow.ipcamId);
+                    }
+                    const scannerDataEl = document.getElementById(`${ gadget.gid }name-data`),
+                        moiContainer = document.getElementsByClassName('beacon-moi-container')[0];
+                    if (!!scannerDataEl && !!!moiContainer) {
+                        const moiEl = document.createElement('div');
+                        moiEl.className = 'beacon-moi-container';
+                        moiEl.innerHTML = `<div class="bcnskey1">MOI System</div><div class="bcnsKey2">Beacon</div>
+                            <label class="moi-onoff-toggle beacon">
+                            <input id="${ gadget.gid }-moi-button" class="moi-toggle-button beacon" type="checkbox">
+                            <span id ="${ gadget.gid }-slider" class="moi-toggle-slider beacon round"></span></label>
+                            ${ content }`;
+
+                        scannerDataEl.before(moiEl);
+                        
+                        document.getElementById(`${ gadget.gid }-moi-button`).disabled = !this.isShowingByStage(window.CONSTANTS.USER_STAGE.SK_ADMIN);
+                        document.getElementById(`${ gadget.gid }-moi-button`).checked = !!gadget.custom.is_visible_moi;
+
+                        if (!!document.getElementById(`${ gadget.gid }-streaming-moi-button`)) {
+                            document.getElementById(`${ gadget.gid }-streaming-moi-button`).disabled = !this.isShowingByStage(window.CONSTANTS.USER_STAGE.SK_ADMIN);
+                            document.getElementById(`${ gadget.gid }-streaming-moi-button`).checked = !!ipcamData.custom.is_visible_moi;
+                        }
+                    }
+                    
                     if (this._.has(gadget.custom, 'is_visible_moi')) {
                         if (gadget.custom.is_visible_moi) {
                             document.getElementById(`${ gadget.gid }-slider`).innerText = 'ON';
@@ -1570,41 +1715,71 @@
                     } else {
                         document.getElementById(`${ gadget.gid }-slider`).innerText = 'OFF';
                     }
-                }
-
-                const element = document.getElementById(`${ gadget.gid }-moi-button`),
-                    closePanel = document.getElementsByClassName('close-button-custom')[0];
-                if (!!element) {
-                    element.onchange = () => {
-                        const _gadget = this.$store.getters.getGadget(gadget.gid),
-                            isVisible = element.checked;
-                        document.getElementById(`${ gadget.gid }-slider`).innerText = 'OFF';
-                        if (isVisible) {
-                            document.getElementById(`${ gadget.gid }-slider`).innerText = 'ON';
+                    
+                    if (this._.has(this.gadgetInfoWindow, 'ipcamId')) {
+                        const ipcamData = this.$store.getters.getIpCam(this.gadgetInfoWindow.ipcamId);
+                        if (ipcamData.custom.is_visible_moi) {
+                            document.getElementById(`${ gadget.gid }-streaming-slider`).innerText = 'ON'; 
+                        } else {
+                            document.getElementById(`${ gadget.gid }-streaming-slider`).innerText = 'OFF';
                         }
-                        _gadget.custom = {
-                            is_visible_moi: isVisible
-                        };
-                        this._updateGadgetData([_gadget], () => {
-                            this.$store.commit('updateGadgetMoiData', {
-                                id: _gadget.id,
-                                isVisible: isVisible
+                    }
+
+                    const element = document.getElementById(`${ gadget.gid }-moi-button`),
+                        streaming_el = document.getElementById(`${ gadget.gid }-streaming-moi-button`);
+                    if (!!element) {
+                        element.onchange = () => {
+                            const _gadget = this._.cloneDeep(this.$store.getters.getGadget(gadget.gid)),
+                                isVisible = element.checked;
+                            document.getElementById(`${ gadget.gid }-slider`).innerText = 'OFF';
+                            if (isVisible) {
+                                document.getElementById(`${ gadget.gid }-slider`).innerText = 'ON';
+                            }
+                            
+                            _gadget.custom.is_visible_moi = isVisible;
+                            this._updateGadgetData([_gadget], (failedList) => {
+                                if (!this._.isEmpty(failedList)) {
+                                    this.sweetbox.fire('Sorry, Gadget data update failed');
+                                }
+                                console.log("Succeed to update gadget data");
                             });
-                            console.log("Succeed to update gadget data");
-                        }, (error) => {
-                            console.log("Failed to update gadget data");
-                        });
+                        }
+                    }
+                    
+                    if (!!streaming_el) {
+                        streaming_el.onchange = () => {
+                            let _ipcam = this._.cloneDeep(this.$store.getters.getIpCam(gadgetData.custom.ipcamId)),
+                                is_visible_moi = streaming_el.checked;
+                            document.getElementById(`${ gadget.gid }-streaming-slider`).innerText = 'OFF';
+                            if (is_visible_moi) {
+                                document.getElementById(`${ gadget.gid }-streaming-slider`).innerText = 'ON';
+                            }
+                            _ipcam.custom.is_visible_moi = is_visible_moi;
+                            this._updateIpcamData([_ipcam], (failedList) => {
+                                if (!this._.isEmpty(failedList)) {
+                                    this.sweetbox.fire('Sorry, Ipcam data update failed');
+                                } 
+                            });
+                        }
                     }
                 }
 
                 if (!!closePanel) {
                     closePanel.onclick = () => {
-                        this.gadgetInfoWindow.item.remove();
+                        if (!!this.gadgetInfoWindow)   {
+                            this.gadgetInfoWindow.item.remove();
+                        }
                     }
                 }
 
                 this.gadgetInfoWindow.item.on('remove', () => {
-                    this.gadgetInfoWindow = null;
+                    if (!!this.gadgetInfoWindow) {
+                        if (this._.has(this.gadgetInfoWindow, 'ipcamId')) {
+                            this._destroyStreaming(this.gadgetInfoWindow.ipcamId);
+                            document.getElementsByClassName('scannerNameList')[0].classList.remove('extend-scannerNameList');
+                        }
+                        this.gadgetInfoWindow = null;
+                    }
                 })
             },
             _setBeaconOpacity(marker, duration, opacity, finishCallback) {
@@ -1656,6 +1831,96 @@
                     });
                 }
             },
+            _selectIpcamFileUrl(ipcamId) {
+                const ipcamData = this.$store.getters.getIpCam(ipcamId),
+                      tagData = this._.first(ipcamData.tags);
+                let fileUrl = `${ window.CONSTANTS.URL.BASE_IMG }icon-ipcam1-on.svg`; 
+                if (tagData === "0" || tagData === "1") {
+                    if (ipcamData.status) {
+                        fileUrl = `${ window.CONSTANTS.URL.BASE_IMG }icon-ipcam${ tagData }-on.svg`; 
+                        if (ipcamData.custom.is_visible_moi) {
+                            fileUrl = `${ window.CONSTANTS.URL.BASE_IMG }icon-ipcam${ tagData }-moi-on.svg`;
+                        }
+                    } else {
+                        fileUrl = `${ window.CONSTANTS.URL.BASE_IMG }icon-ipcam${ tagData }-off.svg`;
+                    }
+                } else if (!!!tagData) {
+                    if (ipcamData.status) {
+                        fileUrl = `${ window.CONSTANTS.URL.BASE_IMG }icon-ipcam1-on.svg`; 
+                        if (ipcamData.custom.is_visible_moi) {
+                            fileUrl = `${ window.CONSTANTS.URL.BASE_IMG }icon-ipcam1-moi-on.svg`;
+                        }
+                    } else {
+                        fileUrl = `${ window.CONSTANTS.URL.BASE_IMG }icon-ipcam1-off.svg`;
+                    }
+                }
+                return {
+                    fileUrl: fileUrl
+                }
+            },
+            _selectBeaconFileUrl(gid) {
+                const beaconData = this.$store.getters.getGadget(gid),
+                      tag = this._.first(beaconData.tags);
+                let fileUrl = '';
+                if (this.isShowingByStage(window.CONSTANTS.USER_STAGE.SK_NORMAL)) {
+                    if (!this._.isEmpty(beaconData.tags)) {
+                        if (this._.has(beaconData.custom, 'ipcamId')) {
+                            const ipcamData = this.$store.getters.getIpCam(beaconData.custom.ipcamId);
+                            if (ipcamData.custom.is_visible_moi) {
+                                if (beaconData.custom.is_visible_moi) {
+                                    fileUrl = `${ window.CONSTANTS.URL.BASE_IMG }icon-worker${ tag }-double-moi-on.svg`; 
+                                } else {
+                                    fileUrl = `${ window.CONSTANTS.URL.BASE_IMG }icon-worker${ tag }-moi-off.svg`; 
+                                }
+                               
+                            } else {
+                                if (beaconData.custom.is_visible_moi) {
+                                    fileUrl = `${ window.CONSTANTS.URL.BASE_IMG }icon-worker${ tag }-beacon-moi-on.svg`; 
+                                } else {
+                                    fileUrl = `${ window.CONSTANTS.URL.BASE_IMG }icon-worker${ tag }-ipcam-moi-off.svg`;  
+                                }
+                            }
+                        } else {
+                            if (beaconData.custom.is_visible_moi) {
+                                fileUrl = `${ window.CONSTANTS.URL.BASE_IMG }icon-worker${ tag }-moi-on.svg`; 
+                            } else {
+                                fileUrl = `${ window.CONSTANTS.URL.BASE_IMG }icon-worker${ tag }-tab.svg`;  
+                            }
+                        }
+                    } else {
+                        fileUrl = `${ window.CONSTANTS.URL.BASE_IMG }lostTag.svg`; 
+                    }
+                } else {
+                    if (!this._.isEmpty(beaconData.tags)) {
+                        fileUrl = `${ window.CONSTANTS.URL.BASE_IMG }icon-worker${ tag }-tab.svg`;  
+                    } else {
+                        fileUrl = `${ window.CONSTANTS.URL.BASE_IMG }lostTag.svg`; 
+                    } 
+                }
+
+                return {
+                    fileUrl: fileUrl
+                }
+            },
+            _showItemsByStage() {
+                this._.forEach(this.markerMap.cams, (marker, ipcamId) => {
+                    marker.remove();
+                });
+                this._.forEach(this.bcnsData, (bcn, gid) => {
+                    bcn.marker.remove();
+                })
+                
+                // this.drawnGadgetList = {};
+                this.bcnsData = {}; 
+                this.markerMap.cams = {};
+
+                const ipcams = this.$store.getters.getIpCams;
+                this._.forEach(this.markerMap.hubs, (marker, hid) => {
+                    this.drawWorkers(hid, marker._coordinates);
+                });
+                
+                this.drawIpCams(ipcams, true);
+            },
             _getSortList(data, key) {
                 let sortData = data;
                 sortData = _.sortBy(sortData, key);
@@ -1677,6 +1942,9 @@
             },
             _handleAddGadget(data) {
                 this.$store.commit('addGadget', data);
+                if (this._.has(data.custom, 'ipcamId')) {
+                    this.$store.commit('addIpcamIdAttachedOnBeacon', {ipcamId: data.custom.ipcamId, gid: data.id});
+                }
             },
             _handleAddIpcam(data) {
                 this.$store.commit('addIpcam', data);
@@ -1692,7 +1960,7 @@
             },
             _handleUpdatedHub(data) {
                 let hubMarker = this.markerMap.hubs[data.id],
-                    hubData = this._.clone(this.$store.getters.getHub(data.id));
+                    hubData = this._.cloneDeep(this.$store.getters.getHub(data.id));
 
                 this._.extend(hubData, data);
                 this.$store.commit('updateHubData', hubData);
@@ -1748,6 +2016,12 @@
                             }
                         }
                     }
+
+                    if (this._.has(data.custom, 'lock')) {
+                        if (!!hubMarker) {
+                            hubMarker.config('draggable', !data.custom.lock);
+                        }
+                    }
                 }
 
                 if (!!data.tags) {
@@ -1785,8 +2059,9 @@
             },
             _handleUpdatedIpcam(data) {
                 let ipcamMarker = this.markerMap.cams[data.id],
-                    ipcamData = this._.clone(this.$store.getters.getIpCam(data.id));
-
+                    ipcamData = this._.cloneDeep(this.$store.getters.getIpCam(data.id)),
+                    beaconDataAttachIpcam = this.$store.getters.getIpcamIdAttachedOnBeacon(data.id);
+                const moiData = ipcamData.custom.is_visible_moi;
                 this._.extend(ipcamData, data);
                 this.$store.commit('updateIpcamData', ipcamData);
                 //맵에 ipcam이 있는데 로케이션값이 달라진 경우
@@ -1802,29 +2077,47 @@
                     }
     
                     if (this._.has(data.custom, 'is_visible_moi')) {
-                        if (!this._.isEqual(data.custom.is_visible_moi, ipcamData.custom.is_visible_moi)) {
-                            if (!!ipcamMarker) {
-                                let fileUrl = `${ window.CONSTANTS.URL.BASE_IMG }icon-ipcam-default.svg`;
-                                if (data.custom.is_visible_moi) {
-                                    fileUrl = `${ window.CONSTANTS.URL.BASE_IMG }icon-ipcam-checked.svg`;
+                        if (!!ipcamMarker) {
+                            const fileUrl = this._selectIpcamFileUrl(data.id).fileUrl;
+                            ipcamMarker.updateSymbol({
+                                markerFile: fileUrl
+                            });
+    
+                            if (!this.isShowingByStage(window.CONSTANTS.USER_STAGE.SK_NORMAL)) {
+                                if (!ipcamMarker.isVisible() && data.custom.is_visible_moi) {
+                                    ipcamMarker.show();
+                                } else if (ipcamMarker.isVisible() && !data.custom.is_visible_moi) {
+                                    ipcamMarker.hide();
                                 }
-                                ipcamMarker.updateSymbol({
+                            }
+                        }
+
+                        if (!!beaconDataAttachIpcam) {
+                            let beaconData = this.bcnsData[beaconDataAttachIpcam];
+                            if (!!beaconData) {
+                                let beaconMarker = beaconData.marker;
+                                const fileUrl = this._selectBeaconFileUrl(beaconDataAttachIpcam).fileUrl;
+                                beaconMarker.updateSymbol({
                                     markerFile: fileUrl
-                                });
-        
-                                if (!this.isShowingByStage(window.CONSTANTS.USER_STAGE.SK_NORMAL)) {
-                                    if (!ipcamMarker.isVisible() && data.custom.is_visible_moi) {
-                                        ipcamMarker.show();
-                                    } else if (ipcamMarker.isVisible() && !data.custom.is_visible_moi) {
-                                        ipcamMarker.hide();
+                                })
+                                if (!this.isShowingByStage(window.CONSTANTS.USER_STAGE.SK_ADMIN)) {
+                                    if (!!this.gadgetInfoWindow) {
+                                        this.gadgetInfoWindow.item.remove();
                                     }
                                 }
                             }
-                            if (!!this.ipcamInfoWindow) {
-                                if (this._.isEqual(this.ipcamInfoWindow.id, data.id)) {
-                                    document.getElementsByClassName('moi-toggle-button')[0].checked = !!data.custom.is_visible_moi;
-                                }
+                        }
+                        if (!!this.ipcamInfoWindow) {
+                            if (this._.isEqual(this.ipcamInfoWindow.id, data.id)) {
+                                document.getElementsByClassName('moi-toggle-button')[0].checked = !!data.custom.is_visible_moi;
                             }
+                        }
+                    }
+
+                    if (this._.has(data.custom, 'lock')) {
+                        if (!!ipcamMarker) {
+                            console.log
+                            ipcamMarker.config('draggable', !data.custom.lock);
                         }
                     }
                 }
@@ -1847,16 +2140,15 @@
                         ipcamMarker = this.markerMap.cams[data.id];
                     if (!!ipcamMarker) {
                         ipcamMarker.remove();
-                        delete this.markerMap.cams[data.id];
+                        delete this.markerMap.cams[data.id]
                         this.drawIpcam(data.id, ipcamData.custom.map_location, true);
                     }
                 }
-               
             },
             _handleUpdatedBeacon(data) { //TODO: data에 어떻게 변경된 값이 오는지 알아야 함
                 let bcnData = this.bcnsData[data.id];
-                const gadget = this._.clone(this.$store.getters.getGadget(data.id));
-
+                const gadget = this._.cloneDeep(this.$store.getters.getGadget(data.id)),
+                      moiData = gadget.custom.is_visible_moi;
                 this._.extend(gadget, data);
                 this.$store.commit('updateGadgetData', gadget);
                 if (!!bcnData) {
@@ -1886,29 +2178,40 @@
                         }
                     }
                     if (!!data.custom) {
-                        this.$store.commit('updateGadgetMoiData', {
-                            id: data.id,
-                            isVisible: data.custom.is_visible_moi
-                        });
-                        if (!this.isShowingByStage(window.CONSTANTS.USER_STAGE.SK_NORMAL)) {
-                            if (!bcnMarker.isVisible() && data.custom.is_visible_moi) {
-                                bcnMarker.show();
-                            } else if (bcnMarker.isVisible() && !data.custom.is_visible_moi) {
-                                bcnMarker.hide();
+                        if (data.custom.is_visible_moi !== moiData) {
+                            this.$store.commit('updateGadgetMoiData', { id: data.id, isVisible: data.custom.is_visible_moi });
+                            if (!this.isShowingByStage(window.CONSTANTS.USER_STAGE.SK_NORMAL)) {
+                                if (!bcnMarker.isVisible() && data.custom.is_visible_moi) {
+                                    bcnMarker.show();
+                                } else if (bcnMarker.isVisible() && !data.custom.is_visible_moi) {
+                                    bcnMarker.hide();
+                                }
+                            } 
+                        } 
+
+                        if (this._.has(data.custom, 'ipcamId')) {
+                            if (this._.has(gadget.custom, 'ipcamId')) {
+                                if (!this._.isEqual(data.custom.ipcamId, gadget.custom.ipcamId)) {
+                                    this.$store.commit('updateIpcamIdAttachedOnBeacon', {ipcamId: data.custom.ipcamId, gid: data.id});
+                                }
+                            } else {
+                                this.$store.commit('addIpcamIdAttachedOnBeacon', {ipcamId: data.custom.ipcamId, gid: data.id});
+                            }
+                            if (!!this.gadgetInfoWindow) {   //TODO
+                                this.gadgetInfoWindow.item.remove();
                             }
                         } else {
-                            if (data.custom.is_visible_moi) {
-                                bcnMarker.updateSymbol({
-                                    textName: 'MOI',
-                                    textSize: 15,
-                                    textDy: 20
-                                });
-                            } else {
-                                bcnMarker.updateSymbol({
-                                    textName: ''
-                                });
+                            if (this._.has(gadget.custom, 'ipcamId')) {
+                                this.$store.commit('removeIpcamIdAttachedOnBeacon', gadget.custom.ipcamId);
+                                if (!!this.gadgetInfoWindow) {   //TODO
+                                    this.gadgetInfoWindow.item.remove();
+                                }
                             }
                         }
+                        const fileUrl = this._selectBeaconFileUrl(data.id).fileUrl;
+                        bcnMarker.updateSymbol({
+                            markerFile: fileUrl
+                        })
                         if (!!this.gadgetInfoWindow) {
                             if (this._.isEqual(this.gadgetInfoWindow.id, data.id)) {
                                 const element = document.getElementById(`${ gadget.id }-moi-button`);
@@ -2029,20 +2332,57 @@
                     }
                 });
             },
+            _handleOnline(data) {
+                switch(data.kind) {
+                    case window.CONSTANTS.PRODUCT_KIND.HUB: 
+                        this._handleHubOnline(data.v);
+                    break;
+                    case window.CONSTANTS.PRODUCT_KIND.IPCAM:
+                        this._handleIpcamOnline(data.v);
+                    break;
+                }
+            },
+            _handleOffline(data) {
+                switch(data.kind) {
+                    case window.CONSTANTS.PRODUCT_KIND.HUB: 
+                        this._handleHubOffline(data.v);
+                    break;
+                    case window.CONSTANTS.PRODUCT_KIND.IPCAM:
+                        this._handleIpcamOffline(data.v);
+                    break;
+                } 
+            },
             _handleHubOnline(data) {
                 let hubMarker = this.markerMap.hubs[data.id],
                     hubData = this._.clone(this.$store.getters.getHub(data.id));
-                hubData.status = 1;
-                this.$store.commit('updateHubData', hubData);
-                if (!!hubMarker) {
-                    hubMarker.updateSymbol({
-                        markerFile: `${ window.CONSTANTS.URL.BASE_IMG }icon-hub-tab1.svg`
-                    });
+                if (!!hubData) {
+                    hubData.status = 1;
+                    this.$store.commit('updateHubData', hubData);
+                    if (!!hubMarker) {
+                        hubMarker.updateSymbol({
+                            markerFile: `${ window.CONSTANTS.URL.BASE_IMG }icon-hub-tab1.svg`
+                        });
+                    }
+                }
+            },
+            _handleIpcamOnline(data) {
+                let ipcamMarker = this.markerMap.cams[data.id], 
+                    ipcamData = this._.clone(this.$store.getters.getIpCam(data.id)), 
+                    markerFile = '';
+                if (!!ipcamData) {
+                    ipcamData.status = 1;
+                    this.$store.commit('updateIpcamData', ipcamData);
+                    if (!!ipcamMarker) {
+                        markerFile = this._selectIpcamFileUrl(data.id).fileUrl;
+                        ipcamMarker.updateSymbol({
+                            markerFile: markerFile
+                        })
+                    }
                 }
             },
             _handleHubOffline(data) {
                 let hubMarker = this.markerMap.hubs[data.id],
-                    hubData = this._.clone(this.$store.getters.getHub(data.id));
+                    hubData = this._.cloneDeep(this.$store.getters.getHub(data.id));
                 hubData.status = 0;
                 this.$store.commit('updateHubData', hubData);
                 if (!!hubMarker) {
@@ -2051,12 +2391,41 @@
                     });
                 }
             },
+            _handleIpcamOffline(data) {
+                let ipcamMarker = this.markerMap.cams[data.id], 
+                    ipcamData = this._.clone(this.$store.getters.getIpCam(data.id)),
+                    fileUrl = '';
+                if (!!ipcamData) {
+                    ipcamData.status = 0;
+                    this.$store.commit('updateIpcamData', ipcamData);
+                    if (!!ipcamMarker) {
+                        fileUrl = this._selectIpcamFileUrl(data.id).fileUrl;
+                        ipcamMarker.updateSymbol({
+                            markerFile: fileUrl
+                        })
+                    }
+                }
+            },
             _handleReopenStream(data) {
                 if (!!this.ipcamInfoWindow) {
-                    this._.forEach(data, item => {
-                        const reopenId = _.first(_.keys(item));
-                        if (this.ipcamInfoWindow.id === reopenId) {
-                            this._playStreaming(item[reopenId]);
+                    this._.forEach(data, (item) => {
+                        var key = this._.keys(item)[0],
+                            value = this._.values(item)[0];
+                        if (this._.isString(value)) {
+                            if (this.ipcamInfoWindow.id === key) {
+                                this._playStreaming(value);
+                            }
+                        } else {
+                            let ipcamMarker = this.markerMap.cams[key];
+                            this.handleErrorStreaming(value);
+                            this.closeIpcamStreaming([key], (res) => {
+                                if (!this._.isEmpty(res)) {
+                                    console.log("Close stream Failed");
+                                } else {
+                                    console.log("Close stream succedd");
+                                }
+                            });
+                            ipcamMarker.removeInfoWindow();
                         }
                     });
                 }
@@ -2083,14 +2452,14 @@
                             this._handleDetectedGadgets(data.v);
                         }
                     },
-                    hub_online: (data) => {
+                    online: (data) => {
                         if (!this.isRemoveAll) {
-                            this._handleHubOnline(data.v);
+                            this._handleOnline(data);
                         }
                     },
-                    hub_offline: (data) => {
+                    offline: (data) => {
                         if (!this.isRemoveAll) {
-                            this._handleHubOffline(data.v);
+                            this._handleOffline(data);
                         }
                     },
                     refresh: (data) => {
@@ -2131,6 +2500,7 @@
             if (this.isConnected) {
                 this._subscribe();
             }
+            this.userStage = this.info.stage;
         },
         mounted() {
             this.initloadMap();
@@ -2207,6 +2577,40 @@
         font-weight: 900 !important;
     }
     
+    .infoFilterGadget{
+        display: inline-block;
+        transform: translateX(-170%);
+        position: absolute;
+        top: 65%;
+    }
+
+    .infoFilterHub {
+        display: inline-block;
+        transform: translateX(-110%);
+        position: absolute;
+        top: 65%;
+    }
+
+    .infoFilterIpcam {
+        display: inline-block;
+        transform: translateX(-205%);
+        position: absolute;
+        top: 65%; 
+    }
+
+    .infoFilterSpeaker {
+        display: inline-block;
+        transform: translateX(-140%);
+        top: 65%;
+        position: absolute;
+    }
+
+    .infoFilterMoi{
+        display: inline-block;
+        transform: translateX(-255%);
+        top: 65%;
+        position: absolute;
+    }
     .filterHubIcon {
         width: 60px;
         height: 60px;
@@ -2218,18 +2622,23 @@
         margin-right: 15px;
         background-repeat: no-repeat;
         background-image: url('../../public/static/location/imgs/icon-hub-tab1.svg');
+        background-color: white;
+        border: none;
     }
     
     .filterGadgetIcon {
-        width: 60px;
+        width: 85px;
         height: 60px;
-        margin-right: 30px;
+        margin-right: 15px;
         margin-bottom: 20px;
         margin-top: 15px;
         cursor: pointer;
         border-color: #fff;
         background-repeat: no-repeat;
-        background-image: url('../../public/static/location/imgs/icon-worker16-tab.svg');
+        background-size: 80px;
+        background-image: url('../../public/static/location/imgs/icon-worker4-tab.svg');
+        background-color: white;
+        border: none;
     }
     
     .filterIpcamIcon {
@@ -2237,12 +2646,14 @@
         height: 60px;
         margin-left: 25px;
         margin-bottom: 20px;
-        margin-top: 15px;
+        margin-top: 10px;
         margin-right: 15px;
         cursor: pointer;
         border-color: #fff;
         background-repeat: no-repeat;
-        background-image: url('../../public/static/location/imgs/icon-ipcam-default.svg');
+        background-image: url('../../public/static/location/imgs/icon-ipcam1-on.svg');
+        background-color: white;
+        border: none;
     }
     
     .filterSpeakerIcon {
@@ -2250,19 +2661,49 @@
         height: 60px;
         cursor: pointer;
         border-color: #fff;
-        margin-left: 30px;
+        margin-left: 18px;
         margin-bottom: 20px;
         margin-top: 15px;
         background-repeat: no-repeat;
         background-image: url('../../public/static/location/imgs/speaker.svg');
+        background-color: white;
+        border: none;
+    }
+
+    .filterMoiIcon {
+        width: 60px;
+        height: 60px;
+        cursor: pointer;
+        border-color: #fff;
+        margin-left: 30px;
+        margin-bottom: 20px;
+        margin-top: 15px;
+        border-radius: 50%;
+        background-color: white;
+        border: none; 
+        background-repeat: no-repeat;
+        background-image: url('../../public/static/location/imgs/icon-moi-tab.svg');
+    }
+
+    .moiFilter {
+       background-image: url('../../public/static/location/imgs/icon-moi.svg');
     }
     
     .moi-onoff-toggle {
-        position: absolute;
+        position: relative;
         display: inline-block;
         width: 55px;
         height: 28px;
         left: 85%;
+        top: 27%;
+    }
+
+    .moi-onoff-toggle-ipcam {
+        position: absolute;
+        display: inline-block;
+        width: 55px;
+        height: 28px;
+        left: 74%;
         top: 27%;
     }
     
@@ -2273,6 +2714,22 @@
         margin-top: 7px;
     }
     
+    .gadget-moi-streaming-onoff-toggle {
+        position: relative;
+        display: inline-block;
+        width: 55px;
+        height: 28px;
+        left: 85%;
+        top: 27%;
+    }
+    
+    .gadget-moi-streaming-onoff-toggle.beacon {
+        height: 25px;
+        left: 0;
+        top: 50%;
+        margin-top: 7px;
+    }
+
     .bottom-shape {
         width: 30px;
         height: 30px;
@@ -2378,6 +2835,10 @@
     .moi-toggle-button {
         display: none;
     }
+
+    .gadget-streaming-moi-toggle-button {
+        display: none;
+    }
     
     .moi-toggle-slider:before {
         position: absolute;
@@ -2391,6 +2852,17 @@
     }
     
     .moi-toggle-slider {
+        position: absolute;
+        cursor: pointer;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background-color: #aaaaaa94;
+        transition: .6s;
+    }
+
+    .moi-toggle-slider-cam {
         position: absolute;
         cursor: pointer;
         top: 0;
@@ -2417,7 +2889,7 @@
     
     input:checked+.moi-toggle-slider {
         background-color: white;
-        padding: 4px 25px 0 5px;
+        padding: 6px 25px 0 5px;
         font-size: 11px;
         font-weight: 600;
         color: rgb(60, 135, 65);
@@ -2438,7 +2910,7 @@
     
     .moi-toggle-slider.round {
         border-radius: 34px;
-        padding: 4px 5px 0 25px;
+        padding: 6px 5px 0 25px;
         font-size: 11px;
         color: white;
         transform: translateX(0);
@@ -2447,7 +2919,75 @@
     .moi-toggle-slider.round:before {
         border-radius: 50%;
     }
+
+    .gadget-streaming-moi-toggle-slider:before {
+        position: absolute;
+        content: "";
+        height: 20px;
+        width: 20px;
+        left: 4px;
+        bottom: 4px;
+        background-color: white;
+        transition: .6s;
+    }
     
+    .gadget-streaming-moi-toggle-slider {
+        position: absolute;
+        cursor: pointer;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background-color: #aaaaaa94;
+        transition: .6s;
+    }
+    
+    .gadget-streaming-moi-toggle-slider.beacon:before {
+        width: 18px;
+        height: 18px;
+    }
+    
+    input:checked+.gadget-streaming-moi-toggle-slider.beacon:before {
+        transform: translateX(30px);
+        background-color: rgb(255, 181, 48);
+    }
+    
+    .gadget-streaming-moi-toggle-switch input {
+        display: none;
+    }
+    
+    input:checked+.gadget-streaming-moi-toggle-slider {
+        background-color: white;
+        padding: 4px 25px 0 5px;
+        font-size: 11px;
+        font-weight: 600;
+        color: rgb(60, 135, 65);
+    }
+
+    input:checked+.gadget-streaming-moi-toggle-slider.beacon {
+        color: rgb(255, 181, 48);
+    }
+    
+    input:checked+.gadget-streaming-moi-toggle-slider:before {
+        transform: translateX(27px);
+        background-color: rgb(60, 135, 65);
+    }
+    
+    input:focus+.gadget-streaming-moi-toggle-slider {
+        box-shadow: 0 0 1px #2196F3;
+    }
+    
+    .gadget-streaming-moi-toggle-slider.round {
+        border-radius: 34px;
+        padding: 4px 5px 0 25px;
+        font-size: 11px;
+        color: white;
+        transform: translateX(0);
+    }
+    
+    .gadget-streaming-moi-toggle-slider.round:before {
+        border-radius: 50%;
+    } 
     .mediaplayer {
         width: 450px;
         height: 253px;
@@ -2455,6 +2995,11 @@
         outline: none;
     }
     
+    .gadget_mediaplayer {
+        width: 400px;
+        height: 350px;
+    }
+
     .remove_menu {
         background: rgb(39 201 189) !important;
         overflow: hidden;
@@ -2520,33 +3065,6 @@
     
     #remove {
         position: absolute;
-    }
-    
-    #removeHubItem {
-        margin: 50px 0 0 100px;
-        width: 50px;
-        height: 50px;
-        cursor: pointer;
-        background-image: url('../../public/static/location/imgs/icon-hub1.svg');
-        position: absolute;
-    }
-    
-    #removeGadgetItem {
-        margin: 50px 0 0 215px;
-        position: absolute;
-        width: 50px;
-        height: 50px;
-        cursor: pointer;
-        background-image: url('../../public/static/location/imgs/icon-worker6.svg');
-    }
-    
-    #removeIpcamItem {
-        margin: 50px 0 0 320px;
-        position: absolute;
-        width: 50px;
-        height: 50px;
-        cursor: pointer;
-        background-image: url('../../public/static/location/imgs/icon-ipcam.svg');
     }
     
     .removeContainer {
@@ -2664,7 +3182,7 @@
         font-size: large;
         color: white;
         position: absolute;
-        margin-left: 60%;
+        margin-left: 50%;
         bottom: 35%;
     }
     
@@ -2944,7 +3462,7 @@
         width: 35px;
         background-repeat: no-repeat;
         background-position: center center;
-        left: 88%;
+        left: 90%;
         top: -30px;
         cursor: pointer;
     }
@@ -3028,14 +3546,15 @@
     }
     
     .ipcamId {
-        width: 150px;
+        width: 200px;
         height: 50px;
         margin-left: 20px;
-        margin-top: 15px;
+        margin-top: 10px;
         color: white;
         overflow: hidden;
         font-weight: 900;
-        font-size: large
+        font-size: large;
+        position: absolute;
     }
     
     .ipcamKey {
@@ -3171,6 +3690,54 @@
         border-top: 2px solid rgb(42 147 240)
     }
     
+    .worker-status.lock-img {
+        background-image: url(../../public/static/location/imgs/lock.svg);
+        background-size: 30px;
+        background-repeat: no-repeat;
+        background-position: center;
+        width: 30px;
+        height: 30px;
+        margin-left: 10%;
+        margin-top: 70%;
+    }
+
+    .worker-status.unlock-img {
+        background-image: url(../../public/static/location/imgs/unlock.svg);
+        background-size: 30px;
+        background-repeat: no-repeat;
+        background-position: center;
+        width: 30px;
+        height: 30px;
+        margin-left: 10%;
+        margin-top: 70%;
+    }
+
+    .worker-status-ipcam.lock-img {
+        background-image: url(../../public/static/location/imgs/lock.svg);
+        background-size: 30px;
+        background-repeat: no-repeat;
+        background-position: 50%;
+        width: 30px;
+        height: 30px;
+        left: 400px;
+        top: 15px;
+        z-index: 1;
+        position: absolute;
+    }
+
+    .worker-status-ipcam.unlock-img {
+        background-image: url(../../public/static/location/imgs/unlock.svg);
+        background-size: 30px;
+        background-repeat: no-repeat;
+        background-position: center;
+        width: 30px;
+        height: 30px;
+        left: 400px;
+        top: 15px;
+        z-index: 1;
+        position: absolute;
+    }
+
     .worker {
         height: 300px;
         width: 125px;
@@ -3185,16 +3752,17 @@
     .scannerData {
         text-align: left;
         font-size: 13px;
-        padding-top: 20px;
         opacity: .5;
+        margin-top: 10px;
     }
     
     .scannerNameList {
-        height: 70px;
         overflow: scroll;
         text-align: left;
         opacity: .7;
         margin-top: 7px;
+        height: 110px;
+        width: 140px;
     }
     
     .scannerName {
@@ -3232,10 +3800,12 @@
         filter: drop-shadow(1px 2px 1px #bcbcbc);
     }
     
+    .extend-scannerNameList {
+        height: 50px;
+    }
     .beacon-moi-container {
         position: relative;
         width: 100%;
-        height: 50px;
     }
     
     .bcns {
@@ -3244,14 +3814,19 @@
         overflow: hidden;
     }
     
-    .bcnskey1 {
+    .bcnskey1{
         text-align: left;
-        font-size: 13px;
+        font-size: 15px;
         padding-top: 10px;
-        padding-bottom: 4px;
         opacity: .5;
     }
-    
+
+    .bcnsKey2{
+        text-align: left;
+        font-size: 12px;
+        opacity: .5;
+    }
+
     .hub-remove-button {
         color: #ffffff;
         background-color: #87CEEB;
@@ -3406,17 +3981,13 @@
     }
     
     .bcnsImg1 {
-        height: 300px;
-        width: 345px;
-        margin-left: 140px;
-        border-top-right-radius: 10px;
-        border-bottom-right-radius: 10px;
-        background-color: white;
+        height: 350px;
+        width: 400px;
     }
     
     .bcnsInfo1 {
-        width: 140px;
-        height: 300px;
+        width: 150px;
+        height: 350px;
         color: black;
         font-weight: 500;
         background-color: rgb(255, 181, 48);
@@ -3428,6 +3999,14 @@
         letter-spacing: 1px;
     }
     
+    .bcns-right-panel {
+        height: 350px;
+        width: 400px;
+        margin-left: 150px;
+        border-top-right-radius: 10px;
+        border-bottom-right-radius: 10px;
+        background-color: white;
+    }
     .ipcam-content {
         height: 200px
     }
@@ -3485,10 +4064,6 @@
         height: 35px;
     }
     
-    #move-button {
-        display: none;
-    }
-    
     .context-menu-button-frame.scanner {
         background-color: rgb(60, 175, 200);
         border-top: thin solid rgb(40, 160, 200);
@@ -3501,6 +4076,10 @@
     .context-menu-button-frame.ipcam {
         background-color: rgb(107, 175, 134);
         border-top: thin solid rgb(87, 160, 134);
+    }
+
+    .context-menu-button-frame.lock {
+        display: none; 
     }
     
     .context-menu-button-panel {
