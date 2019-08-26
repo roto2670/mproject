@@ -159,11 +159,11 @@ export class SocketClient {
                 case window.CONSTANTS.EVENT_TYPE.GET_DETECTED_LIST:
                     this._subscribeHandlers.getDetectedList(data);
                 break;
-                case window.CONSTANTS.EVENT_TYPE.HUB_ONLINE:
-                    this._subscribeHandlers.hub_online(data);
+                case window.CONSTANTS.EVENT_TYPE.ONLINE:
+                    this._subscribeHandlers.online(data);
                 break;
-                case window.CONSTANTS.EVENT_TYPE.HUB_OFFLINE:
-                    this._subscribeHandlers.hub_offline(data);
+                case window.CONSTANTS.EVENT_TYPE.OFFLINE:
+                    this._subscribeHandlers.offline(data);
                 break;
                 case window.CONSTANTS.EVENT_TYPE.REFRESH:
                     this._subscribeHandlers.refresh(data);

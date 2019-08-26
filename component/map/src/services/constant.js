@@ -69,8 +69,8 @@ window.CONSTANTS = {
         UPDATED: "updated",
         REMOVED: "removed",
         GET_DETECTED_LIST: "detected",
-        HUB_ONLINE: "on",
-        HUB_OFFLINE: "off",
+        ONLINE: "on",
+        OFFLINE: "off",
         REFRESH: "refresh",
         REOPEN_STREAM: 'reopen_stream'
     },
@@ -85,7 +85,8 @@ window.CONSTANTS = {
         IPCAM_DISCONNECT: 1,
         STREAMING_FAILED: 2,
         STREAMING_SERVER_DISCONNECT: 3,
-        LIMIT_STREAMING_ACCESS: 4
+        LIMIT_STREAMING_ACCESS: 4,
+        UNKNOWN_IPCAMID: 5
     },
     HUB_FILTER_TEXT: {
         AT1: "AT1",

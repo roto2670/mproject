@@ -13,7 +13,8 @@ export default new Vuex.Store({
 		ipcams: {},
 		hubListDetectOneGadget: {},
 		gadgetListDetectedByOneHub: {},
-		speaker: {}
+		speaker: {},
+		ipcamIdAttachedOnBeacon: {}
 	},
 	getters: {
 		getHubs: (state) => {
@@ -71,6 +72,12 @@ export default new Vuex.Store({
 				return state.gadgetListDetectedByOneHub[hid]
 			}
 			return {}
+		},
+		getIpcamIdAttachedOnBeacon: (state) => (ipcamId) => {
+			if (!!state.ipcamIdAttachedOnBeacon[ipcamId])  {
+				return state.ipcamIdAttachedOnBeacon[ipcamId];
+			}
+			return {}
 		}
 	},
 	mutations: {
@@ -84,6 +91,7 @@ export default new Vuex.Store({
 				if (_.isString(bcn.custom) || !!!bcn.custom) {
 					bcn.custom = {}
 				}
+			
 				state.gadgets[bcn.id] = bcn
 			})
 		},
@@ -106,7 +114,8 @@ export default new Vuex.Store({
 						account_id: data.account_id,
 						_t : new Date() / 1000
 					}
-				} 
+				}
+				
 				if (_.isEmpty(state.detectedgadgets[detectedGadget.gid].hubIdList.find((hid) => hid === detectedGadget.hid))) {
 					state.detectedgadgets[detectedGadget.gid].hubIdList.push(detectedGadget.hid)
 				}
@@ -143,6 +152,21 @@ export default new Vuex.Store({
 					state.gadgetListDetectedByOneHub[detectedGadget.hid][detectedGadget.gid] = detectedGadget
 				}
 			}		
+		},
+		addIpcamIdAttachedOnBeacon(state, data) {
+			if (!state.ipcamIdAttachedOnBeacon[data.ipcamId]) {
+				state.ipcamIdAttachedOnBeacon[data.ipcamId] = data.gid;
+			}
+		},
+		updateIpcamIdAttachedOnBeacon(state, data) {
+			if (!!state.ipcamIdAttachedOnBeacon[data.ipcamId]) {
+				state.ipcamIdAttachedOnBeacon[data.ipcamId] = data.gid;
+			}
+		},
+		removeIpcamIdAttachedOnBeacon(state, ipcamId) {
+			if (!!state.ipcamIdAttachedOnBeacon[ipcamId]) {
+				delete state.ipcamIdAttachedOnBeacon[ipcamId];
+			}
 		},
 		updateHubData(state, payload) {
 			if (!!state.hubs[payload.id]) {
