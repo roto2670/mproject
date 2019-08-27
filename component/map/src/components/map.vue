@@ -75,7 +75,7 @@
                     this.map = new maptalks.Map(this.id, {
                         // centerCross: true,
                         center: [90, 50],
-                        zoom: 5,
+                        zoom: 4,
                         maxZoom: 7,
                         minZoom: 4,
                         // Extent

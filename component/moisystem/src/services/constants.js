@@ -1,5 +1,5 @@
 window.CONSTANTS = {
-    IS_DEV: true,
+    IS_DEV: false,
     INTERVAL: {
         WEBSOCKET_CONNECTION: 10 * 1000
     },
