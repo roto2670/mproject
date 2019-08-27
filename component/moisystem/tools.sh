@@ -10,7 +10,7 @@ then
     npm run build
     node build-hook.js
 
-    cp build_files/index.html ../../../console/src/base/templates/location/
+    cp build_files/index.html ../../../console/src/base/templates/moi/
 
     cp -r build_files/css ../../../console/src/moi/static/
     cp -r build_files/js ../../../console/src/moi/static/
