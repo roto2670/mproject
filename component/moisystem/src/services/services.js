@@ -1,5 +1,6 @@
 import * as WebSocket from '@/services/websocket';
 import axios from 'axios';
+import { _ } from 'core-js';
 
 const socket = new WebSocket.SocketClient();
 const _getTimestamp = () => new Date() / 1000.0;
@@ -21,15 +22,7 @@ export const unsubscribe = () => {
 }
 
 export const getIpcams = (handler) => {
-    if (!window.CONSTANTS.IS_DEV) {
-        socket.call({
-            e: window.CONSTANTS.REQUEST_TYPE.GET_DATA,
-            kwargs: {
-                kind: 'ipcam'
-            },
-            _t: _getTimestamp()
-        }, handler);
-    } else {
+    if (window.CONSTANTS.IS_DEV) {
         let ipcams = [];
         for(var i = 0;i < 20; i++) {
             const ipcam = {
@@ -55,6 +48,14 @@ export const getIpcams = (handler) => {
             ipcams.push(ipcam);
         }
         handler(ipcams);
+    } else {
+        socket.call({
+            e: window.CONSTANTS.REQUEST_TYPE.GET_DATA,
+            kwargs: {
+                kind: 'ipcam'
+            },
+            _t: _getTimestamp()
+        }, handler);
     }
 }
 
@@ -66,6 +67,13 @@ export const openStreaming = (gadgetIdList, handler) => {
         },
         _t: _getTimestamp()
     }, handler)
+    // let list = [];
+    // _.forEach(gadgetIdList, (id) => {
+    //     const obj = {};
+    //     obj[id] = 'http://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4';
+    //     list.push(obj) ;
+    // })
+    // handler(list);
 }
 
 export const closeStreaming = (gadgetIdList, handler) => {

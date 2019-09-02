@@ -152,17 +152,11 @@ export class SocketClient {
                 case window.CONSTANTS.EVENT_TYPE.REMOVED:
                     this._subscribeHandlers.removed(data);
                 break;
-                case window.CONSTANTS.EVENT_TYPE.GET_DETECTED_LIST:
-                    this._subscribeHandlers.getDetectedList(data);
+                case window.CONSTANTS.EVENT_TYPE.ONLINE:
+                    this._subscribeHandlers.online(data);
                 break;
-                case window.CONSTANTS.EVENT_TYPE.HUB_ONLINE:
-                    this._subscribeHandlers.hub_online(data);
-                break;
-                case window.CONSTANTS.EVENT_TYPE.HUB_OFFLINE:
-                    this._subscribeHandlers.hub_offline(data);
-                break;
-                case window.CONSTANTS.EVENT_TYPE.REFRESH:
-                    this._subscribeHandlers.refresh(data);
+                case window.CONSTANTS.EVENT_TYPE.OFFLINE:
+                    this._subscribeHandlers.offline(data);
                 break;
                 case window.CONSTANTS.EVENT_TYPE.REOPEN_STREAMING:
                     this._subscribeHandlers.reopenStreaming(data);

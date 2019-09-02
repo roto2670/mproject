@@ -25,8 +25,8 @@ window.CONSTANTS = {
         UPDATED: 'updated',
         REMOVED: 'removed',
         GET_DETECTED_LIST: 'detected',
-        HUB_ONLINE: 'on',
-        HUB_OFFLINE: 'off',
+        ONLINE: 'on',
+        OFFLINE: 'off',
         REFRESH: 'refresh',
         REOPEN_STREAMING: "reopen_stream"
     },

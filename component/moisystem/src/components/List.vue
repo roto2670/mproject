@@ -6,15 +6,25 @@
                 <!-- <div @click="handleCloseButton" class="list-button">
                     <CloseIcon color="white"/>
                 </div> -->
-                <!-- <div @click="handleSelectAllData" class="select-button">
+                <div @click="handleSelectAllData" class="select-button">
                     <SelectIcon :selectAll="selectedAllData"/>
-                </div> -->
+                </div>
             </div>
             <div class="list-content-frame">
-                <list-item v-for="ipcam in ipcams" :key="ipcam.id"
+                <!-- <draggable
+                    :list="ipcams"
+                    :disabled="!enabled"
+                    class="list-group"
+                    ghost-class="ghost"
+                    :move="checkMove"
+                    @start="dragging = true"
+                    @end="dragging = false"
+                > -->
+                <list-item v-for="ipcam in ipcams" :key="ipcam.name"
                 :ipcam="ipcam" :checked="isSelected(ipcam.id)"
                 :selectedIpcamId="selectedId"
                 @select-item="handleSelectedItem"/>
+                <!-- </draggable> -->
             </div>
         </div>
     </div>
@@ -23,35 +33,43 @@
 import ListItem from '@/components/ListItem'
 import CloseIcon from '@/components/icons/CloseIcon'
 import SelectIcon from '@/components/icons/SelectIcon'
+import draggable from 'vuedraggable';
+import { EventBus } from '@/main.js';
 export default {
     name: 'List',
     components: {
         ListItem,
         CloseIcon,
-        SelectIcon
+        SelectIcon,
+        draggable
     },
     props: {
         selectedList: {
+            type: Array
+        },
+        ipcams: {
             type: Array
         }
     },
     data() {
         return {
-            ipcams: [],
             title: 'Selected videos',
             selectedId: '',
             onTimeoutData: null,
-            selectedAllData: false
+            selectedAllData: false,
+            enabled: true,
+            dragging: false
         }
     },
     methods: {
         handleSelectedItem(id) {
-            if (this._.size(this.selectedList) < window.CONSTANTS.MAX_SHOWING_SCREEN) {
+            if (this._.size(this.selectedList) >= window.CONSTANTS.MAX_SHOWING_SCREEN &&
+                !this._.includes(this.selectedList, id)) {
+                this.sweetbox.fire('max ipcam streaming');
+            } else {
                 this.$emit('select-item', id);
                 this.startLoadingTimeout();
                 this.selectedId = id;
-            } else {
-                this.sweetbox.fire('max ipcam streaming');
             }
         },
         handleCloseButton() {
@@ -60,17 +78,21 @@ export default {
         handleSelectAllData() {
             this.selectedAllData = !this.selectedAllData;
             this.handleSelectAll();
-            return this.selectedAllData;
         },
         handleSelectAll() {
-            if (this.handleSelectAllData) {
-                let cnt = 0;
+            if (this.selectedAllData) {
+                let list = [];
+                const size = 9 - this.selectedList.length;
                 this._.forEach(this.ipcams, (data) => {
-                    if (cnt < 9) {
-                        this.$emit('select-item', data.id);
+                    if (!this._.includes(this.selectedList, data.id)) {
+                        if (data.status && data.custom.is_visible_moi) {
+                            list.push(data.id);
+                        }
                     }
-                    cnt++;
-                })
+                    
+                    if (list.length >= size) return false;
+                });
+                this.$emit('select-all', list);
             } else {
                 this.$emit('select-close-all-list', true);
             }
@@ -91,21 +113,16 @@ export default {
                 clearTimeout(this.onTimeoutData);
                 this.onTimeoutData = null;
             }
-        },
-        _sortIpcamStatus() {
-            this.ipcams = this._.sortBy(this.ipcams, ['status']); 
-            this.ipcams = this._.reverse(this.ipcams);
         }
     },
     created() {
-        this.ipcams = this.$store.getters.getIpcams;
-        this._sortIpcamStatus();
         console.log("Create list view ", this.ipcams);
     },
     watch: {
         selectedList: function() {
             this.selectedId = '';
             this.stopLoadingTimeout();
+            this.selectedAllData = this.selectedList.length === window.CONSTANTS.MAX_SHOWING_SCREEN;
         }
     }
 }
@@ -163,7 +180,12 @@ export default {
     height: 1.3em;
     top: 48%;
     transform: translateY(-50%);
-    right: 1em;
+    right: 2.5em;
     cursor: pointer;
+}
+
+.ghost {
+  opacity: 0.5;
+  background: #c8ebfb;
 }
 </style>

@@ -10,9 +10,10 @@
             </div>
             <div class="moi-content-frame" ref="contentFrame">
                 <!-- <full-screen/> -->
-                <list 
+                <list :ipcams="ipcams" 
                 :selectedList="selectedShowScreenList"
                 @select-item="handleSelectedItem"
+                @select-all="handleSelectedAll"
                 @select-close-list="handleSelectedCloseList"
                 @select-close-all-list="handleCloseAllList"/>
                 <grid-screen :list="selectedShowScreenList"/>
@@ -42,6 +43,7 @@ export default {
     },
     data() {
         return {
+            ipcams: [],
             buttonType: window.CONSTANTS.BUTTON_TYPE,
             selectedButtonType: 1,
             screenWidth: 0,
@@ -65,27 +67,36 @@ export default {
                 this.closeStreaming(id)
             }
         },
+        handleSelectedAll(list) {
+            this.openIpcamStreaming(list, (streamingItems) => {
+                this.handleOpenStreaming(streamingItems);
+            });
+        },
+        handleOpenStreaming(streamingItems) {
+            if (!this._.isEmpty(streamingItems)) {
+                this._.forEach(streamingItems, (item) => {
+                    const gadgetId = this._.keys(item)[0];
+                    let resData = item[gadgetId];
+                    if (!!resData) {
+                        if (this._.isString(resData)) {
+                            this.$store.commit('addStreamingURL', item);
+                            EventBus.$emit('openStreamURL', gadgetId);
+                            this.selectedShowScreenList.push(gadgetId);
+                        } else {
+                            this.handleErrorStreaming(resData, () => {
+                                this.selectedShowScreenList = this._.without(this.selectedShowScreenList, gadgetId);
+                            });
+                        }
+                    }
+                });
+            }
+        },
         handleSelectedCloseList() {
             this.selectedButtonType = 1;
         },
         openStreaming(gadgetId) {
             this.openIpcamStreaming([gadgetId], (streamingItems) => {
-                if (!this._.isEmpty(streamingItems)) {
-                    this._.forEach(streamingItems, (item) => {
-                        this.selectedShowScreenList.push(gadgetId);
-                        if (!!item) {
-                            if (this._.isString(item)) {
-                                this.$store.commit('addStreamingURL', item);
-                                EventBus.$emit('openStreamURL', gadgetId);
-                                this.selectedShowScreenList.push(gadgetId);
-                            } else {
-                                this.handleErrorStreaming(item[gadgetId], () => {
-                                    this.selectedShowScreenList = this._.without(this.selectedShowScreenList, gadgetId);
-                                });
-                            }
-                        }
-                    });
-                }
+                this.handleOpenStreaming(streamingItems); 
             });
         },
         openIpcamStreaming(ipcamId, resultCallback) {
@@ -128,7 +139,16 @@ export default {
             });
         },
         handleCloseAllList() {
-            this.selectedShowScreenList = [];
+            this.services.closeStreaming(this.selectedShowScreenList, streamingUrlList => {
+                if (!this._.isEmpty(streamingUrlList)) {
+                    this.sweetbox.fire('Sorry, disconnect Ipcam Streaming failed');
+                }
+                this._.forEach(streamingUrlList, item => {
+                    const gadgetId = this._.keys(item)[0];
+                    this.$store.commit('removeStreamingURL', gadgetId);
+                });
+                this.selectedShowScreenList = [];
+            });
         },
         _handleAdded(data) {
             if (!this.$store.getters.isIpcam(data)) {
@@ -167,6 +187,20 @@ export default {
                 }
             });
         },
+        _handleOnline(data) {
+            this._.forEach(this.ipcams, ipcam => {
+                if (ipcam.id === data.id) {
+                    ipcam.status = 1;
+                }
+            })
+        },
+        _handleOffline(data) {
+            this._.forEach(this.ipcams, ipcam => {
+                if (ipcam.id === data.id) {
+                    ipcam.status = 0;
+                }
+            })
+        },
         _subscribe() {
             this.services.subscribe(this.info.internal, {
                 added: (data) => {
@@ -180,8 +214,18 @@ export default {
                 },
                 reopenStreaming: (data) => {
                     this._handleReopenStreaming(data.v);
+                },
+                online: (data) => {
+                    this._handleOnline(data.v);
+                },
+                offline: (data) => {
+                    this._handleOffline(data.v);
                 }
             });
+        },
+        _sortIpcamStatus() {
+            this.ipcams = this._.sortBy(this.ipcams, ['status']); 
+            this.ipcams = this._.reverse(this.ipcams);
         }
     },
     computed: {
@@ -193,6 +237,8 @@ export default {
         this._subscribe();
         this.services.getIpcams((ipcams) => {
             this.$store.commit('addIpcams', ipcams);
+            this.ipcams = ipcams;
+            this._sortIpcamStatus();
         });
     }
 }
