@@ -1,17 +1,23 @@
 <template>
+<div class="main-container">
     <div :id="id" v-if="isEmptyUrl">
     </div>
+</div>
 </template>
 
 <script>
     import * as maptalks from 'maptalks'
     import * as beaconDetector from '@/services/beacon-detector';
+    import BcnCountArea from '@/components/bcncountArea';
     import util from '@/services/util';
     import { EventBus } from "../main";
     import { setTimeout, setInterval } from 'timers';
     import Hls from 'hls.js';
     export default {
         name: 'Map',
+        components: {
+            BcnCountArea
+        },
         props: {
             info: {
                 type: Object,
@@ -26,6 +32,7 @@
             return {
                 id: 'map',
                 map: null,
+                zoomLv: 4,
                 url: '',
                 toast: null,
                 zoomLv: '',
@@ -129,6 +136,7 @@
                         this.hideLoading();
                     });
                     this.map.on('zoomend', (e) => {
+                        console.log("zoomLevel", this.map.getZoom());
                         this.zoomLv = 50 * (this.map.getZoom() / 11);
                         let markerWidth = this.zoomLv,
                             markerHeight = this.zoomLv;
@@ -203,8 +211,35 @@
                     this._.forEach(detectedLists, (list) => {
                         this._handleDetectedGadgets(list);
                     })
+                    
+                    this._.forEach(this.markerMap.hubs, (marker, hid) => {
+                        this.countGadgetOnHub(hid);
+                    })
                     console.log("Sucess to detect gadgets");
                 });
+            },
+            countGadgetOnHub(hid) {
+                let hubMarker = this.markerMap.hubs[hid],
+                    dy = 0;
+                const gadgets = this.$store.getters.getGadgetListDetectedByOneHub(hid);
+                if (!!hubMarker) {
+                    if (this.isShowingByStage(window.CONSTANTS.USER_STAGE.SK_ADMIN)) {
+                        dy = -25;
+                    } else {
+                        dy = -45;   
+                    }
+                    
+                    hubMarker.updateSymbol({
+                        textName: this._.size(gadgets),
+                        textWeight : 'bold',
+                        textFill: '#fff',
+                        textHaloFill : '#00BFFF',
+                        textHaloRadius : 4,
+                        textSize : 20,
+                        textWrapCharacter : '\n',
+                        textDy: dy
+                    })
+                }
             },
             loadItems(info) {
                 this.services.getBeacons(info.product_id, (bcnData) => {
@@ -255,12 +290,21 @@
                     }
                 });
                 if (!!this.hubInfoWindow) {
-                    const content = this.getHubInfoWindowContent(this.hubInfoWindow.id),
-                        infoPanel = document.getElementById('worker-info-panel');
-                    if (!!infoPanel) {
-                        infoPanel.innerHTML = content.context;
-                        document.getElementById('worker-info-count').innerText = content.count;
-                        this.registerGadgetHandlerInHubInfoWindow();
+                    if (this.isShowingByStage(window.CONSTANTS.USER_STAGE.SK_ADMIN)) {
+                        const content = this.getHubInfoWindowContent(this.hubInfoWindow.id),
+                            infoPanel = document.getElementById('worker-info-panel');
+                        if (!!infoPanel) {
+                            infoPanel.innerHTML = content.context;
+                            document.getElementById('worker-info-count').innerText = content.count;
+                            this.registerGadgetHandlerInHubInfoWindow();
+                        }
+                    } else {
+                        const content = this.getHubInfoWindowContent(this.hubInfoWindow.id),
+                            infoPanel = document.getElementById('normal-worker-info-panel');
+                        if (!!infoPanel) {
+                            infoPanel.innerHTML = content.context;
+                            this.registerGadgetHandlerInHubInfoWindow();
+                        } 
                     }
                 }
     
@@ -338,17 +382,23 @@
                     this.drawnGadgetList[hubId] = [];
                     this.zoomLv = 50 * (this.map.getZoom() / 11);
                     draggable = this.isShowingByStage(window.CONSTANTS.USER_STAGE.SK_ADMIN) && !hubData.custom.lock;
-
+                    let symbol = {
+                        markerFile: `${ window.CONSTANTS.URL.BASE_IMG }icon-hub-tab1.svg`,
+                        markerWidth: this.zoomLv,
+                        markerHeight: this.zoomLv
+                    }
+                    if (!this.isShowingByStage(window.CONSTANTS.USER_STAGE.SK_ADMIN)) {
+                        this._.extend(symbol, {
+                            markerOpacity: 0
+                        })
+                    }
                     marker = new maptalks.Marker(
                         [coordinate.x, coordinate.y], {
-                            'symbol': {
-                                markerFile: `${ window.CONSTANTS.URL.BASE_IMG }icon-hub-tab1.svg`,
-                                markerWidth: this.zoomLv,
-                                markerHeight: this.zoomLv,
-                            },
+                            'symbol': symbol,
                             draggable: draggable
                         }
                     )
+                    
                     let tagData = this._.first(hubData.tags);
                     if (window.CONSTANTS.IS_MOCK) {
                         tagData = parseInt(tagData) - 100;
@@ -435,18 +485,16 @@
                             }
                         }
                     } else {
-                        if (marker.isVisible()) {
-                            marker.hide();
-                        }
-                    }
+                        marker.on('click', () => {
+                            this.showNormalHubInfoWindow(hubId, marker);
+                        });
+                    } 
 
                     if (this.isShowingByStage(window.CONSTANTS.USER_STAGE.SK_NORMAL)) {
                         marker.on('click', () => {
                             this.showHubInfoWindow(hubId, marker);
                         });
-                    } else {
-                        marker.hide();
-                    }
+                    } 
                 }
             },
             setHubTimeOut(hid) {
@@ -583,7 +631,48 @@
                     }
                 })
             },
-            startDetector() {
+            showNormalHubInfoWindow(hubId, marker) {
+               let content = {},
+                    length = 0,
+                    toggle = '',
+                    hubData = this.$store.getters.getHub(hubId);
+                
+                if(!this._.isEmpty(this.infoWindow)) {
+                    this.infoWindow.remove();
+                }
+                if (!!this.hubInfoWindow) {
+                    marker.removeInfoWindow();
+                    this.hubInfoWindow = null;
+                }
+
+                content = this.getHubInfoWindowContent(hubId);
+                marker.setInfoWindow({ // TODO: vue component
+                    content: `<div class="worker_menu">
+                            <div id="normal-worker-info-panel" class="normal-worker-info-panel">${ content.context }</div>
+                            <div class="normal-close-button-custom"></div></div></div>`,
+                    width: 350,
+                    custom: true,
+                    autoPan: false,
+                    dy: -300
+                });
+                marker.openInfoWindow();
+                this.hubInfoWindow = {
+                    id: hubId,
+                    item: marker._infoWindow
+                };
+                
+                this.registerGadgetHandlerInHubInfoWindow();
+    
+                this._.last(document.getElementsByClassName('normal-close-button-custom')).onclick = () => {
+                    marker.removeInfoWindow();
+                }
+                this.hubInfoWindow.item.on('remove', () => {
+                    if (!!this.hubInfoWindow) {
+                        this.hubInfoWindow = null;
+                    }
+                }) 
+            },
+            startDetector(hid, marker) {
                 if (!this.beaconDetector.isRunning()) {
                     this.beaconDetector.start();
                 }
@@ -2007,11 +2096,13 @@
                                 }
                             }
                             if (!!this.hubInfoWindow) {
-                                if (this._.isEqual(this.hubInfoWindow.id, data.id)) {
-                                    document.getElementsByClassName('moi-toggle-button-hub')[0].checked = !!data.custom.is_counted_hub;
-                                    document.getElementsByClassName('moi-toggle-slider-hub')[0].innerText = 'OFF';
-                                    if (data.custom.is_counted_hub) {
-                                        document.getElementsByClassName('moi-toggle-slider-hub')[0].innerText = 'ON';
+                                if (this.isShowingByStage(window.CONSTANTS.USER_STAGE.SK_ADMIN)) {
+                                    if (this._.isEqual(this.hubInfoWindow.id, data.id)) {
+                                        document.getElementsByClassName('moi-toggle-button-hub')[0].checked = !!data.custom.is_counted_hub;
+                                        document.getElementsByClassName('moi-toggle-slider-hub')[0].innerText = 'OFF';
+                                        if (data.custom.is_counted_hub) {
+                                            document.getElementsByClassName('moi-toggle-slider-hub')[0].innerText = 'ON';
+                                        }
                                     }
                                 }
                             }
@@ -2038,10 +2129,12 @@
 
                 if(!!data.name) {
                     if(!!this.hubInfoWindow) {
-                        if (this._.isEqual(this.hubInfoWindow.id, data.id)) {
-                            let element = document.getElementsByClassName('hubInfo')[0];
-                            element.title = data.name;
-                            element.innerText = data.name;
+                        if (this.isShowingByStage(window.CONSTANTS.USER_STAGE.SK_ADMIN)) {
+                            if (this._.isEqual(this.hubInfoWindow.id, data.id)) {
+                                let element = document.getElementsByClassName('hubInfo')[0];
+                                element.title = data.name;
+                                element.innerText = data.name;
+                            }
                         }
                     }
                     if (!!this.gadgetInfoWindow) {
@@ -2282,14 +2375,24 @@
                         const hubMarker = this.markerMap.hubs[detectedData.hid];
                         if (!!hubMarker) {
                             this.drawWorker(detectedData, hubMarker._coordinates);
+                            this.countGadgetOnHub(detectedData.hid);
                         }
                         if (!!this.hubInfoWindow) {
-                            const content = this.getHubInfoWindowContent(this.hubInfoWindow.id),
-                                infoPanel = document.getElementById('worker-info-panel');
-                            if (!!infoPanel) {
-                                infoPanel.innerHTML = content.context;
-                                document.getElementById('worker-info-count').innerText = content.count;
-                                this.registerGadgetHandlerInHubInfoWindow();
+                            if (this.isShowingByStage(window.CONSTANTS.USER_STAGE.SK_ADMIN)) {
+                                const content = this.getHubInfoWindowContent(this.hubInfoWindow.id),
+                                    infoPanel = document.getElementById('worker-info-panel');
+                                if (!!infoPanel) {
+                                    infoPanel.innerHTML = content.context;
+                                    document.getElementById('worker-info-count').innerText = content.count;
+                                    this.registerGadgetHandlerInHubInfoWindow();
+                                }
+                            } else {
+                                const content = this.getHubInfoWindowContent(this.hubInfoWindow.id),
+                                    infoPanel = document.getElementById('normal-worker-info-panel');
+                                if (!!infoPanel) {
+                                    infoPanel.innerHTML = content.context;
+                                    this.registerGadgetHandlerInHubInfoWindow();
+                                } 
                             }
                         }
                     }
@@ -3576,7 +3679,32 @@
         text-overflow: ellipsis;
         white-space: nowrap;
     } */
+    .normal-worker-info-panel {
+        background-color: white;
+        padding-inline-start: 0;
+        border-top-right-radius: 10px;
+        border-bottom-right-radius: 10px;
+        height: 300px;
+        overflow-x: none;
+        overflow-y: scroll;
+    } 
     
+    .normal-close-button-custom {
+        position: absolute;
+        background-size: 13px !important;
+        background-color: rgba(255 117 117) !important;
+        background-image: url(../../public/static/location/imgs/close.svg);
+        border-radius: 4px 4px 0 0!important;
+        z-index: -1;
+        height: 30px;
+        width: 35px;
+        background-repeat: no-repeat;
+        background-position: center center;
+        left: 80%;
+        top: -30px;
+        cursor: pointer;
+    }
+
     .worker_menu {
         width: 100%;
         height: 300px;
