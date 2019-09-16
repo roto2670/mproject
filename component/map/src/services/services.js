@@ -59,7 +59,7 @@ export const postMapFile = (file, successCallback, failCallback) => {
         axios
         .post(`${ window.CONSTANTS.URL.CONSOLE }/dashboard/location/upload`, formData, {
             headers: {
-                'Content-Type': 'multiart/form-data'
+                'Content-Type': 'multipart/form-data'
             }
         })
         .then(e => {
@@ -79,7 +79,7 @@ export const postAlarmId = (id, successCallback, failCallback) => {
         url: `${ window.CONSTANTS.URL.TEST.URL }/pa/alarm/stream`,
         method: 'POST',
         headers: {
-            'content-type': 'json'
+            'content-type': 'application/json'
         },
         data:id
     }).then(response => {
@@ -229,7 +229,7 @@ export const getAlarmList = (successCallback, failCallback) => {
         url: `${ window.CONSTANTS.URL.CONSOLE }/pa/alarm/list`,
         method: 'GET',
         headers: {
-            'content-type': 'json'
+            'content-type': 'application/json'
         }
     }).then(response => {
         if(response.data) {

@@ -46,7 +46,7 @@ export default {
     },
     methods: {
         selectedAddSound() {
-            // this.$emit('select-add');        //TODO: alarm file을 올릴 수 있습니다.
+            this.$emit('select-add');        //TODO: alarm file을 올릴 수 있습니다.
         },
         selectedRemove() {
             this.$emit('select-remove', this.selectedList);

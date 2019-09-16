@@ -23,10 +23,10 @@
                 <div class="icon-image play-icon" @click="handleStartPlay"></div>
             </div>
             <div class="volume-down-panel">
-                <div class="icon-image volume-down"></div>
+                <div class="icon-image volume-down" @click="handleVolumeDown"></div>
             </div>
             <div class="volume-up-panel">
-                <div class="icon-image volume-up"></div>
+                <div class="icon-image volume-up" @click="handleVolumeUp"></div>
             </div>
         </div>
     </div>
@@ -44,7 +44,8 @@ export default {
         return {
             selectedItem: null,
             context: null,
-            recorder: null
+            recorder: null,
+            audioInput: null
         }
     },
     methods: {
@@ -55,18 +56,24 @@ export default {
                 return !!this.selectedItem && this.selectedItem.id === item.id;
             }
         },
+        isPlaying() {
+            return (this.context !== null);
+        },
         handleSelectedItem(item) {
-            // if (item === `record`) {                 //TODO: command 푸시면 alarm이나 streaming이 선택될 수 있습니다.
-            //     if (!!!this.selectedItem) {
-            //         this.selectedItem = `record`;
-            //     } else {
-            //         this.selectedItem = null;
-            //     }
-            // } else if (!!!this.selectedItem || this.selectedItem.id !== item.id) {
-            //     this.selectedItem = item;
-            // } else {
-            //     this.selectedItem = null;
-            // }
+            if (item === `record`) {                 //TODO: command 푸시면 alarm이나 streaming이 선택될 수 있습니다.
+                if (!!!this.selectedItem) {
+                    this.selectedItem = `record`;
+                } else {
+                    if (this.isPlaying()) {
+                        this.handlePauseRecord();
+                    }
+                    this.selectedItem = null;
+                }
+            } else if (!!!this.selectedItem || this.selectedItem.id !== item.id) {
+                this.selectedItem = item;
+            } else {
+                this.selectedItem = null;
+            }
             console.log("selected item", item);
         },
         handleStartPlay() {
@@ -92,8 +99,11 @@ export default {
         handlePauseRecord() {
             if (!!this.context) {
                 this.context.close();
+                this.audioInput.disconnect();
                 this.recorder.disconnect();
                 this.context = null;
+                this.recorder = null;
+                this.audioInput = null;
                 this.selectedItem = null;
             }
         },
@@ -109,10 +119,10 @@ export default {
                 audio: true
             }).then((stream) => {
                 this.context = new AudioContext();
-                var audioInput = this.context.createMediaStreamSource(stream);
+                this.audioInput = this.context.createMediaStreamSource(stream);
                 var bufferSize = 2048;
 
-                this.recorder = this.context.createScriptProcessor(bufferSize, 1, 1);
+                this.recorder = this.context.createScriptProcessor(bufferSize, 2, 2);
 
                 this.recorder.onaudioprocess = (e) => {
                     var mic = e.inputBuffer.getChannelData(0);
@@ -120,7 +130,7 @@ export default {
                     console.log("mic", convert);
                 };
 
-                audioInput.connect(this.recorder);
+                this.audioInput.connect(this.recorder);
                 this.recorder.connect(this.context.destination);
             })
         },
@@ -135,6 +145,12 @@ export default {
             }
 
             return buf.buffer;
+        },
+        handleVolumeUp() {
+            console.log("Volume Up");
+        },
+        handleVolumeDown() {
+            console.log("Volumn Down");
         },
     },
     created() {
@@ -199,7 +215,7 @@ export default {
     margin: 7px;
     cursor: pointer;
 }
-.alarm-list-panel.selected { 
+.alarm-list-panel.selected {
     background-color: rgb(230, 110, 110);
 }
 .alarm-name-panel {

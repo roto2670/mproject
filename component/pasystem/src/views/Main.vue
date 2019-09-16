@@ -61,7 +61,7 @@ export default {
             isTopPressedType: '',
             alarmList: [],
             setIntervalData: {}
-        }   
+        }
     },
     methods: {
         _initLoadMap() {
@@ -69,7 +69,7 @@ export default {
                 this.map = new maptalks.Map(this.id, {
                     // centerCross: true,
                     center: [90, 50],
-                    zoom: 5,
+                    zoom: 4,
                     maxZoom: 7,
                     minZoom: 4,
                     // Extent
@@ -104,11 +104,13 @@ export default {
             if (!!this.map) {
                 this.map.once('baselayerload', () => {
                     this.zoomLevel = 50 * (this.map.getZoom() / 11);
-                    // this._getGroupList();
+                    this._getGroupList();
+                    this._getAlarmList();
                     this._getSpeakers();
-                    // this._getAlarmList();
-                    this.paLayers['none'] = new maptalks.VectorLayer('panone').addTo(this.map);
-                    this.paLayers['none'].setZIndex(1);
+                    if (!this._.has(this.paLayers, 'none')) {
+                        this.paLayers['none'] = new maptalks.VectorLayer('panone').addTo(this.map);
+                        this.paLayers['none'].setZIndex(1);
+                    }
                 });
                 this.map.on('zoomend moveend', (e) => {
                     this.zoomLevel = 50 * (this.map.getZoom() / 11);
@@ -266,9 +268,10 @@ export default {
         _getAlarmList() {
             this.services.getAlarmList((list) => {
                 console.log('Success to get alarm data', list);
-                this._.forEach(list, data => {
+                this._.forEach(list, (data) => {
                     this.alarmList.push(data.id);
                     this.$store.commit('addAlarmData', data);
+                    console.log("insert : ", data);
                 });
             }, (error) => {
                 console.log("Failed to get alarm list ", error);
@@ -368,7 +371,7 @@ export default {
             this.infoWindowItem = null;
             const _type = this.isTopPressedType;
             this.isTopPressedType = '';
-            
+
             this.$nextTick(() => {
                 if (_type === type) {
                     this.isTopPressedType = '';
@@ -445,10 +448,7 @@ export default {
                 id: group.id,
                 speaker_id_list: group.speaker_id_list
             }
-            let formdata = new FormData();
-                formdata.set('id', group.id);
-                formdata.append('speaker_id_list', JSON.stringify(group.speaker_id_list));
-            this.services.updateSpeakerInGroup(formdata, () => {
+            this.services.updateSpeakerInGroup(data, () => {
                 console.log("Success to update speaker in group");
             }, (error) => {
                 console.warn("Failed to update speaker in group");
@@ -469,9 +469,7 @@ export default {
             const data = {
                 id_list: list
             };
-            let formdata = new FormData();
-            formdata.append('id_list', JSON.stringify(list));
-            this.services.removeAlarmData(formdata, () => {
+            this.services.removeAlarmData(data, () => {
                 console.log("Succeed to remove alarm data");
                 this._.forEach(list, id => {
                     this.$store.commit('removeAlarmData', id);
@@ -507,9 +505,10 @@ export default {
         websocketConnect() {
             let url = window.location.hostname;
             if (window.CONSTANTS.IS_DEV) {
-                url = '192.168.0.15';
+                // url = '192.168.0.15';
                 // url = '0.0.0.0'
-            } 
+                url = '127.0.0.1';
+            }
             this.services.websocketConnect(url, 5555, () => {
                 console.log("Connect with websocket");
                 this.isWebsocketConnected = true;

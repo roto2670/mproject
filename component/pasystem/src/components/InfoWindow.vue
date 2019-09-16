@@ -87,6 +87,7 @@ export default {
                 formdata.set("type", 0);
             }
             formdata.append("alarm_id", data.id);
+            // TODO: ????????????????????????????
             this.services.createReserveAlarm(formdata, () => {
                 console.log("Success to send Record item");
             }, (error) => {
@@ -103,7 +104,7 @@ export default {
         }
     },
     computed: {
-        
+
     },
     created() {
         if (this.isForGroup) {
@@ -152,7 +153,7 @@ export default {
 .info-title {
     text-align: left;
     font-size: 15px;
-    opacity: .5; 
+    opacity: .5;
     color: white;
 }
 .info-title.group {

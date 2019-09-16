@@ -3,7 +3,7 @@ window.CONSTANTS = {
     URL: {
         CONSOLE: '',
         BASE_IMG: 'static/imgs/',
-        TEST_URL: 'http://192.168.1.176:5561'
+        TEST_URL: 'http://127.0.0.1:5561'
     },
     TOP_BUTTON_TYPE: {
         PLUS: 'plus',
@@ -34,6 +34,11 @@ window.CONSTANTS = {
         CHANGE: 'change',
         REMOVE: 'remove'
     },
+    MICROPHONE_ACCESS_STATE: {
+        ALREADY_GRANT: 'granted',
+        NEED_REQUIRED: 'prompt',
+        DENIED: 'denied'
+    },
     LIST_TYPE: {
         SOUND: 0,
         SPEAKER: 1
@@ -47,5 +52,6 @@ window.CONSTANTS = {
 };
 if (window.CONSTANTS.IS_DEV) {
     window.CONSTANTS.URL.CONSOLE = 'http://127.0.0.1:5000';
+    window.CONSTANTS.URL.PA = 'http://127.0.0.1:5561';
     // window.CONSTANTS.URL.CONSOLE = 'http://192.168.0.15:5555';
 }

@@ -60,22 +60,26 @@ export const getInfo = (readyCallback) => {
 
 export const getMapFile = (readyCallback) => {
     const baseImageUrl = `${ window.CONSTANTS.URL.BASE_IMG }map.png`;
-    axios({
-        url: `${ window.CONSTANTS.URL.CONSOLE }/dashboard/location/view`,
-        method: 'GET',
-        responseType: 'text'
-    }).then(response => {
-        if(response.data) {
-            console.log('Success to Get map image file', response.data);
-            readyCallback(`${ window.location.protocol }//${ window.location.host }${ response.data}`);
-        } else {
-            console.warn('Sorry, Img file does not exist');
-            readyCallback(baseImageUrl);
-        }
-    }).catch(error => {
-        console.warn("Failed to get map file ", error);
+    if (window.CONSTANTS.IS_DEV) {
         readyCallback(baseImageUrl);
-    });
+    } else {
+        axios({
+            url: `${ window.CONSTANTS.URL.CONSOLE }/dashboard/location/view`,
+            method: 'GET',
+            responseType: 'text'
+        }).then(response => {
+            if(response.data) {
+                console.log('Success to Get map image file', response.data);
+                readyCallback(`${ window.location.protocol }//${ window.location.host }${ response.data}`);
+            } else {
+                console.warn('Sorry, Img file does not exist');
+                readyCallback(baseImageUrl);
+            }
+        }).catch(error => {
+            console.warn("Failed to get map file ", error);
+            readyCallback(baseImageUrl);
+        });
+    }
 }
 
 export const getSpeakers = (handler) => {
@@ -90,14 +94,13 @@ export const getSpeakers = (handler) => {
 
 export const getAlarmList = (successCallback, failCallback) => {
     axios({
-        url: `${ window.CONSTANTS.URL.CONSOLE }/pa/alarm/list`,
+        url: `${ window.CONSTANTS.URL.PA }/pa/alarm/list`,
         method: 'GET',
         headers: {
-            'content-type': 'json'
+            'content-type': 'application/json'
         }
     }).then(response => {
         if(response.data) {
-
             successCallback(response.data);
         } else {
             console.warn('Failed to get alarm data');
@@ -110,88 +113,86 @@ export const getAlarmList = (successCallback, failCallback) => {
 }
 
 export const addAlarmData = (file, successCallback, failCallback) => {
-    // let formdata = new FormData();
-    //     formdata.append('file', file);
-    // axios({
-    //     url: `${ window.CONSTANTS.URL.CONSOLE }/pa/alarm/upload?file=${ file.name }`,
-    //     method: 'POST',
-    //     headers: {
-    //         'Content-Type': 'multipart/form-data'
-    //     },
-    //     data: formdata
-    // }).then(response => {
-    //     if(response.data) {
-    //         successCallback();
-    //     } else {
-    //         failCallback();
-    //     }
-    // }).catch(error => {
-    //     failCallback();
-    // });
+    let formdata = new FormData();
+        formdata.append('file', file);
+    axios({
+        url: `${ window.CONSTANTS.URL.PA }/pa/alarm/upload?file=${ file.name }`,
+        method: 'POST',
+        headers: {
+            'Content-Type': 'multipart/form-data'
+        },
+        data: formdata
+    }).then(response => {
+        if(response.data) {
+            successCallback();
+        } else {
+            failCallback();
+        }
+    }).catch(error => {
+        failCallback();
+    });
 }
 
 export const removeAlarmData = (data, successCallback, failCallback) => {
-    // axios({
-    //     url: `${ window.CONSTANTS.URL.CONSOLE }/pa/alarm/delete`,
-    //     method: 'POST',
-    //     headers: {
-    //         'Content-Type': 'multipart/form-data'
-    //     },
-    //     data: data
-    // }).then(response => {
-    //     if(response.data) {
-    //         successCallback();
-    //     } else {
-    //         failCallback();
-    //     }
-    // }).catch(error => {
-    //     failCallback(error);
-    // });
+    axios({
+        url: `${ window.CONSTANTS.URL.PA }/pa/alarm/delete`,
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        data: data
+    }).then(response => {
+        if(response.data) {
+            successCallback();
+        } else {
+            failCallback();
+        }
+    }).catch(error => {
+        failCallback(error);
+    });
 }
 
 export const addGroupData = (data, successCallback, failCallback) => {
-    // let formdata = new FormData();
-    // formdata.append('name', data);
-    // axios({
-    //     url: `${ window.CONSTANTS.URL.CONSOLE }/pa/group/create`,
-    //     method: 'POST',
-    //     headers: {
-    //         'Content-Type': 'multipart/form-data'
-    //     },
-    //     data: formdata
-    // }).then(response => {
-    //     if(response.data) {
-    //         successCallback();
-    //     } else {
-    //         failCallback();
-    //     }
-    // }).catch(error => {
-    //     failCallback(error);
-    // });
+    axios({
+        url: `${ window.CONSTANTS.URL.PA }/pa/group/create`,
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        data: data
+    }).then(response => {
+        if(response.data) {
+            successCallback();
+        } else {
+            failCallback();
+        }
+    }).catch(error => {
+        failCallback(error);
+    });
 }
 
 export const removeGroupData = (data, successCallback, failCallback) => {
-    // axios({
-    //     url: `${ window.CONSTANTS.URL.CONSOLE }/pa/group/delete`,
-    //     method: 'POST',
-    //     headers: {
-    //         'Content-Type': 'multipart/form-data'
-    //     },
-    //     data: data
-    // }).then(response => {
-    //     if(response.data) {
-    //         successCallback();
-    //     } else {
-    //         failCallback();
-    //     }
-    // }).catch(error => {
-    //     failCallback(error);
-    // });
+    axios({
+        url: `${ window.CONSTANTS.URL.PA }/pa/group/delete`,
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        data: data
+    }).then(response => {
+        if(response.data) {
+            successCallback();
+        } else {
+            failCallback();
+        }
+    }).catch(error => {
+        failCallback(error);
+    });
 }
 
 export const getGroupData = (successCallback, failCallback) => {
     axios({
-        url: `${ window.CONSTANTS.URL.CONSOLE }/pa/group/list`,
+        url: `${ window.CONSTANTS.URL.PA }/pa/group/list`,
         method: 'GET'
     }).then(response => {
         if(response.data) {
@@ -208,33 +209,30 @@ export const getGroupData = (successCallback, failCallback) => {
 }
 
 export const changeGroupName = (id, name, successCallback, failCallback) => {
-    // let formdata = new FormData();
-    // formdata.set("id", id);
-    // formdata.append("name", name);
-    // axios({
-    //     url: `${ window.CONSTANTS.URL.CONSOLE }/pa/group/update/name`,
-    //     method: 'POST',
-    //     headers: {
-    //         'Content-Type': 'multipart/form-data'
-    //     },
-    //     data: formdata
-    // }).then(response => {
-    //     if(response.data) {
-    //         successCallback(response.data);
-    //     } else {
-    //         failCallback();
-    //     }
-    // }).catch(error => {
-    //     failCallback(error);
-    // });
+    axios({
+        url: `${ window.CONSTANTS.URL.PA }/pa/group/update/name`,
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        data: formdata
+    }).then(response => {
+        if(response.data) {
+            successCallback(response.data);
+        } else {
+            failCallback();
+        }
+    }).catch(error => {
+        failCallback(error);
+    });
 }
 
 export const updateSpeakerInGroup = (data, successCallback, failCallback) => {
     axios({
-        url: `${ window.CONSTANTS.URL.CONSOLE }/pa/group/update/speaker`,
+        url: `${ window.CONSTANTS.URL.PA }/pa/group/update/speaker`,
         method: 'POST',
         headers: {
-            'Content-Type': 'multipart/form-data'
+            'Content-Type': 'application/json'
         },
         data: data
     }).then(response => {
@@ -249,51 +247,54 @@ export const updateSpeakerInGroup = (data, successCallback, failCallback) => {
 }
 
 export const createReserveAlarm = (data, successCallback, failCallback) => {
-    // axios({
-    //     url: `${ window.CONSTANTS.URL.CONSOLE }/pa/reserve/create`,
-    //     method: 'POST',
-    //     headers: {
-    //         'Content-Type': 'multipart/form-data'
-    //     },
-    //     data: data
-    // }).then(response => {
-    //     if(response.data) {
-    //         successCallback(response.data);
-    //     } else {
-    //         failCallback();
-    //     }
-    // }).catch(error => {
-    //     failCallback();
-    // });
+    axios({
+        url: `${ window.CONSTANTS.URL.PA }/pa/reserve/create`,
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        data: data
+    }).then(response => {
+        if(response.data) {
+            successCallback(response.data);
+        } else {
+            failCallback();
+        }
+    }).catch(error => {
+        failCallback();
+    });
 }
 
 export const removeReserveAlarm = (data, successCallback, failCallback) => {
-    // axios({
-    //     url: `${ window.CONSTANTS.URL.CONSOLE }/pa/reserve/delete`,
-    //     method: 'POST',
-    //     data: data
-    // }).then(response => {
-    //     if(response.data) {
-    //         successCallback(response.data);
-    //     } else {
-    //         failCallback();
-    //     }
-    // }).catch(error => {
-    //     failCallback();
-    // });
+    axios({
+        url: `${ window.CONSTANTS.URL.PA }/pa/reserve/delete`,
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        data: data
+    }).then(response => {
+        if(response.data) {
+            successCallback(response.data);
+        } else {
+            failCallback();
+        }
+    }).catch(error => {
+        failCallback();
+    });
 }
 
 export const getReserveAlarmList = (successCallback, failCallback) => {
-    // axios({
-    //     url: `${ window.CONSTANTS.URL.CONSOLE }/pa/reserve/list`,
-    //     method: 'GET'
-    // }).then(response => {
-    //     if(response.data) {
-    //         successCallback(response.data);
-    //     } else {
-    //         failCallback();
-    //     }
-    // }).catch(error => {
-    //     failCallback();
-    // });
+    axios({
+        url: `${ window.CONSTANTS.URL.PA }/pa/reserve/list`,
+        method: 'GET'
+    }).then(response => {
+        if(response.data) {
+            successCallback(response.data);
+        } else {
+            failCallback();
+        }
+    }).catch(error => {
+        failCallback();
+    });
 }

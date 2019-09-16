@@ -20,19 +20,26 @@ export class SocketClient {
     constructor() {
         this._handler = {};
         this._subscribeHandlers = null;
+        this.queue = [];
         this.socket = null;
         this.clientId = null;
     }
 
     connect(host, port, connectCallback, disconnectCallback, errorCallback) { //TODO: params url
         this.socket = new WebSocket(`ws://${ host }:${ port }/ws`);
-        // this.socket = new WebSocket(`ws://192.168.1.171:5555/ws`); 
+        // this.socket = new WebSocket(`ws://192.168.1.171:5555/ws`);
         this.socket.onopen = connectCallback;
         this.socket.onerror = errorCallback;
         this.socket.onclose = disconnectCallback;
         this.socket.onmessage = (message) => {
             this._onMessage(message);
         }
+        this.socket.addEventListener('open', (event) => {
+            _.forEach(this.queue, (item) => {
+                this.socket.send(JSON.stringify(item));
+            });
+            this.queue = [];
+        });
     }
 
     disconnect() {
@@ -42,8 +49,10 @@ export class SocketClient {
     }
 
     send(data) {
-        if (!!this.socket) {
+        if (!!this.socket && this.socket.readyState === this.socket.OPEN) {
             this.socket.send(JSON.stringify(data));
+        } else {
+            this.queue.push(data);
         }
     }
 
@@ -144,7 +153,7 @@ export class SocketClient {
             delete this._handler[data.i];
         }
     }
-    
+
     _handleEvent(data) {
         if (!!data) {
             switch(data.e) {
