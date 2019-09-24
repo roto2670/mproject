@@ -3,6 +3,7 @@ export default {
         isNumber : (value) => (!_.isNaN(value) && _.isNumber(value)),
         isScanner: (kind) => { return _.isEqual(kind, window.CONSTANTS.PRODUCT_KIND.HUB)},
         isIpcam: (kind) => { return _.isEqual(kind, window.CONSTANTS.PRODUCT_KIND.IPCAM)},
-        isBeacon: (kind) => { return _.isEqual(kind, window.CONSTANTS.PRODUCT_KIND.BEACON)}
+        isBeacon: (kind) => { return _.isEqual(kind, window.CONSTANTS.PRODUCT_KIND.MIBSSKEC)},
+        isSpeaker: (kind) => { return _.isEqual(kind, window.CONSTANTS.PRODUCT_KIND.SPEAKER)}
     }
 }
