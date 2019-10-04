@@ -171,6 +171,27 @@ export const addGroupData = (data, successCallback, failCallback) => {
     });
 }
 
+export const voiceStream = (data, successCallback, failCallback) => {
+    let formdata = new FormData();
+      formdata.append('data', data);
+    axios({
+        url: `${ window.CONSTANTS.URL.PA }/pa/test`,
+        method: 'POST',
+        headers: {
+            'Content-Type': 'multipart/form-data'
+        },
+        data: formdata
+    }).then(response => {
+        if(response.data) {
+            successCallback();
+        } else {
+            failCallback();
+        }
+    }).catch(error => {
+        failCallback(error);
+    });
+}
+
 export const removeGroupData = (data, successCallback, failCallback) => {
     axios({
         url: `${ window.CONSTANTS.URL.PA }/pa/group/delete`,
