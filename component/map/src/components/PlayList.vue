@@ -90,11 +90,12 @@ export default {
                 }
             } else if (!!this.selectedItem) {
                 console.log("Success to send Record");
-                this.services.postAlarmId(this.selectedItem.id, () => {
-                    console.log("Success to send Record item");
-                }, (error) => {
-                    console.log("Failed to send Record item");
-                });
+                this.$emit('select-speaker', this.selectedItem);
+                // this.services.postAlarmId(this.selectedItem.id, () => {
+                //     console.log("Success to send Record item");
+                // }, (error) => {
+                //     console.log("Failed to send Record item");
+                // });
             } else {
                 console.log("Theres no item to play");
             }

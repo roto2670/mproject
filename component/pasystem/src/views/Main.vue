@@ -60,6 +60,7 @@ export default {
             isForGroup: false,
             isTopPressedType: '',
             alarmList: [],
+            reserveAlarmList: [],
             setIntervalData: {}
         }
     },
@@ -107,6 +108,7 @@ export default {
                     this._getGroupList();
                     this._getAlarmList();
                     this._getSpeakers();
+                    this._getReserveAlarmList();
                     if (!this._.has(this.paLayers, 'none')) {
                         this.paLayers['none'] = new maptalks.VectorLayer('panone').addTo(this.map);
                         this.paLayers['none'].setZIndex(1);
@@ -277,6 +279,17 @@ export default {
                 console.log("Failed to get alarm list ", error);
             });
         },
+        _getReserveAlarmList() {
+            this.services.getReserveAlarmList((list) => {
+                console.log("Success to get reserve alarm data", data);
+                this._.forEach(list, (data) => {
+                    this.reserveAlarmList.push(data.id);
+                    this.$store.commit('addReserveAlarmList', data);
+                })
+            }, (error) => {
+                console.log("Failed to get reserve alarm data", error);
+            });
+        },
         _zoomIn() {
             if (!!this.map) {
                 this.map.zoomIn(7);
@@ -354,6 +367,8 @@ export default {
             }
         },
         _handleFilterGroup(item, checked) {
+                console.log("#### item : ", item);
+                console.log("#### checked : ", checked);
             if (checked) {
                 this.paLayers[item].show();
                 this.polygonLayers[item].show();
@@ -607,13 +622,18 @@ export default {
             }
         },
         _handleUpdateAlarmList(data) {
-            if (data.kind === 'add') {
+            const list = data.v;
+            this._.forEach(list, item => {
+                if (data.kind === 'add') {
+                    this.$store.commit('addAlarmData', item);
+                    this.alarmList.push(item.id);
+                } else if (data.kind === 'remove') {
+                    this.$store.commit('removeAlarmData', item);
+                    this.alarmList = this._.without(this.alarmList, item);
+                } else if (data.kind === 'update') {
 
-            } else if (data.kind === 'remove') {
-
-            } else if (data.kind === 'update') {
-
-            }
+                }
+            });
         },
         _handleUpdateGroupList(data) {
             const list = data.v;

@@ -302,7 +302,7 @@
                         this._handleDetectedGadgets(list);
                     })
 
-                    // this._.forEach(this.markerMap.hubs, (marker, hid) => { //TODO: 디텍트 된 비콘들의 개수를 허브 위치에 숫자로 표현 가능
+                    // this._.forEach(this.markerMap.hubs, (marker, hid) => { //TODO: 디텍트 된 비콘들의 개수를 허브 위치에 숫자로 표현 가능, overlap, 겹침
                     //     this.countGadgetOnHub(hid);
                     // })
                     console.log("Sucess to detect gadgets");
@@ -314,7 +314,7 @@
                 const gadgets = this.$store.getters.getGadgetListDetectedByOneHub(hid);
                 if (!!hubMarker) {
                     if (this.isShowingByStage(window.CONSTANTS.USER_STAGE.SK_ADMIN)) {
-                        dy = 25;
+                        dy = 15;
                     } else {
                         dy = 25;
                     }
@@ -386,14 +386,14 @@
                     this.drawSpeakers(speakers);
                 });
 
-                // this.services.getAlarmList(alarms => {
-                //     console.log("Sucess to get Alarms", alarms);
-                //     this._.forEach(alarms, (alarm) => {
-                //         this.$store.commit('addAlarms', alarm);
-                //     })
-                // }, (error) => {
-                //     console.log("Failed to get Alarms", error);
-                // });
+                this.services.getAlarmList(alarms => {
+                    console.log("Sucess to get Alarms", alarms);
+                    this._.forEach(alarms, (alarm) => {
+                        this.$store.commit('addAlarms', alarm);
+                    })
+                }, (error) => {
+                    console.log("Failed to get Alarms", error);
+                });
             },
             addGroupLayer(id) {
                 if (!this._.has(this.speakerLayer, id)) {
@@ -782,7 +782,15 @@
                     customLayer = null;
                 if (!!!beacon) return;
                 if (!!this._.isString(beacon.custom) || this._.isEmpty(beacon.custom.map_location)) {
-                    customLocation.push(coordinate.x, coordinate.y - 3 * (1 / 10));
+                    //let number = Math.floor(Math.random())
+                    let xPosition = Math.random() - 0.5,
+                        yPosition = Math.random() - 1;
+                    //customLocation.push(coordinate.x + number, coordinate.y - 3 * (1 / 10));
+                    // customLocation.push(coordinate.x + xPosition, coordinate.y + (yPosition * (0.4)));
+                    beacon.custom.map_location.x = coordinate.x + xPosition;
+                    beacon.custom.map_location.y = coordinate.y + (yPosition * (0.4));
+                    this.$store.commit('updateGadgetData', beacon);
+                    customLocation.push(beacon.custom.map_location.x, beacon.custom.map_location.y);
                 } else {
                     customLocation.push(beacon.custom.map_location.x, beacon.custom.map_location.y);
                 }

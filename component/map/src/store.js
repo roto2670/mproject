@@ -112,7 +112,7 @@ export default new Vuex.Store({
 				if (_.isString(bcn.custom) || !!!bcn.custom) {
 					bcn.custom = {}
 				}
-			
+
 				state.gadgets[bcn.id] = bcn
 			})
 		},
@@ -136,7 +136,7 @@ export default new Vuex.Store({
 						_t : new Date() / 1000
 					}
 				}
-				
+
 				if (_.isEmpty(state.detectedgadgets[detectedGadget.gid].hubIdList.find((hid) => hid === detectedGadget.hid))) {
 					state.detectedgadgets[detectedGadget.gid].hubIdList.push(detectedGadget.hid)
 				}
@@ -147,8 +147,8 @@ export default new Vuex.Store({
 					let beforeDetectedGadget = state.hubListDetectOneGadget[detectedGadget.gid][detectedGadget.hid];
 					if (detectedGadget._t > beforeDetectedGadget._t) {
 						let hubList = _.sortBy(state.hubListDetectOneGadget[detectedGadget.gid], ['_t']),
-							index = -1; 
-						hubList = _.reverse(hubList); 
+							index = -1;
+						hubList = _.reverse(hubList);
 						hubList = _.values(hubList);
 						index = _.findIndex(hubList, (item) => {
 							return item.hid === detectedGadget.hid;
@@ -160,11 +160,11 @@ export default new Vuex.Store({
 				} else {
 					state.hubListDetectOneGadget[detectedGadget.gid][detectedGadget.hid] = detectedGadget
 				}
-	
+
 				if (!_.has(state.gadgetListDetectedByOneHub, detectedGadget.hid)) {
 					state.gadgetListDetectedByOneHub[detectedGadget.hid] = {}
 				}
-	
+
 				if (_.has(state.gadgetListDetectedByOneHub[detectedGadget.hid], detectedGadget.gid)) {
 					if (detectedGadget._t > state.gadgetListDetectedByOneHub[detectedGadget.hid][detectedGadget.gid]._t) {
 						state.gadgetListDetectedByOneHub[detectedGadget.hid][detectedGadget.gid] = detectedGadget
@@ -172,7 +172,7 @@ export default new Vuex.Store({
 				} else {
 					state.gadgetListDetectedByOneHub[detectedGadget.hid][detectedGadget.gid] = detectedGadget
 				}
-			}		
+			}
 		},
 		addIpcamIdAttachedOnBeacon(state, data) {
 			if (!state.ipcamIdAttachedOnBeacon[data.ipcamId]) {
@@ -208,11 +208,12 @@ export default new Vuex.Store({
 				_.extend(state.detectedgadgets[payload.id], payload);
 			}
 		},
-		updateSpeakerData(state, payload) {
-			if (!!state.speakers[payload.id]) {
-				state.speakers[payload.id] = payload;
-			}
-		},
+		// Duplicate
+		// updateSpeakerData(state, payload) {
+		// 	if (!!state.speakers[payload.id]) {
+		// 		state.speakers[payload.id] = payload;
+		// 	}
+		// },
 		removeGadgetLocation(state, gid) {
 			if (!!state.detectedgadgets[gid] && !!state.gadgets[gid]) {
 				state.detectedgadgets[gid].custom.map_location = {}

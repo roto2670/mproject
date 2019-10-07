@@ -7,7 +7,8 @@ export default new Vuex.Store({
     state: {
         speakers: {},
         groupList: {},
-        alarmList: {}
+        alarmList: {},
+        reserveAlarmList: {}
     },
     getters: {
         getSpeakers: (state) => {
@@ -19,7 +20,13 @@ export default new Vuex.Store({
         getAlarmList: (state) => {
 			return _.values(state.alarmList)
         },
+        getReserveAlarmList: (state) => {
+			return _.values(state.reserveAlarmList)
+        },
         // TODO: id? or name?
+        getReserveAlarmData: (state) => (id) => {
+        	return state.reserveAlarmList[id];
+        },
         getAlarmData: (state) => (id) => {
         	return state.alarmList[id];
         },
@@ -72,6 +79,25 @@ export default new Vuex.Store({
         removeAlarmData(state, id) {
             if (_.has(state.alarmList, id)) {
                 delete state.alarmList[id];
+            }
+        },
+        addReserveAlarmList(state, payload) {
+            _.forEach(payload, data => {
+                state.reserveAlarmList[data.id] = data;
+            });
+        },
+        addReserveAlarmData(state, payload) {
+            state.reserveAlarmList[payload.id] = payload;
+        },
+        removeReserveAlarmList(state) {
+            _.forEach(state.reserveAlarmList, (data, id) => {
+                delete state.reserveAlarmList[id];
+            });
+            state.reserveAlarmList = {};
+        },
+        removeReserveAlarmData(state, id) {
+            if (_.has(state.reserveAlarmList, id)) {
+                delete state.reserveAlarmList[id];
             }
         },
         addGroup(state, payload) {

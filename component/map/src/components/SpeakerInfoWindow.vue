@@ -34,7 +34,7 @@
             </div>
         </div>
         <div class="info-right-panel">
-            <PlayList :list="playList"></PlayList>
+            <PlayList :list="playList" @select-speaker="handleSelectSpeaker"></PlayList>
         </div>
         <div class="info-close-button" @click="handleSelectCloseButton"></div>
     </div>
@@ -76,7 +76,21 @@ export default {
         },
         handleSelectCloseButton() {
             this.$emit('select-close');
-        }
+        },
+        handleSelectSpeaker(data) {
+            console.log("selected speaker : ", data);
+            let formdata = new FormData();
+            if (this._.size(this.item) > 1) {
+                formdata.set("type", 1);
+                formdata.append("id", this.item);
+            } else {
+                formdata.append("id", this.item.id);
+                formdata.set("type", 0);
+            }
+            formdata.append("alarm_id", data.id);
+            console.log("selected speaker : ", formdata);
+            // TODO: request Alarm api
+        },
     },
     computed: {
         getGroupName() {
@@ -134,7 +148,7 @@ export default {
 .info-title {
     text-align: left;
     font-size: 15px;
-    opacity: .5; 
+    opacity: .5;
     color: white;
 }
 .info-title.group {
