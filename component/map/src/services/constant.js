@@ -1,5 +1,5 @@
 window.CONSTANTS = {
-    IS_DEV: false,
+    IS_DEV: true,
     IS_MOCK: false,
     HUB_VIEW : {
         NOT_IN_MAP : 0,
@@ -115,6 +115,7 @@ window.CONSTANTS = {
 if (window.CONSTANTS.IS_DEV) {
     window.CONSTANTS.URL.CONSOLE = 'http://127.0.0.1:5000';
     // window.CONSTANTS.URL.CONSOLE = 'http://192.168.0.15:5000';
-    window.CONSTANTS.URL.WEB_SOCKET = '192.168.0.15';
+    //window.CONSTANTS.URL.WEB_SOCKET = '192.168.0.15';
+    window.CONSTANTS.URL.WEB_SOCKET = '127.0.0.1';
     window.CONSTANTS.URL.PA = 'http://127.0.0.1:5561';
 }

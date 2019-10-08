@@ -20,7 +20,8 @@
         </div>
         <div class="alarm-play-frame">
             <div class="play-icon-panel">
-                <div class="icon-image play-icon" @click="handleStartPlay"></div>
+                <div class="icon-image play-icon" @click="handleStartPlay"
+                    :class="{ stopIcon: isPlaying() }"></div>
             </div>
             <div class="volume-down-panel">
                 <div class="icon-image volume-down" @click="handleVolumeDown"></div>
@@ -53,7 +54,7 @@ export default {
             sampleRate: 44100,
             blob: null,
             uuid: null,
-            soundVolume: 50
+            soundVolume: 80
         }
     },
     methods: {
@@ -69,7 +70,6 @@ export default {
         },
         handleSelectedItem(item) {
             if (item === `record`) {                 //TODO: command 푸시면 alarm이나 streaming이 선택될 수 있습니다.
-                console.log("1", item)
                 if (!!!this.selectedItem) {
                     this.selectedItem = `record`;
                 } else {
@@ -80,10 +80,8 @@ export default {
                 }
             } else if (!!!this.selectedItem || this.selectedItem.id !== item.id) {
                 this.selectedItem = item;
-                console.log("2", item)
             } else {
                 this.selectedItem = null;
-                console.log("3", this.selectedItem)
             }
         },
         getUUID() {
@@ -395,6 +393,10 @@ export default {
 .icon-image.play-icon:active {
     background-size: 102%;
     background-image: url('../assets/imgs/icon-play(active).svg');
+}
+.icon-image.stopIcon {
+    background-size: 102%;
+    background-image: url('../assets/imgs/icon-stop.png');
 }
 .volume-down-panel {
     position: absolute;

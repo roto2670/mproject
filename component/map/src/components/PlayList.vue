@@ -19,7 +19,8 @@
         </div>
         <div class="alarm-play-frame">
             <div class="play-icon-panel">
-                <div class="icon-image play-icon" @click="handleStartPlay"></div>
+                <div class="icon-image play-icon" @click="handleStartPlay"
+                    :class="{ stopIcon: isPlaying() }"></div>
             </div>
             <div class="volume-down-panel">
                 <div class="icon-image volume-down" @click="handleVolumeDown"></div>
@@ -44,7 +45,15 @@ export default {
             selectedItem: null,
             context: null,
             recorder: null,
-            audioInput: null
+            audioInput: null,
+            recordingLength: null,
+            leftchannel: [],
+            rightchannel: [],
+            recordingLength: 0,
+            sampleRate: 44100,
+            blob: null,
+            uuid: null,
+            soundVolume: 80
         }
     },
     methods: {
@@ -75,6 +84,12 @@ export default {
             }
             console.log("selected item", this.selectedItem);
         },
+        getUUID() {
+          return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+            var r = Math.random() * 16 | 0, v = c == 'x' ? r : (r & 3 | 8);
+            return v.toString(16);
+          });
+        },
         handleStartPlay() {
             if (this.selectedItem === `record`) {
                 if (!!!this.context) {
@@ -82,6 +97,14 @@ export default {
                         if (permissionState === window.CONSTANTS.MICROPHONE_ACCESS_STATE.DENIED) {
                             console.log("Denied microphone access");
                         } else {
+                            if (this.uuid == null) {
+                              this.uuid = this.getUUID();
+                            }
+                            const data = {}
+                            data.selectedItem = this.selectedItem;
+                            data.uuid = this.uuid;
+                            data.volume = this.soundVolume;
+                            this.$emit('select-speaker', this.selectedItem);
                             this._requireAccess();
                         }
                     });
@@ -90,12 +113,14 @@ export default {
                 }
             } else if (!!this.selectedItem) {
                 console.log("Success to send Record");
+                if (this.uuid == null) {
+                  this.uuid = this.getUUID();
+                }
+                const data = {}
+                data.selectedItem = this.selectedItem;
+                data.uuid = this.uuid;
+                data.volume = this.soundVolume
                 this.$emit('select-speaker', this.selectedItem);
-                // this.services.postAlarmId(this.selectedItem.id, () => {
-                //     console.log("Success to send Record item");
-                // }, (error) => {
-                //     console.log("Failed to send Record item");
-                // });
             } else {
                 console.log("Theres no item to play");
             }
@@ -105,10 +130,93 @@ export default {
                 this.context.close();
                 this.audioInput.disconnect();
                 this.recorder.disconnect();
+                this.blobToWav();
                 this.context = null;
                 this.recorder = null;
                 this.audioInput = null;
                 this.selectedItem = null;
+                this.recordingLength = 0;
+                this.leftchannel =  [],
+                this.rightchannel =  [],
+                this.blob = null;
+                this.uuid = null;
+            }
+        },
+        streamPosting() {
+            if (!!this.context) {
+                this.context.close();
+                this.audioInput.disconnect();
+                this.recorder.disconnect();
+                this.blobToWav();
+                this.context = null;
+                this.recorder = null;
+                this.audioInput = null;
+                this.recordingLength = 0;
+                this.leftchannel =  [],
+                this.rightchannel =  [],
+                this.blob = null;
+            }
+        },
+        blobToWav() {
+            var leftBuffer = this.flattenArray(this.leftchannel, this.recordingLength);
+            var rightBuffer = this.flattenArray(this.rightchannel, this.recordingLength);
+            var interleaved = this.interleave(leftBuffer, rightBuffer);
+            var buffer = new ArrayBuffer(44 + interleaved.length * 2);
+            var view = new DataView(buffer);
+            this.writeUTFBytes(view, 0, 'RIFF');
+            view.setUint32(4, 44 + interleaved.length * 2, true);
+            this.writeUTFBytes(view, 8, 'WAVE');
+            this.writeUTFBytes(view, 12, 'fmt ');
+            view.setUint32(16, 16, true); // chunkSize
+            view.setUint16(20, 1, true); // wFormatTag
+            view.setUint16(22, 2, true); // wChannels: stereo (2 channels)
+            view.setUint32(24, this.sampleRate, true); // dwSamplesPerSec
+            view.setUint32(28, this.sampleRate * 4, true); // dwAvgBytesPerSec
+            view.setUint16(32, 4, true); // wBlockAlign
+            view.setUint16(34, 16, true); // wBitsPerSample
+            // data sub-chunk
+            this.writeUTFBytes(view, 36, 'data');
+            view.setUint32(40, interleaved.length * 2, true);
+            // write the PCM samples
+            var index = 44;
+            var volume = 1;
+            for (var i = 0; i < interleaved.length; i++) {
+                view.setInt16(index, interleaved[i] * (0x7FFF * volume), true);
+                index += 2;
+            }
+            // our final blob
+            this.blob = new Blob([view], { type: 'audio/wav' });
+
+            this.services.voiceStream(this.blob, this.uuid, this.soundVolume, () => {
+              console.log('Success to send blob');
+            }, (error) => {
+              console.warn('Failed to send blob data');
+            });
+        },
+        flattenArray(channelBuffer, recordingLength) {
+            var result = new Float32Array(recordingLength);
+            var offset = 0;
+            for (var i = 0; i < channelBuffer.length; i++) {
+                var buffer = channelBuffer[i];
+                result.set(buffer, offset);
+                offset += buffer.length;
+            }
+            return result;
+        },
+        interleave(leftChannel, rightChannel) {
+            var length = leftChannel.length + rightChannel.length;
+            var result = new Float32Array(length);
+            var inputIndex = 0;
+            for (var index = 0; index < length;) {
+                result[index++] = leftChannel[inputIndex];
+                result[index++] = rightChannel[inputIndex];
+                inputIndex++;
+            }
+            return result;
+        },
+        writeUTFBytes(view, offset, string) {
+            for (var i = 0; i < string.length; i++) {
+                view.setUint8(offset + i, string.charCodeAt(i));
             }
         },
         _checkAccessMicrophone(resultCallback) {
@@ -124,14 +232,19 @@ export default {
             }).then((stream) => {
                 this.context = new AudioContext();
                 this.audioInput = this.context.createMediaStreamSource(stream);
-                var bufferSize = 2048;
+                var bufferSize = 4096;
 
                 this.recorder = this.context.createScriptProcessor(bufferSize, 2, 2);
 
                 this.recorder.onaudioprocess = (e) => {
-                    var mic = e.inputBuffer.getChannelData(0);
-                    var convert = this.convertoFloat32ToInt16(mic);
-                    console.log("mic", convert);
+                    this.leftchannel.push(new Float32Array(e.inputBuffer.getChannelData(0)));
+                    this.rightchannel.push(new Float32Array(e.inputBuffer.getChannelData(1)));
+                    this.recordingLength += bufferSize;
+                    if (this.recordingLength == 204800) {
+                        this.streamPosting();
+                        this._requireAccess();
+                    }
+
                 };
 
                 this.audioInput.connect(this.recorder);
@@ -153,10 +266,23 @@ export default {
             return buf.buffer;
         },
         handleVolumeUp() {
-            console.log("Volume Up");
+            if (this.soundVolume < 100) {
+                this.soundVolume += 5
+                console.log("Volume Up", this.soundVolume);
+            } else {
+                console.log("Volume MAX", this.soundVolume);
+            }
+            this.$emit('select-volume', this.soundVolume);
         },
         handleVolumeDown() {
-            console.log("Volumn Down");
+            if (this.soundVolume > 0){
+                this.soundVolume -= 5
+                console.log("Volume Down", this.soundVolume);
+            } else {
+                console.log("Volume Mute", this.soundVolume);
+            }
+            this.$emit('select-volume', this.soundVolume);
+
         },
     },
     created() {
@@ -267,6 +393,10 @@ export default {
 .icon-image.play-icon:active {
     background-size: 102%;
     background-image: url('../../public/static/location/imgs/icon-play(active).svg');
+}
+.icon-image.stopIcon {
+    background-size: 102%;
+    background-image: url('../../public/static/location/imgs/icon-stop.png');
 }
 .volume-down-panel {
     position: absolute;
