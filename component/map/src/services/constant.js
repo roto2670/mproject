@@ -116,4 +116,5 @@ if (window.CONSTANTS.IS_DEV) {
     window.CONSTANTS.URL.CONSOLE = 'http://127.0.0.1:5000';
     // window.CONSTANTS.URL.CONSOLE = 'http://192.168.0.15:5000';
     window.CONSTANTS.URL.WEB_SOCKET = '192.168.0.15';
+    window.CONSTANTS.URL.PA = 'http://127.0.0.1:5561';
 }

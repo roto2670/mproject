@@ -72,7 +72,7 @@ export default {
         },
         handleSelectItem(index) {
             const item = this.playList[index];
-            console.log(item);
+            console.log("Select item : ", item);
         },
         handleSelectCloseButton() {
             this.$emit('select-close');
@@ -87,7 +87,6 @@ export default {
                 formdata.set("type", 0);
             }
             formdata.append("alarm_id", data.id);
-            // TODO: ????????????????????????????
             this.services.createReserveAlarm(formdata, () => {
                 console.log("Success to send Record item");
             }, (error) => {

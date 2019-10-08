@@ -229,14 +229,14 @@ export const getGroupData = (successCallback, failCallback) => {
     });
 }
 
-export const changeGroupName = (id, name, successCallback, failCallback) => {
+export const changeGroupName = (data, successCallback, failCallback) => {
     axios({
         url: `${ window.CONSTANTS.URL.PA }/pa/group/update/name`,
         method: 'POST',
         headers: {
             'Content-Type': 'application/json'
         },
-        data: formdata
+        data: data
     }).then(response => {
         if(response.data) {
             successCallback(response.data);

@@ -156,6 +156,7 @@ export class SocketClient {
 
     _handleEvent(data) {
         if (!!data) {
+            console.log("###### datea.e ", data.e);
             switch(data.e) {
                 case window.CONSTANTS.EVENT_TYPE.ADDED:
                     this._subscribeHandlers.added(data);

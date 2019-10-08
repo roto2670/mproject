@@ -76,6 +76,7 @@ export const postMapFile = (file, successCallback, failCallback) => {
 
 export const postAlarmId = (id, successCallback, failCallback) => {
     axios({
+        // TODO: PA URL
         url: `${ window.CONSTANTS.URL.TEST.URL }/pa/alarm/stream`,
         method: 'POST',
         headers: {
@@ -226,7 +227,7 @@ export const getGroupData = (successCallback, failCallback) => {
 
 export const getAlarmList = (successCallback, failCallback) => {
     axios({
-        url: `${ window.CONSTANTS.URL.CONSOLE }/pa/alarm/list`,
+        url: `${ window.CONSTANTS.URL.PA }/pa/alarm/list`,
         method: 'GET',
         headers: {
             'content-type': 'application/json'
