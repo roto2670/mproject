@@ -152,6 +152,82 @@ export const removeAlarmData = (data, successCallback, failCallback) => {
     });
 }
 
+export const streamAlarm = (data, successCallback, failCallback) => {
+    axios({
+        url: `${ window.CONSTANTS.URL.PA }/pa/alarm/stream`,
+        method: 'POST',
+        headers: {
+            'content-type': 'application/json'
+        },
+        data:data
+    }).then(response => {
+        if (response.data) {
+            successCallback();
+        } else {
+            failCallback();
+        }
+    }).catch(error => {
+        failCallback(error);
+    })
+}
+
+//export const volumeUp = (data, successCallback, failCallback) => {
+//    axios({
+//        url: `${ window.CONSTANTS.URL.PA }/pa/volume/up`,
+//        method: 'POST',
+//        headers: {
+//            'content-type': 'application/json'
+//        },
+//        data:data
+//    }).then(response => {
+//        if (response.data) {
+//            successCallback();
+//        } else {
+//            failCallback();
+//        }
+//    }).catch(error => {
+//        failCallback(error);
+//    })
+//}
+
+//export const volumeDown = (data, successCallback, failCallback) => {
+//    axios({
+//        url: `${ window.CONSTANTS.URL.PA }/pa/volume/down`,
+//        method: 'POST',
+//        headers: {
+//            'content-type': 'application/json'
+//        },
+//        data:data
+//    }).then(response => {
+//        if (response.data) {
+//            successCallback();
+//        } else {
+//            failCallback();
+//        }
+//    }).catch(error => {
+//        failCallback(error);
+//    })
+//}
+
+export const stopStreamAlarm = (data, successCallback, failCallback) => {
+    axios({
+        url: `${ window.CONSTANTS.URL.PA }/pa/alarm/stop`,
+        method: 'POST',
+        headers: {
+            'content-type': 'application/json'
+        },
+        data:data
+    }).then(response => {
+        if (response.data) {
+            successCallback();
+        } else {
+            failCallback();
+        }
+    }).catch(error => {
+        failCallback(error);
+    })
+}
+
 export const addGroupData = (data, successCallback, failCallback) => {
     axios({
         url: `${ window.CONSTANTS.URL.PA }/pa/group/create`,
@@ -171,11 +247,12 @@ export const addGroupData = (data, successCallback, failCallback) => {
     });
 }
 
-export const voiceStream = (data, successCallback, failCallback) => {
+export const voiceStream = (data, id, volume, successCallback, failCallback) => {
     let formdata = new FormData();
       formdata.append('data', data);
+      formdata.append('volume', volume)
     axios({
-        url: `${ window.CONSTANTS.URL.PA }/pa/test`,
+        url: `${ window.CONSTANTS.URL.PA }/pa/voice/stream?id=${ id }`,
         method: 'POST',
         headers: {
             'Content-Type': 'multipart/form-data'
