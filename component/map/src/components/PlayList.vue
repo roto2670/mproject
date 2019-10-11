@@ -53,7 +53,8 @@ export default {
             sampleRate: 44100,
             blob: null,
             uuid: null,
-            soundVolume: 80
+            soundVolume: 80,
+            isPlayed: false
         }
     },
     methods: {
@@ -65,7 +66,8 @@ export default {
             }
         },
         isPlaying() {
-            return (this.context !== null);
+            // return (this.context !== null);
+            return this.isPlayed;
         },
         handleSelectedItem(item) {
             if (item === `record`) {                 //TODO: command 푸시면 alarm이나 streaming이 선택될 수 있습니다.
@@ -104,7 +106,7 @@ export default {
                             data.selectedItem = this.selectedItem;
                             data.uuid = this.uuid;
                             data.volume = this.soundVolume;
-                            this.$emit('select-speaker', this.selectedItem);
+                            this.$emit('select-speaker', data);
                             this._requireAccess();
                         }
                     });
@@ -120,7 +122,8 @@ export default {
                 data.selectedItem = this.selectedItem;
                 data.uuid = this.uuid;
                 data.volume = this.soundVolume
-                this.$emit('select-speaker', this.selectedItem);
+                this.$emit('select-speaker', data);
+                this.isPlayed = true;
             } else {
                 console.log("Theres no item to play");
             }
@@ -140,6 +143,7 @@ export default {
                 this.rightchannel =  [],
                 this.blob = null;
                 this.uuid = null;
+                this.isPlayed = false;
             }
         },
         streamPosting() {

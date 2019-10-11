@@ -1,5 +1,5 @@
 window.CONSTANTS = {
-    IS_DEV: true,
+    IS_DEV: false,
     IS_MOCK: false,
     HUB_VIEW : {
         NOT_IN_MAP : 0,
@@ -10,7 +10,8 @@ window.CONSTANTS = {
         YOUR_CLOUD : 'https://c2.prota.space',
         CONSOLE : '',
         TEST_URL: 'http://192.168.1.176:5561',
-        WEB_SOCKET: ''
+        WEB_SOCKET: '',
+        PA: 'http://192.168.0.27:5561'
     },
     HUB_INFO: {
         0: "Portal",

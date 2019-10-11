@@ -62,7 +62,7 @@ export default {
             playList: [],
             speakersInGroup: [],
             nowPlaying: null,
-            soundVolume: 50
+            soundVolume: 80
         }
     },
     methods: {
