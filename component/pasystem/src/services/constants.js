@@ -1,9 +1,10 @@
 window.CONSTANTS = {
-    IS_DEV: true,
+    IS_DEV: false,
     URL: {
         CONSOLE: '',
         BASE_IMG: 'static/imgs/',
-        TEST_URL: 'http://127.0.0.1:5561'
+        TEST_URL: 'http://127.0.0.1:5561',
+        PA: 'http://192.168.0.27:5561'
     },
     TOP_BUTTON_TYPE: {
         PLUS: 'plus',
@@ -52,6 +53,6 @@ window.CONSTANTS = {
 };
 if (window.CONSTANTS.IS_DEV) {
     window.CONSTANTS.URL.CONSOLE = 'http://192.168.0.15:5000';
-    window.CONSTANTS.URL.PA = 'http://192.168.0.25:5561';
+    window.CONSTANTS.URL.PA = 'http://192.168.0.27:5561';
     // window.CONSTANTS.URL.CONSOLE = 'http://192.168.0.15:5555';
 }

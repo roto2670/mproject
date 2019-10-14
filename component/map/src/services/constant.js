@@ -10,7 +10,8 @@ window.CONSTANTS = {
         YOUR_CLOUD : 'https://c2.prota.space',
         CONSOLE : '',
         TEST_URL: 'http://192.168.1.176:5561',
-        WEB_SOCKET: ''
+        WEB_SOCKET: '',
+        PA: 'http://192.168.0.27:5561'
     },
     HUB_INFO: {
         0: "Portal",
@@ -115,6 +116,7 @@ window.CONSTANTS = {
 if (window.CONSTANTS.IS_DEV) {
     window.CONSTANTS.URL.CONSOLE = 'http://127.0.0.1:5000';
     // window.CONSTANTS.URL.CONSOLE = 'http://192.168.0.15:5000';
-    window.CONSTANTS.URL.WEB_SOCKET = '192.168.0.15';
+    //window.CONSTANTS.URL.WEB_SOCKET = '192.168.0.15';
+    window.CONSTANTS.URL.WEB_SOCKET = '127.0.0.1';
     window.CONSTANTS.URL.PA = 'http://127.0.0.1:5561';
 }

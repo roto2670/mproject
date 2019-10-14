@@ -906,13 +906,27 @@
                             <div class="bcnName1 bcnName" title="${ gadget.name }">${ gadget.name }</div>
                             <div class="bcnskey1">KIND</div>
                             <div class="bcnName1 bcnKind" title="${ gadgetKind }">${ !_.isEmpty(gadgetKind)? gadgetKind: 'Not Selected'}</div>
-                            <div id="${ gadget.gid }name-data" class="scannerData">SCANNER(${ cnt })</div>
-                            <div class="scannerNameList">${ context }</div></div>
+                            <div id="${ gadget.gid }name-data" class="scannerData"></div>
+                            <div class="scannerNameList"></div></div>
                             <div class="bcns-right-panel">
                             <div id="${ gadget.gid }loading-panel" class="loading-panel"></div>
                             <div id="${ gadget.gid }loader" class="loader"><div></div><div></div><div></div><div></div></div>
                             <img id="${ gadget.gid }img" class="bcnsImg1" src="${ window.CONSTANTS.URL.BASE_IMG }item${ tag }.png"></img></div>
                             <div class="close-button-custom"></div></div></div>`;
+                // Origin -> scanner의 비콘갯수 및 리스트 보이는 코드
+                // let content = `<div class="bcns">
+                //             <div class="bcnsInfo1">
+                //             <div class="bcnskey1">NAME</div>
+                //             <div class="bcnName1 bcnName" title="${ gadget.name }">${ gadget.name }</div>
+                //             <div class="bcnskey1">KIND</div>
+                //             <div class="bcnName1 bcnKind" title="${ gadgetKind }">${ !_.isEmpty(gadgetKind)? gadgetKind: 'Not Selected'}</div>
+                //             <div id="${ gadget.gid }name-data" class="scannerData">SCANNER(${ cnt })</div>
+                //             <div class="scannerNameList">${ context }</div></div>
+                //             <div class="bcns-right-panel">
+                //             <div id="${ gadget.gid }loading-panel" class="loading-panel"></div>
+                //             <div id="${ gadget.gid }loader" class="loader"><div></div><div></div><div></div><div></div></div>
+                //             <img id="${ gadget.gid }img" class="bcnsImg1" src="${ window.CONSTANTS.URL.BASE_IMG }item${ tag }.png"></img></div>
+                //             <div class="close-button-custom"></div></div></div>`;
                 let showInfoWindow = {
                     'content': content,
                     'width': 400,

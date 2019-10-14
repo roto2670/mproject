@@ -7,6 +7,8 @@
                     <div class="info-text">{{ item.name }}</div>
                     <div class="info-title group">GROUP</div>
                     <div class="info-text">{{ getGroupName }}</div>
+                    <div class="info-title group">VOLUME</div>
+                    <div class="info-text">{{ this.soundVolume }}</div>
                 </div>
                 <div class="alarm-image-panel">
                     <div class="alarm-image"></div>
@@ -34,7 +36,8 @@
             </div>
         </div>
         <div class="info-right-panel">
-            <PlayList :list="playList" @select-speaker="handleSelectSpeaker"></PlayList>
+            <PlayList :list="playList" @select-speaker="handleSelectSpeaker"
+                @select-volume="handleVolume"></PlayList>
         </div>
         <div class="info-close-button" @click="handleSelectCloseButton"></div>
     </div>
@@ -57,7 +60,9 @@ export default {
     data() {
         return {
             playList: [],
-            speakersInGroup: []
+            speakersInGroup: [],
+            nowPlaying: null,
+            soundVolume: 80
         }
     },
     methods: {
@@ -77,19 +82,48 @@ export default {
         handleSelectCloseButton() {
             this.$emit('select-close');
         },
+        handleVolume(volume) {
+            this.soundVolume = volume
+        },
         handleSelectSpeaker(data) {
-            console.log("selected speaker : ", data);
-            let formdata = new FormData();
-            if (this._.size(this.item) > 1) {
-                formdata.set("type", 1);
-                formdata.append("id", this.item);
+            const jsondata = {};
+            jsondata.uuid = data.uuid;
+            jsondata.volume = data.volume;
+            if (data.selectedItem == 'record') {
+                jsondata.alarm_id = data.selectedItem;
+                if (this._.size(this.item) > 1) {
+                    jsondata.type = '2';
+                    jsondata.id = this.item.id;
+                } else {
+                    jsondata.type = '3';
+                    jsondata.id = this.item;
+                }
             } else {
-                formdata.append("id", this.item.id);
-                formdata.set("type", 0);
+                jsondata.alarm_id = data.selectedItem.id;
+                if (this._.size(this.item) > 1) {
+                    jsondata.type = '0';
+                    jsondata.id = this.item.id;
+                } else {
+                    jsondata.type = '1';
+                    jsondata.id = this.item;
+                }
             }
-            formdata.append("alarm_id", data.id);
-            console.log("selected speaker : ", formdata);
-            // TODO: request Alarm api
+            if (this.nowPlaying == null) {
+                this.services.streamAlarm(jsondata, () => {
+                    console.log("Success to send Record item");
+                    this.nowPlaying = data.selectedItem.id;
+                }, (error) => {
+                    console.log("Failed to send Record item");
+                });
+            } else {
+                this.services.stopStreamAlarm(jsondata, () => {
+                    console.log("Success to send Record item");
+                    this.nowPlaying = null;
+                }, (error) => {
+                    console.log("Failed to send Record item");
+                });
+            }
+
         },
     },
     computed: {
