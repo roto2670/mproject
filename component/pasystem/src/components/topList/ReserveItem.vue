@@ -12,18 +12,20 @@
 export default {
     name: 'ReserveItem',
     props: {
-        type: {
+        id: {
             type: String
-        },
-        name: {
-            type: String
+        }
+    },
+    data() {
+        return {
+            reserve: {}
         }
     },
     computed: {
         itemName() {
-            const itemName = `Sound - ${ this.name }`
+            const itemName = `Reserve - ${ this.reserve.hour } : ${ this.reserve.minute }`
             if (this.type === window.CONSTANTS.RESERVE_TYPE.GROUP) {
-                itemName = `Group - ${ this.name }`
+                itemName = `Group - ${ this.hour }`
             } else if (this.type === window.CONSTANTS.RESERVE_TYPE.GROUP) {
             }
             return itemName;
@@ -31,8 +33,39 @@ export default {
     },
     methods: {
         handleSelectedCheckbox() {
-            this.$emit('select-checkbox', this.type, this.name);
+            this.$emit('select-checkbox', this.id);
         }
+    },
+    created() {
+        this.reserve = this.$store.getters.getReserveAlarmData(this.id);
+        console.log("### reserve : ", this.reserve);
     }
 }
 </script>
+<style>
+.sound-item-panel {
+    position: relative;
+    width: 100%;
+    height: 45px;
+    padding: 15px;
+    border-bottom: 1px solid rgb(235, 235, 235);
+}
+.sound-item-wrapper {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+}
+.sound-item-label {
+    font-size: 20px;
+    user-select: none;
+    color: rgb(128, 128, 128);
+    font-weight: bold;
+    cursor: pointer;
+}
+.sound-item-checkbox {
+    margin: -1px 10px 0 !important;
+    width: 17px;
+    height: 17px;
+    vertical-align: middle;
+}
+</style>
