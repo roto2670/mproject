@@ -13,8 +13,8 @@
             @select-remove="selectedRemoveReserve" :class="{ reserve: true }"></SoundList>
             <div v-else class="reserve-list-container">
                 <div class="list-wrapper">
-                <ReserveItem v-for="object in list" :key="object.id"
-                :id="object.id" @select-checkbox="handleSelectCheckbox"></ReserveItem>
+                <ReserveItem v-for="id in list" :key="id"
+                :id="id" @select-checkbox="handleSelectCheckbox"></ReserveItem>
                 </div>
                 <div class="sound-button-wrapper">
                     <div class="sound-button-panel" @click="selectedAddReserve">
@@ -50,9 +50,13 @@ export default {
         ReserveTimeList,
         ReserveItem
     },
+    props: {
+        list: {
+            type: Array
+        }
+    },
     data() {
         return {
-            list: [],
             checkList: [],
             reserveOption: {},
             typeList: this._.values(window.CONSTANTS.RESERVE_TYPE),
@@ -65,14 +69,10 @@ export default {
             this.type = window.CONSTANTS.RESERVE_TYPE.GROUP;
         },
         selectedRemoveReserve() {
-            console.log("###Select reserve remove ::::: ", this.checkList);
             this.$emit('select-remove', this.checkList);
-            this._.forEach(this.checkList, id => {
-                this.list = this._.without(this.list, id);
-            });
+            this.checkList = [];
         },
         handleSelectCheckbox(id) {
-            console.log("###### check id : ", id);
             if (!this._.includes(this.checkList, id)) {
                 this.checkList.push(id);
             } else {
@@ -80,7 +80,6 @@ export default {
             }
         },
         handleChangedCheckBox(item, checked) {
-            console.log("NNNNNNNNNN ", item, checked);
             if (checked) {
                 this.checkList = [item];
             } else {
@@ -139,22 +138,11 @@ export default {
         }
     },
     created() {
-        this.list = this.$store.getters.getReserveAlarmList;
-        console.log("### list : ", this.list);
-            console.log("### this.type : ", this.type);
     }
 }
 </script>
 <style>
 .reserve-container {
-    /* position: absolute;
-    width: 300px;
-    left: 500px;
-    background-color: rgb(249, 249, 249);
-    border: 1px solid rgb(223, 223, 233);
-    border-radius: 10px;
-    z-index: 1;
-    overflow: hidden; */
 }
 .sound-container.reserve {
     left: 640px;

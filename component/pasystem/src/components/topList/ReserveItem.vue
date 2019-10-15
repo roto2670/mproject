@@ -38,7 +38,6 @@ export default {
     },
     created() {
         this.reserve = this.$store.getters.getReserveAlarmData(this.id);
-        console.log("### reserve : ", this.reserve);
     }
 }
 </script>
