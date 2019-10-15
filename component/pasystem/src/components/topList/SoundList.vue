@@ -53,6 +53,7 @@ export default {
             this.selectedList = [];
         },
         handleSelectCheckbox(id) {
+            console.log("### id : ", id);
             if (!this._.includes(this.selectedList, id)) {
                 this.selectedList.push(id);
             } else {

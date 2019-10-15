@@ -281,11 +281,12 @@ export default {
         },
         _getReserveAlarmList() {
             this.services.getReserveAlarmList((list) => {
-                console.log("Success to get reserve alarm data", data);
+                console.log("Success to get reserve alarm data", list);
                 this._.forEach(list, (data) => {
                     this.reserveAlarmList.push(data.id);
-                    this.$store.commit('addReserveAlarmList', data);
-                })
+                    this.$store.commit('addReserveAlarmData', data);
+                    console.log("### data : %s", data);
+                });
             }, (error) => {
                 console.log("Failed to get reserve alarm data", error);
             });
@@ -514,7 +515,19 @@ export default {
             this.isTopPressedType = '';
         },
         handleReserveRemove(list){
-            console.log(data); //TODO 예약 삭제
+            console.log("111111 : ::: ", list); //TODO 예약 삭제
+            const data = {
+                id_list: list
+            };
+            this.services.removeReserveAlarm(data, () => {
+                console.log("Succeed to remove reserve alarm");
+                this._.forEach(list, id => {
+                    this.$store.commit('removeReserveAlarmData', id);
+                    this.reserveAlarmList = this._.without(this.reserveAlarmList, id);
+                });
+            }, (error) => {
+                console.log("Failed to remove reserve alarm", error);
+            });
         },
         // websocket function
         websocketConnect() {

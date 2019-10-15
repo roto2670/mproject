@@ -7,9 +7,26 @@
                 <div class="back-text"> {{ text }}</div>
             </div>
         </div>
-        <SoundList v-if="isShowing('scheduled')"
-        :list="list" @select-add="selectedAddReserve"
-        @select-remove="selectedRemoveReserve" :class="{ reserve: true }"></SoundList>
+        <div v-if="isShowing('scheduled')">
+            <SoundList v-if="isEmpty"
+            :list="list" @select-add="selectedAddReserve"
+            @select-remove="selectedRemoveReserve" :class="{ reserve: true }"></SoundList>
+            <div v-else class="reserve-list-container">
+                <div class="list-wrapper">
+                <ReserveItem v-for="object in list" :key="object.id"
+                :id="object.id" @select-checkbox="handleSelectCheckbox"></ReserveItem>
+                </div>
+                <div class="sound-button-wrapper">
+                    <div class="sound-button-panel" @click="selectedAddReserve">
+                        <div class="sound-button-text">ADD NEW</div>
+                    </div>
+                    <div class="sound-button-panel right"
+                    @click="selectedRemoveReserve" :class="{ deactive: deactive }">
+                        <div class="sound-button-text">REMOVE</div>
+                    </div>
+                </div>
+            </div>
+        </div>
         <GroupList v-else-if="isShowing('group') || isShowing('sound')"
         :checkList="checkList" :type="type"
         :class="{ reserve: true }"
@@ -47,9 +64,20 @@ export default {
             console.log("Select reserve add");
             this.type = window.CONSTANTS.RESERVE_TYPE.GROUP;
         },
-        selectedRemoveReserve(list) {
-            console.log("Select reserve remove ", list);
-            this.$emit('select-remove', list);
+        selectedRemoveReserve() {
+            console.log("###Select reserve remove ::::: ", this.checkList);
+            this.$emit('select-remove', this.checkList);
+            this._.forEach(this.checkList, id => {
+                this.list = this._.without(this.list, id);
+            });
+        },
+        handleSelectCheckbox(id) {
+            console.log("###### check id : ", id);
+            if (!this._.includes(this.checkList, id)) {
+                this.checkList.push(id);
+            } else {
+                this.checkList = this._.without(this.checkList, id);
+            }
         },
         handleChangedCheckBox(item, checked) {
             console.log("NNNNNNNNNN ", item, checked);
@@ -105,20 +133,28 @@ export default {
                 _text = `${ this.reserveOption.group.length } GROUPS, ${ this.reserveOption.sound.length } SOUNDS`;
             }
             return _text;
+        },
+        deactive() {
+            return this._.isEmpty(this.checkList);
         }
     },
     created() {
-        this.services.getReserveAlarmList((list) => {
-            console.log("Succeed to get reserve alarm list ", list);
-            this.list = list;
-        }, (error) => {
-            console.log("Failed to get reserve alarm list ", error);
-        });
+        this.list = this.$store.getters.getReserveAlarmList;
+        console.log("### list : ", this.list);
+            console.log("### this.type : ", this.type);
     }
 }
 </script>
 <style>
 .reserve-container {
+    /* position: absolute;
+    width: 300px;
+    left: 500px;
+    background-color: rgb(249, 249, 249);
+    border: 1px solid rgb(223, 223, 233);
+    border-radius: 10px;
+    z-index: 1;
+    overflow: hidden; */
 }
 .sound-container.reserve {
     left: 640px;
@@ -157,4 +193,54 @@ export default {
     font-size: 20px;
     color: rgb(125, 125, 125);
 }
+
+.sound-button-wrapper {
+    width: 100%;
+    height: 60px;
+}
+.sound-button-panel {
+    position: relative;
+    display: inline-block;
+    width: 50%;
+    height: 100%;
+    background-color: rgb(85, 185, 250);
+    color: white;
+    cursor: pointer;
+}
+.sound-button-panel.right {
+    width: 50%;
+    border-left: 2px solid rgb(81, 177, 237);
+}
+.sound-button-panel.deactive {
+    pointer-events: none;
+    background-color: rgb(204, 204, 204);
+    color: rgb(177, 177, 177);
+}
+.sound-button-text {
+    position: absolute;
+    width: 100%;
+    top: 50%;
+    transform: translateY(-50%);
+    text-align: center;
+    font-weight: bold;
+    font-size: 15px;
+}
+
+.reserve-list-container {
+    position: absolute;
+    width: 300px;
+    left: 650px;
+    background-color: rgb(249, 249, 249);
+    border: 1px solid rgb(223, 223, 233);
+    border-radius: 10px;
+    z-index: 1;
+    overflow: hidden;
+
+}
+
+.list-wrapper {
+    height: 180px;
+    overflow-y: scroll;
+}
+
 </style>
