@@ -20,7 +20,8 @@ window.CONSTANTS = {
         UPDATED: 'updated',
         REMOVED: 'removed',
         UPDATE_ALARM_LIST: 'update_alarm_list',
-        UPDATE_GROUP_LIST: 'update_group_list'
+        UPDATE_GROUP_LIST: 'update_group_list',
+        UPDATE_RESERVE_LIST: 'update_reserve_list'
     },
     REQUEST_TYPE: {
         SUBSCRIBE: "subscribe",

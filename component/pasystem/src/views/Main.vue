@@ -10,7 +10,7 @@
         @select-button="handleBroadCast"></GroupList>
         <SoundList v-if="isShowingTopList('sound_set_up')" :list="alarmList"
         @select-add="handleSoundAdd" @select-remove="handleSoundRemove"></SoundList>
-        <ReserveList v-if="isShowingTopList('scheduled_broadcast')"
+        <ReserveList v-if="isShowingTopList('scheduled_broadcast')" :list="reserveAlarmList"
         @select-button="handleReserveButton"
         @select-remove="handleReserveRemove"></ReserveList>
         <InfoWindow :isForGroup="isForGroup" :item="infoWindowItem" v-if="isShowingInfoWindow"
@@ -273,7 +273,6 @@ export default {
                 this._.forEach(list, (data) => {
                     this.alarmList.push(data.id);
                     this.$store.commit('addAlarmData', data);
-                    console.log("insert : ", data);
                 });
             }, (error) => {
                 console.log("Failed to get alarm list ", error);
@@ -285,7 +284,6 @@ export default {
                 this._.forEach(list, (data) => {
                     this.reserveAlarmList.push(data.id);
                     this.$store.commit('addReserveAlarmData', data);
-                    console.log("### data : %s", data);
                 });
             }, (error) => {
                 console.log("Failed to get reserve alarm data", error);
@@ -515,7 +513,6 @@ export default {
             this.isTopPressedType = '';
         },
         handleReserveRemove(list){
-            console.log("111111 : ::: ", list); //TODO 예약 삭제
             const data = {
                 id_list: list
             };
@@ -580,6 +577,9 @@ export default {
                 },
                 updateGroupList: (data) => {
                     this._handleUpdateGroupList(data);
+                },
+                updateReserveList: (data) => {
+                    this._handleUpdateReserveList(data);
                 }
             });
         },
@@ -660,6 +660,18 @@ export default {
                     const group = this.$store.getters.getGroup(item.id);
                     group.name = item.name;
                     this.$store.commit('updateGroup', group);
+                }
+            });
+        },
+        _handleUpdateReserveList(data) {
+            const list = data.v;
+            this._.forEach(list, item => {
+                if (data.kind === 'add') {
+                    this.$store.commit('addReserveAlarmData', item);
+                    this.reserveAlarmList.push(item.id);
+                } else if (data.kind === 'remove') {
+                    this.$store.commit('removeReserveAlarmData', item); //TODO
+                    this.reserveAlarmList = this._.without(this.reserveAlarmList, item);
                 }
             });
         }

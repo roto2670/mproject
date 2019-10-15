@@ -135,7 +135,7 @@ export class SocketClient {
         try {
             data = JSON.parse(message.data);
         } finally {
-            console.log(data);
+            // console.log(data);
             if (!!data) {
                 if (_.has(data,"i")) { //Event 데이터
                     this._handleResponse(data);
@@ -156,7 +156,6 @@ export class SocketClient {
 
     _handleEvent(data) {
         if (!!data) {
-            console.log("###### datea.e ", data.e);
             switch(data.e) {
                 case window.CONSTANTS.EVENT_TYPE.ADDED:
                     this._subscribeHandlers.added(data);
@@ -172,6 +171,8 @@ export class SocketClient {
                 break;
                 case window.CONSTANTS.EVENT_TYPE.UPDATE_GROUP_LIST:
                     this._subscribeHandlers.updateGroupList(data);
+                case window.CONSTANTS.EVENT_TYPE.UPDATE_RESERVE_LIST:
+                    this._subscribeHandlers.updateReserveList(data);
                 break;
             }
         }
