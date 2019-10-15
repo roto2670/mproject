@@ -8,7 +8,8 @@ export default new Vuex.Store({
         speakers: {},
         groupList: {},
         alarmList: {},
-        reserveAlarmList: {}
+        reserveAlarmList: {},
+        streamingStatus: false
     },
     getters: {
         getSpeakers: (state) => {
@@ -35,6 +36,9 @@ export default new Vuex.Store({
         },
         getGroup: (state) => (id) => {
             return state.groupList[id];
+        },
+        getStreamingStatus: (state) => {
+            return state.streamingStatus;
         }
     },
     mutations: {
@@ -114,7 +118,10 @@ export default new Vuex.Store({
             if (_.has(state.groupList, payload.id)) {
                 state.groupList[payload.id] = payload;
             }
-        }
+        },
+        updateStreamingStatus(state, status) {
+            state.streamingStatus = status
+        },
     },
     actions: {
 

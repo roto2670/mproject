@@ -21,7 +21,8 @@ window.CONSTANTS = {
         REMOVED: 'removed',
         UPDATE_ALARM_LIST: 'update_alarm_list',
         UPDATE_GROUP_LIST: 'update_group_list',
-        UPDATE_RESERVE_LIST: 'update_reserve_list'
+        UPDATE_RESERVE_LIST: 'update_reserve_list',
+        UPDATE_STREAMING_STATUS: 'update_streaming_status'
     },
     REQUEST_TYPE: {
         SUBSCRIBE: "subscribe",
@@ -54,8 +55,8 @@ window.CONSTANTS = {
 };
 if (window.CONSTANTS.IS_DEV) {
     window.CONSTANTS.URL.CONSOLE = 'http://192.168.0.15:5000';
-    //window.CONSTANTS.URL.PA = 'http://192.168.0.27:5561';
-    window.CONSTANTS.URL.PA = 'http://127.0.0.1:5561';
+    window.CONSTANTS.URL.PA = 'http://192.168.0.27:5561';
+    //window.CONSTANTS.URL.PA = 'http://127.0.0.1:5561';
     // window.CONSTANTS.URL.PA = 'http://203.233.111.6:5561';
     // window.CONSTANTS.URL.CONSOLE = 'http://192.168.0.15:5555';
 }

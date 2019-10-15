@@ -494,14 +494,11 @@ export default {
             });
         },
         handleReserveButton(data) {
-            let time = new Date() / 1000.0;
-            time += (data.reserve_time.hour * 3600);
-            time += (data.reserve_time.minute * 60);
-            time = new Date(time * 1000);
+            console.log("data", data)
             let _data = {
                 type: data.reserve_time.type,
-                hour: time.getHours(),
-                minute: time.getMinutes(),
+                hour: data.reserve_time.hour,
+                minute: data.reserve_time.minute,
                 alarm_id: data.sound[0],
                 group_id_list: data.group
             };
@@ -563,6 +560,7 @@ export default {
         subscribe() {
             this.services.subscribe(this.info.internal, {
                 added: (data) => {
+                    console.log("received", data);
                     this._handleAdded(data.v);
                 },
                 updated: (data) => {
@@ -570,16 +568,24 @@ export default {
                     this._handleUpdated(data.v);
                 },
                 removed: (data) => {
+                    console.log("received", data);
                     this._handleRemoved(data);
                 },
                 updateAlarmList: (data) => {
+                    console.log("received", data);
                     this._handleUpdateAlarmList(data);
                 },
                 updateGroupList: (data) => {
+                    console.log("received", data);
                     this._handleUpdateGroupList(data);
                 },
                 updateReserveList: (data) => {
+                    console.log("received", data);
                     this._handleUpdateReserveList(data);
+                },
+                updateStreamingStatus: (data) => {
+                    console.log("received", data);
+                    this._handleStreamingStatus(data);
                 }
             });
         },
@@ -674,6 +680,11 @@ export default {
                     this.reserveAlarmList = this._.without(this.reserveAlarmList, item);
                 }
             });
+        },
+        _handleStreamingStatus(data) {
+            //TODO: event handling
+            const status = data.v
+            this.$store.commit('updateStreamingStatus', status)
         }
     },
     computed: {

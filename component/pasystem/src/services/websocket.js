@@ -174,6 +174,9 @@ export class SocketClient {
                 case window.CONSTANTS.EVENT_TYPE.UPDATE_RESERVE_LIST:
                     this._subscribeHandlers.updateReserveList(data);
                 break;
+                case window.CONSTANTS.EVENT_TYPE.UPDATE_STREAMING_STATUS:
+                    this._subscribeHandlers.updateStreamingStatus(data);
+                break;
             }
         }
     }
