@@ -23,7 +23,7 @@ export default {
     },
     methods: {
         handleChange() {
-            this.$emit('change-time', this.type, this.time);
+            this.$emit('change-time', this.type, this.time-1);
         },
         getItem(item) {
             if (this.type === 'type') {
