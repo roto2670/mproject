@@ -26,7 +26,7 @@ export class SocketClient {
 
     connect(host, port, connectCallback, disconnectCallback, errorCallback) { //TODO: params url
         this.socket = new WebSocket(`ws://${ host }:${ port }/ws`);
-        // this.socket = new WebSocket(`ws://192.168.1.171:5555/ws`); 
+        // this.socket = new WebSocket(`ws://192.168.1.171:5555/ws`);
         this.socket.onopen = connectCallback;
         this.socket.onerror = errorCallback;
         this.socket.onclose = disconnectCallback;
@@ -131,7 +131,7 @@ export class SocketClient {
                     this._handleResponse(data);
                 } else {            //Response 데이터
                     this._handleEvent(data);
-                } 
+                }
             }
         }
     }
@@ -177,6 +177,10 @@ export class SocketClient {
                 case window.CONSTANTS.EVENT_TYPE.UPDATE_GROUP_LIST:
                     this._subscribeHandlers.updateGroupList(data);
                 break;
+                case window.CONSTANTS.EVENT_TYPE.UPDATE_STREAMING_STATUS:
+                    this._subscribeHandlers.updateStreamingStatus(data);
+                break;
+
             }
         }
     }

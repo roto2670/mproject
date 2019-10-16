@@ -2990,6 +2990,11 @@
                     }
                 });
             },
+            _handleStreamingStatus(data) {
+                //TODO: event handling
+                const status = data.v
+                this.$store.commit('updateStreamingStatus', status)
+            },
             _subscribe() {
                 this.services.subscribe(this.info.internal, {
                     added: (data) => {
@@ -3035,6 +3040,9 @@
                     },
                     updateGroupList: (data) => {
                         this._handleUpdateGroupList(data);
+                    },
+                    updateStreamingStatus: (data) => {
+                        this._handleStreamingStatus(data);
                     }
                 });
             }

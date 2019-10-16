@@ -17,7 +17,8 @@ export default new Vuex.Store({
 		speaker: {},
 		ipcamIdAttachedOnBeacon: {},
 		alarms: {},
-		groupList: {}
+		groupList: {},
+		streamingStatus: false
 	},
 	getters: {
 		getHubs: (state) => {
@@ -95,11 +96,14 @@ export default new Vuex.Store({
 			return state.alarms;
 		},
 		getGroupList: (state) => {
-            return _.values(state.groupList);
-        },
-        getGroup: (state) => (id) => {
-            return state.groupList[id];
-        }
+      return _.values(state.groupList);
+		},
+		getGroup: (state) => (id) => {
+				return state.groupList[id];
+		},
+		getStreamingStatus: (state) => {
+			return state.streamingStatus;
+    }
 	},
 	mutations: {
 		addHub(state, payload) {
@@ -208,6 +212,9 @@ export default new Vuex.Store({
 				_.extend(state.detectedgadgets[payload.id], payload);
 			}
 		},
+		updateStreamingStatus(state, status) {
+			state.streamingStatus = status
+    },
 		// Duplicate
 		// updateSpeakerData(state, payload) {
 		// 	if (!!state.speakers[payload.id]) {
