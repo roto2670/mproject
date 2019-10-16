@@ -54,7 +54,8 @@ export default {
             sampleRate: 44100,
             blob: null,
             uuid: null,
-            soundVolume: 80
+            soundVolume: 80,
+            isPlayed: false
         }
     },
     methods: {
@@ -66,7 +67,11 @@ export default {
             }
         },
         isPlaying() {
-            return (this.context !== null);
+            if (this.selectedItem === `record`) {
+                return (this.context !== null);
+            } else {
+                return this.isPlayed;
+            }
         },
         handleSelectedItem(item) {
             if (item === `record`) {                 //TODO: command 푸시면 alarm이나 streaming이 선택될 수 있습니다.
@@ -114,32 +119,53 @@ export default {
             } else if (!!this.selectedItem) {
                 console.log("Success to send Record", this.selectedItem);
                 if (this.uuid == null) {
-                  this.uuid = this.getUUID();
+                    this.uuid = this.getUUID();
                 }
                 const data = {}
                 data.selectedItem = this.selectedItem;
                 data.uuid = this.uuid;
                 data.volume = this.soundVolume;
                 this.$emit('select-speaker', data);
+                if (this.isPlayed) {
+                    this.handlePauseRecord();
+                } else {
+                    this.isPlayed = true;
+                    setTimeout(this.handleIsPlayed, 5000);
+                }
             } else {
                 console.log("Theres no item to play");
             }
         },
-        handlePauseRecord() {
-            if (!!this.context) {
-                this.context.close();
-                this.audioInput.disconnect();
-                this.recorder.disconnect();
-                this.blobToWav();
-                this.context = null;
-                this.recorder = null;
-                this.audioInput = null;
+        handleIsPlayed() {
+            const streamingStatus = this.$store.getters.getStreamingStatus;
+            if (streamingStatus) {
+                setTimeout(this.handleIsPlayed, 3000);
+            } else {
                 this.selectedItem = null;
-                this.recordingLength = 0;
-                this.leftchannel =  [],
-                this.rightchannel =  [],
-                this.blob = null;
-                this.uuid = null;
+                this.isPlayed = false;
+            }
+        },
+        handlePauseRecord() {
+            if (this.selectedItem === `record`) {
+                if (!!this.context) {
+                    this.context.close();
+                    this.audioInput.disconnect();
+                    this.recorder.disconnect();
+                    this.blobToWav();
+                    this.context = null;
+                    this.recorder = null;
+                    this.audioInput = null;
+                    this.selectedItem = null;
+                    this.recordingLength = 0;
+                    this.leftchannel =  [],
+                    this.rightchannel =  [],
+                    this.blob = null;
+                    this.uuid = null;
+                    this.isPlayed = false;
+                }
+            } else {
+                this.selectedItem = null;
+                this.isPlayed = false;
             }
         },
         streamPosting() {
