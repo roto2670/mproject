@@ -16,11 +16,13 @@
             </div>
             <div v-else class="group-speaker-panel">
                 <div class="group-text-wrapper">
-                    <div class="info-title">SPEAKERS</div>
+                    <div class="info-title">GROUP</div>
                     <div class="group-wrapper">
                         <div v-for="(groupId, index) in item" :key="index"
                         class="info-text">{{ groupName(groupId) }}</div>
                     </div>
+                    <div class="info-title">VOLUME</div>
+                    <div class="info-text">{{ this.soundVolume }}</div>
                 </div>
                 <div class="group-list-panel">
                     <div class="group-list-title">
@@ -195,6 +197,8 @@ export default {
     text-align: left;
     font-size: 20px;
     font-weight: 900;
+    margin-top: 5px;
+    margin-bottom: 5px;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -265,7 +269,7 @@ export default {
 }
 .group-text-wrapper {
     width: calc(100% - 50px);
-    height: 70px;
+    height: 90px;
     margin: 25px;
     user-select: none;
 }
