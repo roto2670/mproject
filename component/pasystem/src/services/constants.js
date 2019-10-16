@@ -1,5 +1,5 @@
 window.CONSTANTS = {
-    IS_DEV: false,
+    IS_DEV: true,
     URL: {
         CONSOLE: '',
         BASE_IMG: 'static/imgs/',
