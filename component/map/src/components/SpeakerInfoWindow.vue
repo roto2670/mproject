@@ -112,6 +112,7 @@ export default {
                 this.services.streamAlarm(jsondata, () => {
                     console.log("Success to send Record item");
                     this.nowPlaying = data.selectedItem.id;
+                    setTimeout(this.handleIsPlayed, 5000);
                 }, (error) => {
                     console.log("Failed to send Record item");
                 });
@@ -125,6 +126,14 @@ export default {
             }
 
         },
+        handleIsPlayed() {
+            const streamingStatus = this.$store.getters.getStreamingStatus;
+            if (streamingStatus) {
+                setTimeout(this.handleIsPlayed, 3000);
+            } else {
+                this.nowPlaying = null;
+            }
+        }
     },
     computed: {
         getGroupName() {
