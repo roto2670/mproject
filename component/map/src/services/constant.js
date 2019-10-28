@@ -11,7 +11,7 @@ window.CONSTANTS = {
         CONSOLE : '',
         TEST_URL: 'http://192.168.1.176:5561',
         WEB_SOCKET: '',
-        PA: 'http://172.168.5.6:5561'
+        PA: 'http://172.16.5.6:5561'
     },
     HUB_INFO: {
         0: "Portal",

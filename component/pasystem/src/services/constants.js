@@ -4,7 +4,7 @@ window.CONSTANTS = {
         CONSOLE: '',
         BASE_IMG: 'static/imgs/',
         TEST_URL: 'http://127.0.0.1:5561',
-        PA: 'http://172.168.5.6:5561'
+        PA: 'http://172.16.5.6:5561'
     },
     TOP_BUTTON_TYPE: {
         PLUS: 'plus',
