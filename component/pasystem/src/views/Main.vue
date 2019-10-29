@@ -687,8 +687,16 @@ export default {
         },
         _handleStreamingStatus(data) {
             //TODO: event handling
-            const status = data.v
-            this.$store.commit('updateStreamingStatus', status)
+            const isStatus = data.v,
+                  nowStatus = this.$store.getters.getNowPlaying;
+            this.$store.commit('updateStreamingStatus', isStatus)
+            if (!isStatus) {
+                this.$store.commit('updateNowPlaying', 0)
+            } else {
+                if (nowStatus == 0) {
+                    this.$store.commit('updateNowPlaying', 2)
+                }
+            }
         }
     },
     computed: {

@@ -137,8 +137,6 @@ export default {
         groupName(data) {
             const id = !!data? data: this._.first(this.item.tags),
                   group = this.$store.getters.getGroup(id);
-                  status = this.$store.getters.getStreamingStatus;
-                  console.log("status", status)
             if (!!group) {
                 return group.name;
             }

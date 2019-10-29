@@ -96,6 +96,8 @@ export default {
           });
         },
         handleStartPlay() {
+            const isStatus = this.$store.getters.getStreamingStatus,
+                  nowStatus = this.$store.getters.getNowPlaying;
             if (this.selectedItem === `record`) {
                 if (!!!this.context) {
                     this._checkAccessMicrophone((permissionState) => {
@@ -110,10 +112,11 @@ export default {
                             data.uuid = this.uuid;
                             data.volume = this.soundVolume;
                             this.$emit('select-speaker', data);
+                            this.$store.commit('updateNowPlaying', 1);
                             this._requireAccess();
                         }
                     });
-                } else {
+                } else if (isStatus && nowStatus == 1) {
                     this.handlePauseRecord();
                 }
             } else if (!!this.selectedItem) {
@@ -125,9 +128,12 @@ export default {
                 data.selectedItem = this.selectedItem;
                 data.uuid = this.uuid;
                 data.volume = this.soundVolume;
+                this.$store.commit('updateNowPlaying', 1);
                 this.$emit('select-speaker', data);
-                if (this.isPlayed) {
+                if (isStatus && nowStatus == 1) {
                     this.handlePauseRecord();
+                } else if (isStatus && nowStatus == 2) {
+                    this.sweetbox.fire("Another user is broadcasting first. Please try again later.")
                 } else {
                     this.isPlayed = true;
                     setTimeout(this.handleIsPlayed, 5000);
