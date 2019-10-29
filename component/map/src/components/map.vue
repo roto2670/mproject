@@ -31,6 +31,8 @@
                 id: 'map',
                 map: null,
                 zoomLv: 15,  // Like 188Line
+                markerWidth: {stops: [[4, 15], [5, 20], [6, 25], [7, 30]]},
+                markerHeight: {stops: [[4, 15], [5, 20], [6, 25], [7, 30]]},
                 url: '',
                 toast: null,
                 userStage: 0,
@@ -143,40 +145,40 @@
                         this.hideLoading();
                     });
                     this.map.on('zoomend', (e) => {
-                        this.setBaseZoomLv();
-                        let markerWidth = this.zoomLv,
-                            markerHeight = this.zoomLv;
-                        this._.forEach(this.markerMap.hubs, (marker) => {
-                            marker.updateSymbol({
-                                markerWidth: markerWidth,
-                                markerHeight: markerHeight
-                            })
-                        });
+                        // this.setBaseZoomLv();
+                        // let markerWidth = this.zoomLv,
+                        //     markerHeight = this.zoomLv;
+                        // this._.forEach(this.markerMap.hubs, (marker) => {
+                        //     marker.updateSymbol({
+                        //         markerWidth: markerWidth,
+                        //         markerHeight: markerHeight
+                        //     })
+                        // });
 
-                        this._.forEach(this.markerMap.cams, (marker) => {
-                            marker.updateSymbol({
-                                markerWidth: markerWidth,
-                                markerHeight: markerHeight
-                            })
-                        });
+                        // this._.forEach(this.markerMap.cams, (marker) => {
+                        //     marker.updateSymbol({
+                        //         markerWidth: markerWidth,
+                        //         markerHeight: markerHeight
+                        //     })
+                        // });
 
-                        this._.forEach(this.markerMap.speakers, (marker) => {
-                            marker.updateSymbol({
-                                markerWidth: markerWidth,
-                                markerHeight: markerHeight
-                            })
-                        });
+                        // this._.forEach(this.markerMap.speakers, (marker) => {
+                        //     marker.updateSymbol({
+                        //         markerWidth: markerWidth,
+                        //         markerHeight: markerHeight
+                        //     })
+                        // });
 
-                        this._.forEach(this.bcnsData, (beacon) => {
-                            if (beacon.marker.isVisible()) {
-                                const tag = beacon.tags,
-                                      size = this._getMarkerSize(tag);
-                                beacon.marker.updateSymbol({
-                                    markerWidth: size.width,
-                                    markerHeight: size.height
-                                });
-                            }
-                        });
+                        // this._.forEach(this.bcnsData, (beacon) => {
+                        //     if (beacon.marker.isVisible()) {
+                        //         const tag = beacon.tags,
+                        //               size = this._getMarkerSize(tag);
+                        //         beacon.marker.updateSymbol({
+                        //             markerWidth: size.width,
+                        //             markerHeight: size.height
+                        //         });
+                        //     }
+                        // });
                     });
                     this.map.on('click', (e) => {
                         this.speakerInfoWindowItems = {};
@@ -465,12 +467,12 @@
                     }
                 } else {
                     this.drawnGadgetList[hubId] = [];
-                    this.setBaseZoomLv();
+                    // this.setBaseZoomLv();
                     draggable = this.isShowingByStage(window.CONSTANTS.USER_STAGE.SK_ADMIN) && !hubData.custom.lock;
                     let symbol = {
                         markerFile: `${ window.CONSTANTS.URL.BASE_IMG }icon-hub-tab1.svg`,
-                        markerWidth: this.zoomLv,
-                        markerHeight: this.zoomLv
+                        markerWidth: this.markerWidth,
+                        markerHeight: this.markerHeight
                     }
                     if (!this.isShowingByStage(window.CONSTANTS.USER_STAGE.SK_ADMIN)) {
                         this._.extend(symbol, {
@@ -1102,7 +1104,7 @@
                     draggable = null,
                     customLayer = null;;
                 var ipcamData = this.$store.getters.getIpCam(ipcamId);
-                this.setBaseZoomLv();
+                // this.setBaseZoomLv();
 
                 if (this._.has(this.markerMap.cams, ipcamId)) {
                     if (!(this.markerMap.cams[ipcamId]._coordinates.x === coordinate.x) && !(this.markerMap.cams[ipcamId]._coordinates.y === coordinate.y)) {
@@ -1139,8 +1141,8 @@
                         [coordinate.x, coordinate.y], {
                             'symbol': {
                                 markerFile: fileUrl,
-                                markerWidth: this.zoomLv,
-                                markerHeight: this.zoomLv,
+                                markerWidth: this.markerWidth,
+                                markerHeight: this.markerHeight
                             },
                             draggable: draggable
                         }
@@ -1215,7 +1217,7 @@
                     speakerData = this.$store.getters.getSpeaker(speakerId),
                     groupData = this.$store.getters.getGroupList;
                 //TODO
-                this.setBaseZoomLv();
+                // this.setBaseZoomLv();
                 let fileUrl = `${ window.CONSTANTS.URL.BASE_IMG }speaker.svg`; // if changed, declare const
 
                 if (this._.has(this.markerMap.speakers, speakerId)) {
@@ -1230,8 +1232,8 @@
                         [coordinate.x, coordinate.y], {
                             'symbol': {
                                 markerFile: fileUrl,
-                                markerWidth: this.zoomLv,
-                                markerHeight: this.zoomLv,
+                                markerWidth: this.markerWidth,
+                                markerHeight: this.markerHeight
                             },
                             draggable: this.isShowingByStage(window.CONSTANTS.USER_STAGE.SK_ADMIN)
                         }
@@ -2091,39 +2093,55 @@
                 return this.userStage <= stage;
             },
             _getMarkerSize(tag) {   //TODO: 마커들의 크기를 tag별로 꺼내는 함수
-                let markerWidth = this.zoomLv,
-                    markerHeight = this.zoomLv;
+                let markerWidth = {stops: [[4, 15], [5, 20], [6, 25], [7, 30]]},
+                    markerHeight = {stops: [[4, 15], [5, 20], [6, 25], [7, 30]]};
+                // BASE
+                // markerWidth = {stops: [[4, 15], [5, 20], [6, 25], [7, 30]]}
+                // markerHeight = {stops: [[4, 15], [5, 20], [6, 25], [7, 30]]};
                 if (this._.includes(this.tags.xll, tag)) {
                     // JB, Shotcreate
-                    markerHeight *= 2.0;
+                    // markerHeight *= 2.0;
+                    markerHeight = {stops: [[4, 30], [5, 40], [6, 50], [7, 60]]};
                     if (this._.isEqual(tag, "8")) {
-                        markerWidth *= 3.1;
+                        // markerWidth *= 3.1;
+                        markerWidth = {stops: [[4, 46.5], [5, 62], [6, 77.5], [7, 93]]};
                     } else {
-                        markerWidth *= 3.7;
+                        // markerWidth *= 3.7;
+                        markerWidth = {stops: [[4, 55.5], [5, 74], [6, 92.5], [7, 111]]};
                     }
                 } else if (this._.includes(this.tags.xl, tag)) {
                     // Charging, MPU, CPU, EV, Mixer
-                    markerWidth *= 2.0;
-                    markerHeight *= 1.6;
+                    // markerWidth *= 2.0;
+                    markerWidth = {stops: [[4, 30], [5, 40], [6, 50], [7, 60]]};
+                    // markerHeight *= 1.6;
+                    markerHeight = {stops: [[4, 24], [5, 32], [6, 40], [7, 48]]};
                 } else if (this._.includes(this.tags.l, tag)) {
                     // Loader, Dumper, Wheel, crawer, JCB, Dozer
-                    markerHeight *= 1.4;
+                    // markerHeight *= 1.4;
+                    markerHeight = {stops: [[4, 21], [5, 28], [6, 35], [7, 42]]};
                     if (this._.isEqual(tag, "9") || this._.isEqual(tag, "11")) {
-                        markerWidth *= 1.45;
+                        // markerWidth *= 1.5;
+                        markerWidth = {stops: [[4, 22.5], [5, 30], [6, 37.5], [7, 45]]};
                     } else if (this._.isEqual(tag, "4") || this._.isEqual(tag, "5")) {
-                        markerWidth *= 1.8;
+                        // markerWidth *= 1.8;
+                        markerWidth = {stops: [[4, 27], [5, 36], [6, 45], [7, 54]]};
                     } else {
-                        markerWidth *= 1.4;
+                        // markerWidth *= 1.4;
+                        markerWidth = {stops: [[4, 21], [5, 28], [6, 35], [7, 42]]};
                     }
                 } else {
                     // Core Drilling, Grouting, Mai pump, bus, wcbh
-                    markerHeight *= 1.2;
+                    // markerHeight *= 1.2;
+                    markerHeight = {stops: [[4, 18], [5, 24], [6, 30], [7, 36]]};
                     if (this._.isEqual(tag, "17") || this._.isEqual(tag, "10")) {
-                        markerWidth *= 1.3;
+                        // markerWidth *= 1.3;
+                        markerWidth = {stops: [[4, 19.5], [5, 26], [6, 32.5], [7, 39]]};
                     } else if (this._.isEqual(tag, "12")) {
-                        markerWidth *= 1.4;
+                        // markerWidth *= 1.4;
+                        markerWidth = {stops: [[4, 21], [5, 28], [6, 35], [7, 42]]};
                     } else {
-                        markerWidth *= 1.3;
+                        // markerWidth *= 1.3;
+                        markerWidth = {stops: [[4, 19.5], [5, 26], [6, 32.5], [7, 39]]};
                     }
                 }
 
