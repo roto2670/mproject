@@ -90,10 +90,9 @@ export default {
             const jsondata = {}
             jsondata.uuid = data.uuid;
             jsondata.volume = data.volume;
-
             if (data.selectedItem == 'record'){
                 jsondata.alarm_id = data.selectedItem;
-                if (this._.size(this.item) > 1) {
+                if (this.item.hasOwnProperty('id')) {
                     jsondata.type = '2';
                     jsondata.id = this.item.id;
                 } else {
@@ -102,7 +101,7 @@ export default {
                 }
             } else {
                 jsondata.alarm_id = data.selectedItem.id;
-                if (this._.size(this.item) > 1) {
+                if (this.item.hasOwnProperty('id')) {
                     jsondata.type = '0';
                     jsondata.id = this.item.id;
                 } else {
