@@ -502,8 +502,12 @@ export default {
                 alarm_id: data.sound[0],
                 group_id_list: data.group
             };
-            this.services.createReserveAlarm(_data, () => {
-                console.log("Succeed to add reserve alarm");
+            this.services.createReserveAlarm(_data, (resdata) => {
+                if (resdata === '1') {
+                  this.sweetbox.fire('There is a pre-scheduled broadcast at the requested time. Your request has been canceled.');
+                } else {
+                  console.log("Succeed to add reserve alarm");
+                }
             }, (error) => {
                 console.log("Failed to add reserve alarm");
             });
