@@ -143,7 +143,7 @@ export const removeAlarmData = (data, successCallback, failCallback) => {
         data: data
     }).then(response => {
         if(response.data) {
-            successCallback();
+            successCallback(response.data);
         } else {
             failCallback();
         }
@@ -162,7 +162,7 @@ export const streamAlarm = (data, successCallback, failCallback) => {
         data:data
     }).then(response => {
         if (response.data) {
-            successCallback();
+            successCallback(response.data);
         } else {
             failCallback();
         }

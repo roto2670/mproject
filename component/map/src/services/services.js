@@ -104,7 +104,7 @@ export const streamAlarm = (data, successCallback, failCallback) => {
         data:data
     }).then(response => {
         if (response.data) {
-            successCallback();
+            successCallback(response.data);
         } else {
             failCallback();
         }

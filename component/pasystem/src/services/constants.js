@@ -58,7 +58,7 @@ window.CONSTANTS = {
 };
 if (window.CONSTANTS.IS_DEV) {
     window.CONSTANTS.URL.CONSOLE = 'http://192.168.0.15:5000';
-    window.CONSTANTS.URL.PA = 'http://192.168.0.27:5561';
+    window.CONSTANTS.URL.PA = 'http://203.233.111.6:5562';
     //window.CONSTANTS.URL.PA = 'http://127.0.0.1:5561';
     // window.CONSTANTS.URL.PA = 'http://203.233.111.6:5561';
     // window.CONSTANTS.URL.CONSOLE = 'http://192.168.0.15:5555';
