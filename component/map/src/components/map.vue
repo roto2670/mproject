@@ -3047,8 +3047,21 @@
             },
             _handleStreamingStatus(data) {
                 //TODO: event handling
-                const status = data.v
-                this.$store.commit('updateStreamingStatus', status)
+                const isStatus = data.v,
+                      nowStatus = this.$store.getters.getNowPlaying;
+                this.$store.commit('updateStreamingStatus', isStatus)
+                if (!isStatus) {
+                    this.$store.commit('updateNowPlaying', 0)
+                } else {
+                    if (nowStatus == 0) {
+                        this.$store.commit('updateNowPlaying', 2)
+                    }
+                }
+            },
+            _handleFailedList(data){
+                var respName = data.v,
+                nameList = respName.join(',');
+                this.sweetbox.fire('speaker does not contain an IP address. Target Speaker : ' + nameList)
             },
             _subscribe() {
                 this.services.subscribe(this.info.internal, {
@@ -3098,6 +3111,9 @@
                     },
                     updateStreamingStatus: (data) => {
                         this._handleStreamingStatus(data);
+                    },
+                    failedList: (data) => {
+                        this._handleFailedList(data);
                     }
                 });
             }

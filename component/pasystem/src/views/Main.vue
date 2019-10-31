@@ -601,6 +601,9 @@ export default {
                 },
                 offline: (data) => {
                     this._handleOffline(data.v);
+                },
+                failedList: (data) => {
+                    this._handleFailedList(data);
                 }
             });
         },
@@ -744,6 +747,11 @@ export default {
                     markerFile: `${ window.CONSTANTS.URL.BASE_IMG }speaker-offline.png`
                 });
             }
+        },
+        _handleFailedList(data){
+            var respName = data.v,
+                nameList = respName.join(',');
+            this.sweetbox.fire('speaker does not contain an IP address. Target Speaker : ' + nameList)
         }
     },
     computed: {

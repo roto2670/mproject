@@ -132,18 +132,36 @@ export const stopStreamAlarm = (data, successCallback, failCallback) => {
     })
 }
 
+export const stopStreamVoice = (successCallback, failCallback) => {
+    axios({
+        url: `${ window.CONSTANTS.URL.PA }/pa/voice/stop`,
+        method: 'POST',
+        headers: {
+            'content-type': 'application/json'
+        },
+        data: {}
+    }).then(response => {
+        if (response.data) {
+            successCallback();
+        } else {
+            failCallback();
+        }
+    }).catch(error => {
+        failCallback(error);
+    })
+}
+
 export const voiceStream = (data, id, volume, successCallback, failCallback) => {
     let formdata = new FormData();
-    formdata.append('data', data);
-    formdata.append('volume', volume);
-
+        formdata.append('data', data);
+        formdata.append('volume', volume);
     axios({
         url: `${ window.CONSTANTS.URL.PA }/pa/voice/stream?id=${ id }`,
         method: 'POST',
         headers: {
             'Content-Type': 'multipart/form-data'
         },
-        data: data
+        data: formdata
     }).then(response => {
         if(response.data) {
             successCallback();

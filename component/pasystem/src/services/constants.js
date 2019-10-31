@@ -22,7 +22,8 @@ window.CONSTANTS = {
         UPDATE_ALARM_LIST: 'update_alarm_list',
         UPDATE_GROUP_LIST: 'update_group_list',
         UPDATE_RESERVE_LIST: 'update_reserve_list',
-        UPDATE_STREAMING_STATUS: 'update_streaming_status'
+        UPDATE_STREAMING_STATUS: 'update_streaming_status',
+        FAILED_LIST : 'failed_list'
     },
     PRODUCT_KIND: {
         SPEAKER: "speaker"
