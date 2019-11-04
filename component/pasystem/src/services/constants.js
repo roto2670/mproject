@@ -24,6 +24,9 @@ window.CONSTANTS = {
         UPDATE_RESERVE_LIST: 'update_reserve_list',
         UPDATE_STREAMING_STATUS: 'update_streaming_status'
     },
+    PRODUCT_KIND: {
+        SPEAKER: "speaker"
+    },
     REQUEST_TYPE: {
         SUBSCRIBE: "subscribe",
         UNSUBSCRIBE: "unsubscribe",

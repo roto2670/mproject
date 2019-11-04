@@ -1219,6 +1219,9 @@
                 //TODO
                 // this.setBaseZoomLv();
                 let fileUrl = `${ window.CONSTANTS.URL.BASE_IMG }speaker.svg`; // if changed, declare const
+                if (!speakerData.status) {
+                    fileUrl = `${ window.CONSTANTS.URL.BASE_IMG }speaker-offline.png`;
+                }
 
                 if (this._.has(this.markerMap.speakers, speakerId)) {
                     if (!(this.markerMap.speakers[speakerId]._coordinates.x === coordinate.x) && !(this.markerMap.speakers[speakerId]._coordinates.y === coordinate.y)) {

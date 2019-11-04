@@ -189,6 +189,11 @@ export default {
             } else {
                 tag = 'none';
             }
+            if (!speaker.status) {
+                marker.updateSymbol({
+                    markerFile: `${ window.CONSTANTS.URL.BASE_IMG }speaker-offline.png`
+                });
+            }
             marker.addTo(this.paLayers[tag]);
             this.markers[speaker.id] = marker;
 
@@ -590,6 +595,12 @@ export default {
                 updateStreamingStatus: (data) => {
                     console.log("received", data);
                     this._handleStreamingStatus(data);
+                },
+                online: (data) => {
+                    this._handleOnline(data.v);
+                },
+                offline: (data) => {
+                    this._handleOffline(data.v);
                 }
             });
         },
@@ -696,6 +707,42 @@ export default {
                 if (nowStatus == 0) {
                     this.$store.commit('updateNowPlaying', 2)
                 }
+            }
+        },
+        _handleOnline(data) {
+            switch(data.kind) {
+                case window.CONSTANTS.PRODUCT_KIND.SPEAKER:
+                    this._handleSpeakerOnline(data.v);
+                break;
+            }
+        },
+        _handleOffline(data) {
+            switch(data.kind) {
+                case window.CONSTANTS.PRODUCT_KIND.SPEAKER:
+                    this._handleSpeakerOffline(data.v);
+                break;
+            }
+        },
+        _handleSpeakerOnline(data) {
+            let speakerMarker = this.markers[data.id],
+                speakerData = this._.clone(this.$store.getters.getSpeaker(data.id));
+            speakerData.status = 1;
+            this.$store.commit('updateSpeaker', speakerData);
+            if (!!speakerMarker) {
+                speakerMarker.updateSymbol({
+                    markerFile: `${ window.CONSTANTS.URL.BASE_IMG }icon-pa-round.svg`
+                });
+            }
+        },
+        _handleSpeakerOffline(data) {
+            let speakerMarker = this.markers[data.id],
+                speakerData = this._.clone(this.$store.getters.getSpeaker(data.id));
+            speakerData.status = 0;
+            this.$store.commit('updateSpeaker', speakerData);
+            if (!!speakerMarker) {
+                speakerMarker.updateSymbol({
+                    markerFile: `${ window.CONSTANTS.URL.BASE_IMG }speaker-offline.png`
+                });
             }
         }
     },

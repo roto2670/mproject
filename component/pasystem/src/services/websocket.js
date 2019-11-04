@@ -177,6 +177,12 @@ export class SocketClient {
                 case window.CONSTANTS.EVENT_TYPE.UPDATE_STREAMING_STATUS:
                     this._subscribeHandlers.updateStreamingStatus(data);
                 break;
+                case window.CONSTANTS.EVENT_TYPE.ONLINE:
+                    this._subscribeHandlers.online(data);
+                break;
+                case window.CONSTANTS.EVENT_TYPE.OFFLINE:
+                    this._subscribeHandlers.offline(data);
+                break;
             }
         }
     }
