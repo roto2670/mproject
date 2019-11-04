@@ -2348,6 +2348,11 @@
                     } else {
                         fileUrl = `${ window.CONSTANTS.URL.BASE_IMG }icon-ipcam1-off.svg`;
                     }
+                } else {
+                    // Maybe equipment type?
+                    if (!ipcamData.status) {
+                        fileUrl = `${ window.CONSTANTS.URL.BASE_IMG }icon-ipcam1-off.svg`;
+                    }
                 }
                 return {
                     fileUrl: fileUrl
@@ -2894,6 +2899,9 @@
                     case window.CONSTANTS.PRODUCT_KIND.IPCAM:
                         this._handleIpcamOnline(data.v);
                     break;
+                    case window.CONSTANTS.PRODUCT_KIND.SPEAKER:
+                        this._handleSpeakerOnline(data.v);
+                    break;
                 }
             },
             _handleOffline(data) {
@@ -2903,6 +2911,9 @@
                     break;
                     case window.CONSTANTS.PRODUCT_KIND.IPCAM:
                         this._handleIpcamOffline(data.v);
+                    break;
+                    case window.CONSTANTS.PRODUCT_KIND.SPEAKER:
+                        this._handleSpeakerOffline(data.v);
                     break;
                 }
             },
@@ -2934,6 +2945,17 @@
                     }
                 }
             },
+            _handleSpeakerOnline(data) {
+                let speakerMarker = this.markerMap.speakers[data.id],
+                    speakerData = this._.clone(this.$store.getters.getSpeaker(data.id));
+                speakerData.status = 1;
+                this.$store.commit('updateSpeakerData', speakerData);
+                if (!!speakerMarker) {
+                    speakerMarker.updateSymbol({
+                        markerFile: `${ window.CONSTANTS.URL.BASE_IMG }speaker.svg`
+                    });
+                }
+            },
             _handleHubOffline(data) {
                 let hubMarker = this.markerMap.hubs[data.id],
                     hubData = this._.cloneDeep(this.$store.getters.getHub(data.id));
@@ -2958,6 +2980,17 @@
                             markerFile: fileUrl
                         })
                     }
+                }
+            },
+            _handleSpeakerOffline(data) {
+                let speakerMarker = this.markerMap.speakers[data.id],
+                    speakerData = this._.clone(this.$store.getters.getSpeaker(data.id));
+                speakerData.status = 0;
+                this.$store.commit('updateSpeakerData', speakerData);
+                if (!!speakerMarker) {
+                    speakerMarker.updateSymbol({
+                        markerFile: `${ window.CONSTANTS.URL.BASE_IMG }speaker-offline.png`
+                    });
                 }
             },
             _handleReopenStream(data) {
