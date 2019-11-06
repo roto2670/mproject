@@ -171,6 +171,7 @@ export class SocketClient {
                 break;
                 case window.CONSTANTS.EVENT_TYPE.UPDATE_GROUP_LIST:
                     this._subscribeHandlers.updateGroupList(data);
+                break;
                 case window.CONSTANTS.EVENT_TYPE.UPDATE_RESERVE_LIST:
                     this._subscribeHandlers.updateReserveList(data);
                 break;
