@@ -141,7 +141,11 @@ export default {
                           }
                         })
                     } else {
-                        this.nowPlaying = data.selectedItem.id;
+                        if (data.selectedItem == 'record') {
+                            this.nowPlaying = data.selectedItem;
+                        } else {
+                            this.nowPlaying = data.selectedItem.id;
+                        }
                         setTimeout(this.handleIsPlayed, 5000);
                     }
                 }, (error) => {

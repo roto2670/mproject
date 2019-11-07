@@ -18,7 +18,8 @@ export default new Vuex.Store({
 		ipcamIdAttachedOnBeacon: {},
 		alarms: {},
 		groupList: {},
-		streamingStatus: false
+		streamingStatus: false,
+		nowPlaying: 0
 	},
 	getters: {
 		getHubs: (state) => {
@@ -103,6 +104,9 @@ export default new Vuex.Store({
 		},
 		getStreamingStatus: (state) => {
 			return state.streamingStatus;
+    },
+    getNowPlaying: (state) => {
+        return state.nowPlaying;
     }
 	},
 	mutations: {
@@ -214,6 +218,9 @@ export default new Vuex.Store({
 		},
 		updateStreamingStatus(state, status) {
 			state.streamingStatus = status
+    },
+    updateNowPlaying(state, playStatus) {
+        state.nowPlaying = playStatus
     },
 		// Duplicate
 		// updateSpeakerData(state, payload) {
