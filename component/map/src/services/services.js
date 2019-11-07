@@ -74,6 +74,27 @@ export const postMapFile = (file, successCallback, failCallback) => {
     }
 }
 
+export const getGadgetCountList = (successCallback, failCallback) => {
+    axios({
+        url: `${ window.CONSTANTS.URL.CONSOLE }/dash/gadget/count/list`,
+        method: 'GET',
+        headers: {
+            'content-type': 'application/json'
+        }
+    }).then(response => {
+        if(response.data) {
+            console.log('Success to get gadget count list', response.data);
+            successCallback(response.data);
+        } else {
+            console.warn('Failed to get gadget count list');
+            failCallback();
+        }
+    }).catch(error => {
+        console.warn("Failed to get alarm data ", error);
+        failCallback();
+    });
+}
+
 export const postAlarmId = (id, successCallback, failCallback) => {
     axios({
         // TODO: PA URL

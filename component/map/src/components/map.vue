@@ -66,6 +66,7 @@
                 drawnGadgetList: {},
                 isRemoveAll: false,
                 ipcamStreamData: {},
+                gadgetCountInfoWindow: null,
                 markerMap: {
                     hubs: {},
                     cams: {},
@@ -102,8 +103,8 @@
                         dragRotate: false,
                         dragPitch: false,
                         drgaRotatePitch: false,
-                        touchGesture: false,
-                        touchZoom: false,
+                        touchGesture: true,
+                        touchZoom: true,
                         touchRotate: false,
                         touchPitch: false,
                         touchZoomRotate: false,
@@ -141,44 +142,10 @@
                         this.initContextMenu();
                         this.map.fitExtent();
                         this.loadItems(this.info);
-                        this.initBeaconLocationHandler(this.info);
+                        //this.initBeaconLocationHandler(this.info);
                         this.hideLoading();
                     });
                     this.map.on('zoomend', (e) => {
-                        // this.setBaseZoomLv();
-                        // let markerWidth = this.zoomLv,
-                        //     markerHeight = this.zoomLv;
-                        // this._.forEach(this.markerMap.hubs, (marker) => {
-                        //     marker.updateSymbol({
-                        //         markerWidth: markerWidth,
-                        //         markerHeight: markerHeight
-                        //     })
-                        // });
-
-                        // this._.forEach(this.markerMap.cams, (marker) => {
-                        //     marker.updateSymbol({
-                        //         markerWidth: markerWidth,
-                        //         markerHeight: markerHeight
-                        //     })
-                        // });
-
-                        // this._.forEach(this.markerMap.speakers, (marker) => {
-                        //     marker.updateSymbol({
-                        //         markerWidth: markerWidth,
-                        //         markerHeight: markerHeight
-                        //     })
-                        // });
-
-                        // this._.forEach(this.bcnsData, (beacon) => {
-                        //     if (beacon.marker.isVisible()) {
-                        //         const tag = beacon.tags,
-                        //               size = this._getMarkerSize(tag);
-                        //         beacon.marker.updateSymbol({
-                        //             markerWidth: size.width,
-                        //             markerHeight: size.height
-                        //         });
-                        //     }
-                        // });
                     });
                     this.map.on('click', (e) => {
                         this.speakerInfoWindowItems = {};
@@ -675,7 +642,7 @@
                     width: 350,
                     custom: true,
                     autoPan: false,
-                    dy: -300
+                    dy: -15  // TODO:  before -300
                 });
                 marker.openInfoWindow();
                 if (hubData.custom.lock) {
@@ -746,7 +713,7 @@
                     width: 350,
                     custom: true,
                     autoPan: false,
-                    dy: -300
+                    dy: -15  // TODO: before -300
                 });
                 marker.openInfoWindow();
                 this.hubInfoWindow = {
@@ -1319,7 +1286,7 @@
                         </div><div class="ipcam-right-panel">
                         </div><div class="bottom-shape"></div><div class="close-button"></div></div>`,
                     custom: true,
-                    dy: -333,
+                    dy: -15,  // TODO: before -333
                     dx: -4,
                     autoPan: false
                 });
@@ -3063,6 +3030,76 @@
                 nameList = respName.join(',');
                 this.sweetbox.fire('speaker does not contain an IP address. Target Speaker : ' + nameList)
             },
+            _getGadgetCountListTr(data, key) {
+                var tr = '<div class="gcTrContainer">' +
+                            '<div class="gcTdFirstContainer">' + data.kind[key] +
+                            '</div>' +
+                            '<div class="gcTdContainer">' + data.at1[key].length +
+                            '</div>' +
+                            '<div class="gcTdContainer">' + data.at2[key].length +
+                            '</div>' +
+                            '<div class="gcTdContainer">' + (data.at1[key].length + data.at2[key].length) +
+                            '</div>' +
+                        '</div>';
+                return tr;
+            },
+            _showGadgetCountList() {
+                if (this.gadgetCountInfoWindow == null) {
+                    this.services.getGadgetCountList((data) => {
+                        console.log('data', data);
+                        console.log('data', data.at1);
+                        console.log('data', data.kind['5']);
+                        console.log('data', data.at1['4'].length);
+                        var context = '<div class="gcContainer">' +
+                                '<div class="gcTrContainer" style="border-bottom: 1px solid #555555;padding-top:5px">' +
+                                    '<div class="gcTdFirstContainer">Kind' +
+                                    '</div>' +
+                                    '<div class="gcTdContainer">AT1' +
+                                    '</div>' +
+                                    '<div class="gcTdContainer">AT2' +
+                                    '</div>' +
+                                    '<div class="gcTdContainer">Total' +
+                                    '</div>' +
+                                '</div>';
+
+                        context += this._getGadgetCountListTr(data, '1');
+                        context += this._getGadgetCountListTr(data, '2');
+                        context += this._getGadgetCountListTr(data, '3');
+                        context += this._getGadgetCountListTr(data, '4');
+                        context += this._getGadgetCountListTr(data, '5');
+                        context += this._getGadgetCountListTr(data, '6');
+                        context += this._getGadgetCountListTr(data, '7');
+                        context += this._getGadgetCountListTr(data, '8');
+                        context += this._getGadgetCountListTr(data, '9');
+                        context += this._getGadgetCountListTr(data, '10');
+                        context += this._getGadgetCountListTr(data, '11');
+                        context += this._getGadgetCountListTr(data, '12');
+                        context += this._getGadgetCountListTr(data, '13');
+                        context += this._getGadgetCountListTr(data, '14');
+                        context += this._getGadgetCountListTr(data, '15');
+                        context += this._getGadgetCountListTr(data, '16');
+                        context += this._getGadgetCountListTr(data, '17');
+                        context += this._getGadgetCountListTr(data, '18');
+                        context += this._getGadgetCountListTr(data, '19');
+                        context += '</div>';
+                        var options = {
+                            'autoOpenOn' : false,  //set to null if not to open window when clicking on map
+                            'single' : false,
+                            'custom' : true,
+                            'animation': null,
+                            'content' : context
+                        };
+                        var infoWindow = new maptalks.ui.InfoWindow(options);
+                        infoWindow.addTo(this.map).show({x:145, y:45});
+                        this.gadgetCountInfoWindow = infoWindow;
+                    }, (error) => {
+                        console.log("Failed to get gadget count list", error);
+                    });
+                } else {
+                    this.gadgetCountInfoWindow.hide();
+                    this.gadgetCountInfoWindow = null;
+                }
+            },
             _subscribe() {
                 this.services.subscribe(this.info.internal, {
                     added: (data) => {
@@ -3140,6 +3177,9 @@
             });
             EventBus.$on('removeItem', () => {
                 this.removeItems();
+            });
+            EventBus.$on('beaconCountList', () => {
+                this._showGadgetCountList();
             });
 
             window.addEventListener("beforeunload", () => {
@@ -5039,5 +5079,30 @@
     .context-menu-button-text {
         text-align: center;
         font-size: 0.8em;
+    }
+
+    .gcContainer {
+        width: 380px;
+        background: rgb(85, 185, 250);
+        opacity: 0.9;
+        text-align: center;
+        font-weight: bolder;
+        border-radius: 8px;
+        color: #333333;
+        -webkit-box-shadow: 11px 11px 20px #aaaaaa99;
+        box-shadow: 11px 11px 20px #aaaaaa99;
+    }
+    .gcTrContainer {
+
+    }
+    .gcTdFirstContainer {
+        display: inline-block;
+        width: 160px;
+        padding: 5px;
+    }
+    .gcTdContainer {
+        display: inline-block;
+        width: 60px;
+        padding: 5px;
     }
 </style>
