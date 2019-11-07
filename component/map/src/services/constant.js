@@ -81,7 +81,8 @@ window.CONSTANTS = {
         REOPEN_STREAM: 'reopen_stream',
         UPDATE_ALARM_LIST: 'update_alarm_list',
         UPDATE_GROUP_LIST: 'update_group_list',
-        UPDATE_STREAMING_STATUS: 'update_streaming_status'
+        UPDATE_STREAMING_STATUS: 'update_streaming_status',
+        FAILED_LIST : 'failed_list'
     },
     PRODUCT_KIND: {
         HUB: "hub",

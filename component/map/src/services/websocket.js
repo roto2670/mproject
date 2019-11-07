@@ -180,7 +180,9 @@ export class SocketClient {
                 case window.CONSTANTS.EVENT_TYPE.UPDATE_STREAMING_STATUS:
                     this._subscribeHandlers.updateStreamingStatus(data);
                 break;
-
+                case window.CONSTANTS.EVENT_TYPE.FAILED_LIST:
+                    this._subscribeHandlers.failedList(data);
+                break;
             }
         }
     }

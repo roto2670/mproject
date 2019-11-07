@@ -97,27 +97,31 @@ export default {
         },
         handleStartPlay() {
             const isStatus = this.$store.getters.getStreamingStatus,
-                  nowStatus = this.$store.getters.getNowPlaying;
+                  nowStatus = this.$store.getters.getNowPlaying,
+                  data = {};
+            if (this.uuid == null) {
+                this.uuid = this.getUUID();
+            }
+            data.selectedItem = this.selectedItem;
+            data.uuid = this.uuid;
+            data.volume = this.soundVolume;
             if (this.selectedItem === `record`) {
                 if (!!!this.context) {
                     this._checkAccessMicrophone((permissionState) => {
                         if (permissionState === window.CONSTANTS.MICROPHONE_ACCESS_STATE.DENIED) {
                             console.log("Denied microphone access");
                         } else {
-                            if (this.uuid == null) {
-                              this.uuid = this.getUUID();
-                            }
-                            const data = {}
-                            data.selectedItem = this.selectedItem;
-                            data.uuid = this.uuid;
-                            data.volume = this.soundVolume;
                             this.$emit('select-speaker', data);
                             this.$store.commit('updateNowPlaying', 1);
                             this._requireAccess();
                         }
                     });
-                } else if (isStatus && nowStatus == 1) {
-                    this.handlePauseRecord();
+                } else {
+                    if (isStatus && nowStatus == 1) {
+                        this.handlePauseRecord();
+                    } else if (isStatus && nowStatus == 2) {
+                        this.sweetbox.fire("Another user is broadcasting first. Please try again later.")
+                    }
                 }
             } else if (!!this.selectedItem) {
                 console.log("Success to send Record", this.selectedItem);
@@ -168,6 +172,11 @@ export default {
                     this.blob = null;
                     this.uuid = null;
                     this.isPlayed = false;
+                    this.services.stopStreamVoice(() => {
+                        console.log("Success to stop voice stream");
+                    }, (error) => {
+                        console.log("Failed to stop voice stream");
+                    });
                 }
             } else {
                 this.selectedItem = null;

@@ -44,6 +44,7 @@
 </template>
 <script>
 import PlayList from '@/components/PlayList';
+const fileNotExist = "1";
 export default {
     name: 'SpeakerInfoWindow',
     components: {
@@ -109,10 +110,24 @@ export default {
                 }
             }
             if (this.nowPlaying == null) {
-                this.services.streamAlarm(jsondata, () => {
+                const fileDel = this.services.removeAlarmData,
+                      delFileData = {},
+                      removeAlarmData = this.$store.commit;
+                this.services.streamAlarm(jsondata, (resData) => {
                     console.log("Success to send Record item");
-                    this.nowPlaying = data.selectedItem.id;
-                    setTimeout(this.handleIsPlayed, 5000);
+                    if (resData === fileNotExist) {
+                        this.sweetbox.fire({
+                          title: 'Alarm file does not exist.',
+                          text: "There is no alarm file available to play. Please remove it from the list and re-register it.",
+                        })
+                    } else {
+                        if (data.selectedItem == 'record') {
+                            this.nowPlaying = data.selectedItem;
+                        } else {
+                            this.nowPlaying = data.selectedItem.id;
+                        }
+                        setTimeout(this.handleIsPlayed, 5000);
+                    }
                 }, (error) => {
                     console.log("Failed to send Record item");
                 });
@@ -124,7 +139,6 @@ export default {
                     console.log("Failed to send Record item");
                 });
             }
-
         },
         handleIsPlayed() {
             const streamingStatus = this.$store.getters.getStreamingStatus;

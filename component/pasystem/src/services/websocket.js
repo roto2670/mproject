@@ -184,6 +184,9 @@ export class SocketClient {
                 case window.CONSTANTS.EVENT_TYPE.OFFLINE:
                     this._subscribeHandlers.offline(data);
                 break;
+                case window.CONSTANTS.EVENT_TYPE.FAILED_LIST:
+                    this._subscribeHandlers.failedList(data);
+                break;
             }
         }
     }
