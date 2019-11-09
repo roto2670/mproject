@@ -170,7 +170,6 @@ export default {
         },
         _drawSpeaker(speaker) {
             const location = speaker.custom.map_location,
-                  groupData = this.$store.getters.getGroupList,
                   fileUrl = `${ window.CONSTANTS.URL.BASE_IMG }icon-pa-round.svg`,
                   marker = new maptalks.Marker(
                     [location.x, location.y], {
@@ -184,7 +183,7 @@ export default {
                     }
                   );
             let tag = this._.first(speaker.tags);
-            if (!!tag && this._.has(groupData, tag)) {
+            if (!!tag && this._.has(this.speakerByTags, tag)) {
                 this.speakerByTags[tag].push(speaker.id);
             } else {
                 tag = 'none';
