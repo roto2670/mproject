@@ -12,9 +12,10 @@
             <div v-if="isShowingByStage(1)" id="filter" class="clickbtn" title="Filter Beacons">
                 <img id="clickbtnFilter" src="static/location/imgs/icon-filter.svg" @click="filter" style="vertical-align:unset;">
             </div>
-            <div v-if="isShowingByStage(0)" id="top-remove">
+            <!-- TODO: Remove all comment out -->
+            <!-- <div v-if="isShowingByStage(0)" id="top-remove">
                 <div id="removebtn" @click="remove" class="clickbtn3" title="Remove All"></div>
-            </div>
+            </div> -->
             <div v-if="isShowingByStage(0)" id="top-beacon-list">
                 <div id="beaconListbtn" @click="beaconCountList" class="clickbtn3" title="Equipment List"></div>
             </div>
