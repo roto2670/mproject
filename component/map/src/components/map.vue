@@ -3038,7 +3038,9 @@
                             '</div>' +
                             '<div class="gcTdContainer">' + data.at2[key].length +
                             '</div>' +
-                            '<div class="gcTdContainer">' + (data.at1[key].length + data.at2[key].length) +
+                            '<div class="gcTdContainer">' + data.other[key].length +
+                            '</div>' +
+                            '<div class="gcTdContainer">' + (data.at1[key].length + data.at2[key].length + data.other[key].length) +
                             '</div>' +
                         '</div>';
                 return tr;
@@ -3046,10 +3048,6 @@
             _showGadgetCountList() {
                 if (this.gadgetCountInfoWindow == null) {
                     this.services.getGadgetCountList((data) => {
-                        console.log('data', data);
-                        console.log('data', data.at1);
-                        console.log('data', data.kind['5']);
-                        console.log('data', data.at1['4'].length);
                         var context = '<div class="gcContainer">' +
                                 '<div class="gcTrContainer" style="border-bottom: 1px solid #555555;padding-top:5px">' +
                                     '<div class="gcTdFirstContainer">Kind' +
@@ -3057,6 +3055,8 @@
                                     '<div class="gcTdContainer">AT1' +
                                     '</div>' +
                                     '<div class="gcTdContainer">AT2' +
+                                    '</div>' +
+                                    '<div class="gcTdContainer">Other' +
                                     '</div>' +
                                     '<div class="gcTdContainer">Total' +
                                     '</div>' +
@@ -3090,7 +3090,7 @@
                             'content' : context
                         };
                         var infoWindow = new maptalks.ui.InfoWindow(options);
-                        infoWindow.addTo(this.map).show({x:145, y:45});
+                        infoWindow.addTo(this.map).show({x:150, y:45});
                         this.gadgetCountInfoWindow = infoWindow;
                     }, (error) => {
                         console.log("Failed to get gadget count list", error);
@@ -5082,7 +5082,7 @@
     }
 
     .gcContainer {
-        width: 380px;
+        width: 450px;
         background: rgb(85, 185, 250);
         opacity: 0.9;
         text-align: center;
