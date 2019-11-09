@@ -46,6 +46,8 @@ export default {
                 text = 'GROUP SET-UP';
             } else if (this.type === window.CONSTANTS.TOP_BUTTON_TYPE.SCHEDULED_BROADCAST) {
                 text = 'SCHEDULED BROADCAST';
+            } else if (this.type === window.CONSTANTS.TOP_BUTTON_TYPE.RESERVE) {
+                text = 'ALARM SET-UP';
             }
             return text;
         },
@@ -132,7 +134,8 @@ export default {
 .text-button-panel.sound_set_up-pressed,
 .text-button-panel.group_set_up-pressed,
 .text-button-panel.broadcast-pressed,
-.text-button-panel.scheduled_broadcast-pressed {
+.text-button-panel.scheduled_broadcast-pressed,
+.text-button-panel.reserve-pressed {
     background-color: rgb(85, 185, 250);
 }
 .text-button-image-panel {
@@ -165,6 +168,10 @@ export default {
 }
 .text-button-image.broadcast-pressed {
     background-image: url('../assets/imgs/icon-broadcast(active).svg');
+}
+.text-button-image.reserve {
+    background-size: 40%;
+    background-image: url('../assets/imgs/clock.svg');
 }
 .text-button-label {
     position: absolute;

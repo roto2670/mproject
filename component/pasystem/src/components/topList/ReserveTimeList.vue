@@ -48,7 +48,7 @@ export default {
     background-color: rgb(249, 249, 249);
     border: 1px solid rgb(223, 223, 233);
     z-index: 1;
-    left: 640px;
+    left: 490px;
     border-radius: 10px;
     z-index: 1;
     box-shadow: 0.25em 0.25em 0.75em rgba(0, 0, 0, .1);

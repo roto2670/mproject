@@ -12,8 +12,9 @@ window.CONSTANTS = {
         FILTER: 'filter',
         SOUND_SET_UP: 'sound_set_up',
         GROUP_SET_UP: 'group_set_up',
-        BROADCAST: 'broadcast',
-        SCHEDULED_BROADCAST: 'scheduled_broadcast'
+        // BROADCAST: 'broadcast',
+        // SCHEDULED_BROADCAST: 'scheduled_broadcast',
+        RESERVE: 'reserve'
     },
     EVENT_TYPE: {
         ADDED: 'added',
@@ -23,7 +24,8 @@ window.CONSTANTS = {
         UPDATE_GROUP_LIST: 'update_group_list',
         UPDATE_RESERVE_LIST: 'update_reserve_list',
         UPDATE_STREAMING_STATUS: 'update_streaming_status',
-        FAILED_LIST : 'failed_list'
+        FAILED_LIST : 'failed_list',
+        UPDATE_PLAY_LIST : 'update_play_list'
     },
     PRODUCT_KIND: {
         SPEAKER: "speaker"
@@ -59,8 +61,8 @@ window.CONSTANTS = {
 };
 if (window.CONSTANTS.IS_DEV) {
     window.CONSTANTS.URL.CONSOLE = 'http://192.168.0.15:5000';
-    window.CONSTANTS.URL.PA = 'http://203.233.111.6:5562';
-    //window.CONSTANTS.URL.PA = 'http://127.0.0.1:5561';
+    // window.CONSTANTS.URL.PA = 'http://203.233.111.6:5562';
+    window.CONSTANTS.URL.PA = 'http://127.0.0.1:5561';
     // window.CONSTANTS.URL.PA = 'http://203.233.111.6:5561';
     // window.CONSTANTS.URL.CONSOLE = 'http://192.168.0.15:5555';
 }

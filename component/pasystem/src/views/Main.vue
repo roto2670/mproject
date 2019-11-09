@@ -2,6 +2,10 @@
     <div id="main" class="main-container">
         <input class="file-input" type="file" ref="file" @change="handleFileUpload()"/>
         <Top :selectedType="isTopPressedType" @select-top-button="handleTopButton"></Top>
+        <List :groupList="groupList" :alarmList="playList" :reserveList="reserveAlarmList"
+        @select-group-check="_handleGroupListCheckbox"
+        @select-button="handleBroadCastLeftMenu"
+        @select-reserve-item="handleReserveItemInfoWindow"></List>
         <GroupList v-if="isShowingTopList('filter') ||
                          isShowingTopList('broadcast') ||
                          isShowingTopList('group_set_up')"
@@ -13,10 +17,17 @@
         <ReserveList v-if="isShowingTopList('scheduled_broadcast')" :list="reserveAlarmList"
         @select-button="handleReserveButton"
         @select-remove="handleReserveRemove"></ReserveList>
-        <InfoWindow :isForGroup="isForGroup" :item="infoWindowItem" v-if="isShowingInfoWindow"
+        <ReserveWindow v-if="isShowingTopList('reserve')"
+        :groupList="groupList" :alarmList="alarmList"
+        @select-add-reserve="handleReserveWindowButton"></ReserveWindow>
+        <InfoWindow :isForGroup="isForGroup" :item="infoWindowItem" :leftSoundItemId="leftSelectedSoundId"
+        v-if="isShowingInfoWindow"
         @select-close="handleInfoWindowClose"></InfoWindow>
         <ContextMenu v-if="isShowingContextMenu" :speaker="contextMenuItem" :position="markerPosition"
         @select-edit="handleEditGroup"></ContextMenu>
+        <ReserveItemInfoWindow v-if="isShowingTopList('reserveItem')" :id="leftSelectedReserveId"
+        @select-remove="handleReserveRemove"
+        @select-pause="handleReservePause"></ReserveItemInfoWindow>
         <div :id="id" class="map-container">
         </div>
     </div>
@@ -24,11 +35,15 @@
 <script>
 import * as maptalks from 'maptalks';
 import Top from '@/components/Top';
+import List from '@/components/List';
 import GroupList from '@/components/topList/GroupList';
 import SoundList from '@/components/topList/SoundList';
 import ReserveList from '@/components/topList/ReserveList';
+import ReserveWindow from '@/components/topList/ReserveWindow';
 import InfoWindow from '@/components/InfoWindow';
 import ContextMenu from '@/components/ContextMenu';
+import ReserveItemInfoWindow from '@/components/topList/ReserveItemInfoWindow';
+import { EventBus } from "@/main";
 export default {
     name: 'Main',
     components: {
@@ -37,7 +52,10 @@ export default {
         SoundList,
         ReserveList,
         InfoWindow,
-        ContextMenu
+        ContextMenu,
+        List,
+        ReserveWindow,
+        ReserveItemInfoWindow
     },
     data() {
         return {
@@ -61,7 +79,10 @@ export default {
             isTopPressedType: '',
             alarmList: [],
             reserveAlarmList: [],
-            setIntervalData: {}
+            setIntervalData: {},
+            playList: [],
+            leftSelectedSoundId: '',
+            leftSelectedReserveId: '',
         }
     },
     methods: {
@@ -107,6 +128,7 @@ export default {
                     this.zoomLevel = 50 * (this.map.getZoom() / 11);
                     this._getGroupList();
                     this._getAlarmList();
+                    this._getPlayList();
                     this._getSpeakers();
                     this._getReserveAlarmList();
                     if (!this._.has(this.paLayers, 'none')) {
@@ -140,10 +162,21 @@ export default {
             this.services.getGroupData(list => {
                 this._.forEach(list, group => {
                     this.$store.commit('addGroup', group);
+                    this.groupList.push(group.id);
                     this._registerItemsByTag(group.id);
                 });
             }, (error) => {
                 console.log("Failed to get group list");
+            });
+        },
+        _getPlayList() {
+            this.services.getPlayList(list => {
+                this._.forEach(list, playList => {
+                    this.playList.push(playList);
+                    this.$store.commit('addPlayList', playList);
+                });
+            }, (error) => {
+                console.log("Failed to get playlist.");
             });
         },
         _getSpeakers() {
@@ -370,8 +403,6 @@ export default {
             }
         },
         _handleFilterGroup(item, checked) {
-                console.log("#### item : ", item);
-                console.log("#### checked : ", checked);
             if (checked) {
                 this.paLayers[item].show();
                 this.polygonLayers[item].show();
@@ -410,6 +441,93 @@ export default {
                 }
             });
         },
+        handleReserveItemInfoWindow(reserveId) {
+            this.isTopPressedType = 'reserveItem';
+            this.leftSelectedReserveId = reserveId;
+        },
+        _handleGroupListCheckbox(item, checked) {
+            var zone = this.polygonLayers[item];
+            var polygons = this.polygons[item];
+            if (checked) {
+                polygons.updateSymbol({
+                    polygonFill: 'rgb(235, 255, 25)',
+                    polygonOpacity: 0.8,
+                    lineColor: 'rgb(235, 255, 25)',
+                    lineWidth: 1
+                })
+            } else {
+                polygons.updateSymbol({
+                    polygonFill: 'rgb(255, 75, 25)',
+                    polygonOpacity: 0.5,
+                    lineColor: 'rgb(255, 75, 25)',
+                    lineWidth: 1
+                })
+
+            }
+        },
+        _handleGroupListCheckBoxAll(checked) {
+            if (checked) {
+                this._.forEach(this.polygons, polygon => {
+                    polygon.updateSymbol({
+                        polygonFill: 'rgb(235, 255, 25)',
+                        polygonOpacity: 0.8,
+                        lineColor: 'rgb(235, 255, 25)',
+                        lineWidth: 1
+                    })
+                });
+            } else {
+                this._.forEach(this.polygons, polygon => {
+                    polygon.updateSymbol({
+                        polygonFill: 'rgb(255, 75, 25)',
+                        polygonOpacity: 0.5,
+                        lineColor: 'rgb(255, 75, 25)',
+                        lineWidth: 1
+                    })
+                });
+            }
+        },
+        _handleGroupListUnSelect(groupList) {
+            let polygonList = [];
+            this._.forEach(groupList, groupId => {
+                polygonList.push(this.polygons[groupId]);
+            })
+            this._.forEach(polygonList, polygon => {
+                polygon.updateSymbol({
+                    polygonFill: 'rgb(255, 75, 25)',
+                    polygonOpacity: 0.5,
+                    lineColor: 'rgb(255, 75, 25)',
+                    lineWidth: 1
+                })
+            });
+        },
+        _handleGroupListSelect(groupList) {
+            let polygonList = [];
+            this._.forEach(groupList, groupId => {
+                polygonList.push(this.polygons[groupId]);
+            })
+            this._.forEach(polygonList, polygon => {
+                polygon.updateSymbol({
+                    polygonFill: 'rgb(235, 255, 25)',
+                    polygonOpacity: 0.8,
+                    lineColor: 'rgb(235, 255, 25)',
+                    lineWidth: 1
+                })
+            });
+        },
+        _handleGroupListReady(groupList) {
+            let polygonList = [];
+            this._.forEach(groupList, groupId => {
+                polygonList.push(this.polygons[groupId]);
+            })
+            this._.forEach(polygonList, polygon => {
+                polygon.updateSymbol({
+                    polygonFill: 'rgb(25, 255, 25)',
+                    polygonOpacity: 0.8,
+                    lineColor: 'rgb(25, 255, 25)',
+                    lineWidth: 1
+                })
+            });
+        },
         handleChangedCheckbox(item, checked) {
             this._handleFilterGroup(item, checked);
         },
@@ -417,11 +535,16 @@ export default {
             this.infoWindowItem = list;
             this.isTopPressedType = '';
         },
+        handleBroadCastLeftMenu(list, soundId) {
+            this.infoWindowItem = list;
+            this.isForGroup = true;
+            this.leftSelectedSoundId = soundId;
+            this.isTopPressedType = '';
+        },
         handleInfoWindowClose() {
             this.infoWindowItem = null;
         },
         handleEditGroup(type, groupId) {
-            console.log("NNNNNNNNNNNNNNN type: ", type);
             if (!!this.contextMenuItem) {
                 const speaker = this.$store.getters.getSpeaker(this.contextMenuItem.id),
                       marker = this.markers[speaker.id];
@@ -497,6 +620,33 @@ export default {
                 console.log("Failed to remove alarm data ", error);
             });
         },
+        handleReserveWindowButton(data) {
+            let repeat = data.repeat;
+            if (data.type == 1) {
+                // type is blasting then repeat is normal
+                repeat = 0;
+            }
+            let _data = {
+                type: data.type,
+                repeat: repeat,
+                hour: data.hour,
+                minute: data.minute,
+                alarm_id: data.alarmId,
+                group_id_list: data.groupList,
+                name: data.name,
+                pause: 0
+            };
+            this.services.createReserveAlarm(_data, (resdata) => {
+                if (resdata === '1') {
+                  this.sweetbox.fire('There is a pre-scheduled broadcast at the requested time. Your request has been canceled.');
+                } else {
+                  console.log("Succeed to add reserve alarm");
+                }
+            }, (error) => {
+                console.log("Failed to add reserve alarm");
+            });
+            this.isTopPressedType = '';
+        },
         handleReserveButton(data) {
             console.log("data", data)
             let _data = {
@@ -530,6 +680,18 @@ export default {
             }, (error) => {
                 console.log("Failed to remove reserve alarm", error);
             });
+            this.isTopPressedType = '';
+        },
+        handleReservePause(itemId, isPause) {
+            const data = {
+                id: itemId,
+                pause: isPause
+            }
+            this.services.pauseReserveAlarm(data, (ret) => {
+                console.log("Success to pause reserve alarm", ret);
+            }, (error) => {
+                console.log("Failed to pause reserve alarm", error);
+            })
         },
         // websocket function
         websocketConnect() {
@@ -603,7 +765,10 @@ export default {
                 },
                 failedList: (data) => {
                     this._handleFailedList(data);
-                }
+                },
+                updatePlayList: (data) => {
+                    this._handlePlayList(data);
+                },
             });
         },
         _handleAdded(data) {
@@ -676,9 +841,11 @@ export default {
             this._.forEach(list, item => {
                 if (data.kind === 'add') {
                     this.$store.commit('addGroup', item);
+                    this.groupList.push(item.id);
                     this._registerItemsByTag(item.id);
                 } else if (data.kind === 'remove') {
                     this.$store.commit('removeGroup', item); //TODO
+                    this.groupList = this._.without(this.groupList, item);
                 } else if (data.kind === 'update') {
                     const group = this.$store.getters.getGroup(item.id);
                     group.name = item.name;
@@ -695,6 +862,9 @@ export default {
                 } else if (data.kind === 'remove') {
                     this.$store.commit('removeReserveAlarmData', item); //TODO
                     this.reserveAlarmList = this._.without(this.reserveAlarmList, item);
+                } else if (data.kind === 'update') {
+                    this.$store.commit('updateReserveAlarmData', item);
+                    EventBus.$emit("g-reserve-item-pause", item);
                 }
             });
         },
@@ -747,10 +917,22 @@ export default {
                 });
             }
         },
-        _handleFailedList(data){
+        _handleFailedList(data) {
             var respName = data.v,
                 nameList = respName.join(',');
             this.sweetbox.fire('speaker does not contain an IP address. Target Speaker : ' + nameList)
+        },
+        _handlePlayList(data) {
+            const list = data.v;
+            this._.forEach(list, item => {
+                if (data.kind === 'add') {
+                    this.$store.commit('addPlayList', item);
+                    this.playList.push(item);
+                } else if (data.kind === 'remove') {
+                    this.$store.commit('removePlayList', item);
+                    this.playList = this._.without(this.playList, item);
+                }
+            });
         }
     },
     computed: {
@@ -778,6 +960,18 @@ export default {
         window.addEventListener("beforeunload", () => {
             this.services.unsubscribe();
         });
+        EventBus.$on('g-open-infowindow', (v) => {
+            this._handleGroupListReady(v);
+        })
+        EventBus.$on('g-close-infowindow', (v) => {
+            this._handleGroupListCheckBoxAll(false);
+        })
+        EventBus.$on('g-open-reserve-item-infowindow', (v) => {
+            this._handleGroupListSelect(v);
+        })
+        EventBus.$on('g-close-reserve-item-infowindow', (v) => {
+            this._handleGroupListUnSelect(v);
+        })
     }
 }
 </script>
@@ -796,8 +990,9 @@ div {
     left: 0;
 }
 .map-container {
-    width: 100%;
+    width: calc(100% - 250px);
     height: calc(100% - 40px);
+    margin-left: 250px;
 }
 .file-input {
     display: none !important;

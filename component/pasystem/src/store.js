@@ -9,6 +9,7 @@ export default new Vuex.Store({
         groupList: {},
         alarmList: {},
         reserveAlarmList: {},
+        playList: [],
         streamingStatus: false,
         nowPlaying: 0
     },
@@ -43,6 +44,9 @@ export default new Vuex.Store({
         },
         getNowPlaying: (state) => {
             return state.nowPlaying;
+        },
+        getPlayList: (state) => {
+            return state.playList;
         }
     },
     mutations: {
@@ -108,6 +112,11 @@ export default new Vuex.Store({
                 delete state.reserveAlarmList[id];
             }
         },
+        updateReserveAlarmData(state, payload) {
+            if (_.has(state.reserveAlarmList, payload.id)) {
+                state.reserveAlarmList[payload.id] = payload;
+            }
+        },
         addGroup(state, payload) {
             if (!_.has(state.groupList, payload.id)) {
                 state.groupList[payload.id] = payload;
@@ -128,6 +137,12 @@ export default new Vuex.Store({
         },
         updateNowPlaying(state, playStatus) {
             state.nowPlaying = playStatus
+        },
+        addPlayList(state, id) {
+            state.playList.push(id);
+        },
+        removePlayList(state, id) {
+            state.playList = _.without(state.playList, id);
         }
     },
     actions: {

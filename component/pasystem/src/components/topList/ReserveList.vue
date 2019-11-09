@@ -145,16 +145,16 @@ export default {
 .reserve-container {
 }
 .sound-container.reserve {
-    left: 640px;
+    left: 490px;
 }
 .group-container.reserve {
-    left: 640px;
+    left: 490px;
 }
 .back-container {
     position: absolute;
     width: 300px;
     height: 50px;
-    left: 640px;
+    left: 490px;
     z-index: 2;
     border-bottom: 1px solid rgb(223, 223, 233);
     cursor: pointer;
