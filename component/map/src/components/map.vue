@@ -902,7 +902,8 @@
                     'width': 400,
                     'bottom': 11,
                     'custom': true,
-                    'dy': -250,
+                    // 'dy': -250,  before
+                    'dy': -15,
                     'autoPan': false,
                     'autoCloseOn': true,
                     'autoOpenOn': true,
