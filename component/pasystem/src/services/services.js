@@ -363,6 +363,25 @@ export const removeReserveAlarm = (data, successCallback, failCallback) => {
     });
 }
 
+export const pauseReserveAlarm = (data, successCallback, failCallback) => {
+    axios({
+        url: `${ window.CONSTANTS.URL.PA }/pa/reserve/pause`,
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        data: data
+    }).then(response => {
+        if(response.data) {
+            successCallback(response.data);
+        } else {
+            failCallback();
+        }
+    }).catch(error => {
+        failCallback();
+    });
+}
+
 export const getReserveAlarmList = (successCallback, failCallback) => {
     axios({
         url: `${ window.CONSTANTS.URL.PA }/pa/reserve/list`,
@@ -375,5 +394,73 @@ export const getReserveAlarmList = (successCallback, failCallback) => {
         }
     }).catch(error => {
         failCallback();
+    });
+}
+
+export const getPlayList = (successCallback, failCallback) => {
+    axios({
+        url: `${ window.CONSTANTS.URL.PA }/pa/list`,
+        method: 'GET',
+        headers: {
+            'content-type': 'application/json'
+        }
+    }).then(response => {
+        if(response.data) {
+            successCallback(response.data);
+        } else {
+            console.warn('Failed to get playlist');
+            failCallback();
+        }
+    }).catch(error => {
+        console.warn("Failed to get playlist", error);
+        failCallback();
+    });
+}
+
+export const addPlayList = (data, successCallback, failCallback) => {
+    let reqData = {
+        'id_list': data
+    }
+    axios({
+        url: `${ window.CONSTANTS.URL.PA }/pa/list/add`,
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        data: reqData
+    }).then(response => {
+        if(response.data) {
+            successCallback();
+        } else {
+            console.warn('Failed to add playlist');
+            failCallback();
+        }
+    }).catch(error => {
+        console.warn('Failed to add playlist', error);
+        failCallback();
+    });
+}
+
+export const removePlayList = (data, successCallback, failCallback) => {
+    let reqData = {
+        'id_list': data
+    }
+    axios({
+        url: `${ window.CONSTANTS.URL.PA }/pa/list/remove`,
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        data: reqData
+    }).then(response => {
+        if(response.data) {
+            successCallback(response.data);
+        } else {
+            console.warn('Failed to remove playlist');
+            failCallback();
+        }
+    }).catch(error => {
+        console.warn('Failed to remove playlist', error);
+        failCallback(error);
     });
 }

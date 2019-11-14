@@ -31,8 +31,9 @@
         </div>
         <div v-else-if="type === 'group_set_up'"
         class="sound-button-wrapper">
-            <div class="sound-button-panel" @click="selectedAddGroup">
-                <div class="sound-button-text">ADD NEW</div>
+            <div class="sound-button-panel" :class="{ deactive: !isEmpty }"
+            @click="selectedAddGroup">
+                <div class="sound-button-text">CREATE</div>
             </div>
             <div class="sound-button-panel right" :class="{ deactive: isEmpty }"
             @click="selectedRemove">
@@ -71,7 +72,6 @@ export default {
             if (this.type === window.CONSTANTS.TOP_BUTTON_TYPE.FILTER) {
                 this.$emit('select-checkbox', item, checked);
             } else if (this.type === 'sound') {
-                console.log("ASDFS")
                 if (checked) {
                     this.groupCheckList = [item];
                 } else {

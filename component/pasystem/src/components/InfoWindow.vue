@@ -16,7 +16,7 @@
             </div>
             <div v-else class="group-speaker-panel">
                 <div class="group-text-wrapper">
-                    <div class="info-title">GROUP</div>
+                    <div class="info-title">GROUP ({{ item.length }}) </div>
                     <div class="group-wrapper">
                         <div v-for="(groupId, index) in item" :key="index"
                         class="info-text">{{ groupName(groupId) }}</div>
@@ -37,7 +37,11 @@
                 </div>
             </div>
         </div>
-        <div class="info-right-panel">
+        <div v-if="isForGroup" class="info-right-panel">
+            <GroupPlayList :list="playList" :soundItemId="leftSoundItemId"
+            @select-speaker="handleSelectSpeaker" @select-volume="handleVolume" ></GroupPlayList>
+        </div>
+        <div v-else class="info-right-panel">
             <PlayList :list="playList" @select-speaker="handleSelectSpeaker" @select-volume="handleVolume" ></PlayList>
         </div>
         <div class="info-close-button" @click="handleSelectCloseButton"></div>
@@ -45,11 +49,14 @@
 </template>
 <script>
 import PlayList from '@/components/PlayList';
+import GroupPlayList from '@/components/GroupPlayList';
+import { EventBus } from "@/main";
 const fileNotExist = "1";
 export default {
     name: 'InfoWindow',
     components: {
-        PlayList
+        PlayList,
+        GroupPlayList
     },
     props: {
         isForGroup: {
@@ -57,6 +64,9 @@ export default {
         },
         item: {
             required: true
+        },
+        leftSoundItemId: {
+            type: String
         }
     },
     data() {
@@ -183,8 +193,14 @@ export default {
     created() {
         if (this.isForGroup) {
             this.handleGroupList();
+            EventBus.$emit('g-open-infowindow', this.item);
+        } else {
+            EventBus.$emit('g-open-infowindow', []);
         }
         this.playList = this.$store.getters.getAlarmList;
+    },
+    destroyed() {
+        EventBus.$emit('g-close-infowindow', true);
     }
 }
 </script>

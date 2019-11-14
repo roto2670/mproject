@@ -15,8 +15,9 @@
                     :id="id" @select-checkbox="handleSelectCheckbox"></SoundItem>
                 </div>
                 <div class="sound-button-wrapper">
-                    <div class="sound-button-panel" @click="selectedAddSound">
-                        <div class="sound-button-text">ADD NEW</div>
+                    <div class="sound-button-panel" :class="{ deactive: !deactive }"
+                    @click="selectedAddSound">
+                        <div class="sound-button-text">UPLOAD</div>
                     </div>
                     <div class="sound-button-panel right" :class="{ deactive: deactive }"
                     @click="selectedRemove">
@@ -53,7 +54,6 @@ export default {
             this.selectedList = [];
         },
         handleSelectCheckbox(id) {
-            console.log("### id : ", id);
             if (!this._.includes(this.selectedList, id)) {
                 this.selectedList.push(id);
             } else {

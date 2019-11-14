@@ -1,10 +1,31 @@
 <template>
-    <div id="sound-item" class="sound-item-panel">
+    <div v-if="isEditMode" id="sound-item" class="sound-item-panel add">
+        <div class="sound-add-frame">
+            <div class="sa-left-frame">
+                <label class="sound-item-label">
+                    {{ itemName }}
+                </label>
+            </div>
+            <div class="sa-right-frame">
+                <div class="sa-button-panel" @click="handleSoundItemAdd">
+                    <div class="sa-button"></div>
+                </div>
+                <div class="sa-button-panel cancel" @click="handleCancel">
+                    <div class="sa-button cancel"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div v-else id="sound-item" class="sound-item-panel">
         <div class="sound-item-wrapper">
             <label class="sound-item-label">
                 <input type="checkbox" class="sound-item-checkbox"
                 @change="handleSelectedCheckbox">{{ itemName }}
             </label>
+        </div>
+        <div v-if="isShowingEditButton" class="sound-edit-button"
+        @click="handleEditButton">
+            <div class="sound-edit-image"></div>
         </div>
     </div>
 </template>
@@ -18,18 +39,40 @@ export default {
     },
     data() {
         return {
-            alarm: {}
+            alarm: {},
+            isEdit: false
         }
     },
     computed: {
         itemName() {
-            return `Sound - ${ this.alarm.name }`;
-        }
+            return `${ this.alarm.name }`;
+        },
+        isShowingEditButton() {
+            return !this.isEdit;
+        },
+        isEditMode() {
+            return this.isEdit;
+        },
     },
     methods: {
         handleSelectedCheckbox() {
             this.$emit('select-checkbox', this.id);
-        }
+        },
+        handleEditButton() {
+            this.isEdit = true;
+        },
+        handleSoundItemAdd() {
+            this.isEdit = false;
+            const data = [this.id];
+            this.services.addPlayList(data, (ret) => {
+                // console.log("Add playlist ret. ", ret);
+            }, (error) => {
+                console.warn("Failed to add playlist.", error);
+            })
+        },
+        handleCancel() {
+            this.isEdit = false;
+        },
     },
     created() {
         this.alarm = this.$store.getters.getAlarmData(this.id);
@@ -62,4 +105,71 @@ export default {
     height: 17px;
     vertical-align: middle;
 }
+.sound-edit-button {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    right: 10px;
+    width: 40px;
+    height: 40px;
+    cursor: pointer;
+}
+.sound-edit-image {
+    width: 100%;
+    height: 100%;
+    background-size: 100%;
+    background-image: url('../../assets/imgs/icon-modify.svg');
+    background-position: center center;
+    background-repeat: no-repeat;
+}
+
+.sound-item-panel.add {
+    padding: 10px 20px;
+}
+.sound-add-frame {
+
+}
+.sa-left-frame {
+    position: absolute;
+    top: 26px;
+    transform: translateY(-50%);
+    width: 190px;
+    height: 30px;
+}
+.sa-name-input {
+    width: 100%;
+    height: 100%;
+    border-radius: 5px;
+    border: 1px solid rgb(220, 220, 220);
+    padding: 5px;
+    box-sizing: border-box;
+}
+.sa-right-frame {
+    position: absolute;
+    top: 7.5px;
+    right: 0;
+    width: 70px;
+}
+.sa-button-panel {
+    width: 30px;
+    height: 30px;
+    display: inline-flex;
+    cursor: pointer;
+}
+.sa-button-panel {
+    margin-left: 4px;
+}
+.sa-button {
+    width: 100%;
+    height: 100%;
+    background-image: url('../../assets/imgs/list-add.svg');
+    background-size: 75%;
+    background-repeat: no-repeat;
+    background-position: center center;
+}
+.sa-button.cancel {
+    background-image: url('../../assets/imgs/icon-close(red).svg');
+    background-size: 60%;
+}
+
 </style>
