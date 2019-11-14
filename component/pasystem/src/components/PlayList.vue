@@ -2,26 +2,42 @@
     <div id="playlist" class="alarm-container">
         <div class="alarm-list-frame">
             <div class="alarm-list-wrapper">
-                <div class="live-record-streaming" @click="handleSelectedItem(`record`)"
-                    :class="{ liveRecord: isSelectedItem(`record`)}">
-                    <div class="live-record-text" :class="{ liveRecordStart: isSelectedItem(`record`)}">
-                        START BROADCAST
+                <div class="live-tab" @click="handleTabItem(`sound`)"
+                    :class="{ liveRecord: !isSelectedTab(`sound`)}">
+                    <div class="live-record-text" :class="{ liveRecordStart: !isSelectedTab(`sound`)}">
+                       SOUND
                     </div>
                 </div>
-                <div v-for="(data, index) in list" :key="index"
-                class="alarm-list-panel" :class="{ selected: isSelectedItem(data) }"
-                @click="handleSelectedItem(data)">
-                    <div class="alarm-name-panel">
-                        <div class="alarm-name"
-                         :class="{ selected: isSelectedItem(data) }"> {{ data.name }}</div>
+                <div class="live-tab" @click="handleTabItem(`record`)"
+                    :class="{ liveRecord: !isSelectedTab(`record`)}">
+                    <div class="live-record-text" :class="{ liveRecordStart: !isSelectedTab(`record`)}">
+                        MICROPHONE
+                    </div>
+                </div>
+                <div v-if="isSelectedSoundTabItem">
+                    <div v-for="(data, index) in list" :key="index"
+                    class="alarm-list-panel" :class="{ selected: isSelectedItem(data) }"
+                    @click="handleSelectedItem(data)">
+                        <div class="alarm-name-panel">
+                            <div class="alarm-name"
+                            :class="{ selected: isSelectedItem(data) }"> {{ data.name }}</div>
+                        </div>
                     </div>
                 </div>
             </div>
         </div>
         <div class="alarm-play-frame">
-            <div class="play-icon-panel">
-                <div class="icon-image play-icon" @click="handleStartPlay"
-                    :class="{ stopIcon: isPlaying() }"></div>
+            <div v-if="isSelectedSoundTabItem">
+                <div class="play-icon-panel">
+                    <div class="icon-image play-icon" @click="handleStartPlay"
+                        :class="{ stopIcon: isPlaying() }"></div>
+                </div>
+            </div>
+            <div v-else>
+                <div class="play-icon-panel">
+                    <div class="icon-image mic-icon" @click="handleStartPlay"
+                        :class="{ stopMic: isPlaying() }"></div>
+                </div>
             </div>
             <div class="volume-down-panel">
                 <div class="icon-image volume-down" @click="handleVolumeDown"></div>
@@ -43,6 +59,7 @@ export default {
     },
     data() {
         return {
+            selectedTabItem: 'sound',
             selectedItem: null,
             context: null,
             recorder: null,
@@ -59,6 +76,17 @@ export default {
         }
     },
     methods: {
+        isSelectedTab(item) {
+            return this.selectedTabItem == item;
+        },
+        handleTabItem(item) {
+            this.selectedTabItem = item;
+            if (item === 'record') {
+                this.selectedItem = 'record';
+            } else {
+                this.selectedItem = null;
+            }
+        },
         isSelectedItem(item) {
             if (item === `record`) {
                 return this.selectedItem === `record`;
@@ -321,8 +349,12 @@ export default {
             this.$emit('select-volume', this.soundVolume);
         },
     },
+    computed: {
+        isSelectedSoundTabItem() {
+           return this.selectedTabItem === 'sound';
+        }
+    },
     created() {
-        console.log("create play list ", this.list);
     }
 }
 </script>
@@ -342,14 +374,15 @@ export default {
 .alarm-list-wrapper {
     margin: 14px;
 }
-.live-record-streaming {
-    width: 100%;
+.live-tab {
+    width: 50%;
     height: 40px;
+    display: inline-block;
     background-color: rgb(207, 83, 85);
-    border-radius: 18px;
+    border-radius: 8px;
     cursor: pointer;
 }
-.live-record-streaming.liveRecord {
+.live-tab.liveRecord {
     background-color: #ffb3b3;
 }
 .live-record-border {
@@ -439,6 +472,18 @@ export default {
     background-size: 102%;
     background-image: url('../assets/imgs/icon-stop.png');
 }
+.icon-image.mic-icon {
+    background-size: 70%;
+    background-image: url('../assets/imgs/microphone.svg');
+    background-color: rgb(255, 255, 255);
+    border-radius: 100%;
+}
+.icon-image.micStop {
+    background-size: 75%;
+    background-image: url('../assets/imgs/muted.svg');
+    background-color: rgb(255, 255, 255);
+    border-radius: 100%;
+}
 .volume-down-panel {
     position: absolute;
     width: 50px;
@@ -447,9 +492,11 @@ export default {
     right: 70px;
 }
 .icon-image.volume-down {
+    cursor: pointer;
     background-image: url('../assets/imgs/icon-volume-down.svg');
 }
 .icon-image.volume-down:active {
+    cursor: pointer;
     background-image: url('../assets/imgs/icon-volume-down(active).svg');
 }
 .volume-up-panel {
@@ -460,9 +507,11 @@ export default {
     right: 0;
 }
 .icon-image.volume-up {
+    cursor: pointer;
     background-image: url('../assets/imgs/icon-volume-up.svg');
 }
 .icon-image.volume-up:active {
+    cursor: pointer;
     background-image: url('../assets/imgs/icon-volume-up(active).svg');
 }
 </style>

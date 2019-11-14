@@ -493,9 +493,11 @@ export default {
     right: 0;
 }
 .icon-image.volume-up {
+    cursor: pointer;
     background-image: url('../assets/imgs/icon-volume-up.svg');
 }
 .icon-image.volume-up:active {
+    cursor: pointer;
     background-image: url('../assets/imgs/icon-volume-up(active).svg');
 }
 </style>
