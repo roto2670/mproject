@@ -1608,7 +1608,7 @@
                 this._.forEach(this.gadgetInfoNumber, (index) => {
                     context += `<label class="filterBeacon">
                                 <img id="worker${ index }" class="workerImg" src="${ window.CONSTANTS.URL.BASE_IMG }icon-worker${ index }-tab.svg">
-                                <input class="beaconItem" id="beacon-${ index }" type="checkbox"></label>`
+                                <input class="beaconItem" id="beacon-${ index }" type="checkbox" checked></label>`
                 })
                 context += `<button id="beacon-filter-Reset-Button" class="beacon-filter-Reset-Button">Reset</button>`;
 
@@ -1622,13 +1622,13 @@
                 })
 
                 this._.forEach(this.gadgetInfoNumber, (index) => {
-                    document.getElementById(`beacon-${ index }`).checked = !this.workerLayer[index].isVisible();
+                    document.getElementById(`beacon-${ index }`).checked = this.workerLayer[index].isVisible();
                     document.getElementById(`beacon-${ index }`).onchange = () => {
                         const checked = document.getElementById(`beacon-${ index }`).checked;
                         if (checked) {
-                            this.workerLayer[index].hide();
-                        } else {
                             this.workerLayer[index].show();
+                        } else {
+                            this.workerLayer[index].hide();
                         }
                     }
                 })
@@ -1714,13 +1714,13 @@
                         thirdSelectOption: window.CONSTANTS.HUB_FILTER_TEXT.AT2
                     }
                     content = `<div class="selectTn">
-                            <label id="tn"><input class="firstSelectOption item${ type }-${ type }" type="checkbox">
+                            <label id="tn"><input class="firstSelectOption item${ type }-${ type }" type="checkbox" checked>
                             ${ context.firstSelectOption }</label></div>
                             <div class="selectTn">
-                            <label id="tn"><input class="secondSelectOption item${ type }-${ type + 1 }" type="checkbox">
+                            <label id="tn"><input class="secondSelectOption item${ type }-${ type + 1 }" type="checkbox" checked>
                             ${ context.secondSelectOption }</label></div>
                             <div class="selectTn">
-                            <label id="tn"><input class="thirdSelectOption item${ type }-${ type + 2 }" type="checkbox">
+                            <label id="tn"><input class="thirdSelectOption item${ type }-${ type + 2 }" type="checkbox" checked>
                             ${ context.thirdSelectOption }</label></div>
                             <button id="filter-Reset-Button" class="filter-Reset-Button">Reset</button>`
                 } else if (type === 2) {
@@ -1733,10 +1733,10 @@
                         secondSelectOption: window.CONSTANTS.IPCAM_FILTER_TEXT.MOBILE
                     }
                     content = `<div class="selectTn">
-                            <label id="tn"><input class="firstSelectOption item${ type }-${ type }" type="checkbox">
+                            <label id="tn"><input class="firstSelectOption item${ type }-${ type }" type="checkbox" checked>
                             ${ context.firstSelectOption }</label></div>
                             <div class="selectTn">
-                            <label id="tn"><input class="secondSelectOption item${ type }-${ type + 1 }" type="checkbox">
+                            <label id="tn"><input class="secondSelectOption item${ type }-${ type + 1 }" type="checkbox" checked>
                             ${ context.secondSelectOption }</label></div>
                             <button id="filter-Reset-Button" class="filter-Reset-Button">Reset</button>`
                 } else if (type === 3) {
@@ -1747,7 +1747,7 @@
                         layers[index] = this.speakerLayer[group.id];
                         context = group.name;
                         content += `<div class="selectTn">
-                            <label id="tn"><input class="firstSelectOption item${ type }-${ index }" type="checkbox">
+                            <label id="tn"><input class="firstSelectOption item${ type }-${ index }" type="checkbox" checked>
                             ${ group.name }</label></div>`;
                     })
                     content += `</div><button id="filter-Reset-Button" class="filter-Reset-Button">Reset</button>`;
@@ -1774,45 +1774,45 @@
                             layers.thirdOption.show();
                         }
                     }
-                    document.getElementsByClassName(`item${ type }-${ type }`)[0].checked = !layers.firstOption.isVisible();
+                    document.getElementsByClassName(`item${ type }-${ type }`)[0].checked = layers.firstOption.isVisible();
                     document.getElementsByClassName(`item${ type }-${ type }`)[0].onchange = () => {
                         const checked = document.getElementsByClassName(`item${ type }-${ type }`)[0].checked;
                         if (checked) {
-                            layers.firstOption.hide();
-                        } else {
                             layers.firstOption.show();
+                        } else {
+                            layers.firstOption.hide();
                         }
                     }
-                    document.getElementsByClassName(`item${ type }-${ type + 1 }`)[0].checked = !layers.secondOption.isVisible();
+                    document.getElementsByClassName(`item${ type }-${ type + 1 }`)[0].checked = layers.secondOption.isVisible();
                     document.getElementsByClassName(`item${ type }-${ type + 1 }`)[0].onchange = () => {
                         const checked = document.getElementsByClassName(`item${ type }-${ type + 1 }`)[0].checked;
                         if (checked) {
-                            layers.secondOption.hide();
-                        } else {
                             layers.secondOption.show();
+                        } else {
+                            layers.secondOption.hide();
                         }
                     }
                     if (!!document.getElementsByClassName(`item${ type }-${ type + 2 }`)[0]) {
-                        document.getElementsByClassName(`item${ type }-${ type + 2 }`)[0].checked = !layers.thirdOption.isVisible();
+                        document.getElementsByClassName(`item${ type }-${ type + 2 }`)[0].checked = layers.thirdOption.isVisible();
                         document.getElementsByClassName(`item${ type }-${ type + 2}`)[0].onchange = () => {
                             const checked = document.getElementsByClassName(`item${ type }-${ type + 2 }`)[0].checked;
                             if (checked) {
-                                layers.thirdOption.hide();
-                            } else {
                                 layers.thirdOption.show();
+                            } else {
+                                layers.thirdOption.hide();
                             }
                         }
                     }
                 } else {
                     const groupData = this.$store.getters.getGroupList;
                     this._.forEach(groupData, (group, index) => {
-                        document.getElementsByClassName(`item${ type }-${ index }`)[0].checked = !layers[index].isVisible();
+                        document.getElementsByClassName(`item${ type }-${ index }`)[0].checked = layers[index].isVisible();
                         document.getElementsByClassName(`item${ type }-${ index }`)[0].onchange = () => {
                             const checked = document.getElementsByClassName(`item${ type }-${ index }`)[0].checked;
                             if (checked) {
-                                layers[index].hide();
-                            } else {
                                 layers[index].show();
+                            } else {
+                                layers[index].hide();
                             }
                         }
                     })
