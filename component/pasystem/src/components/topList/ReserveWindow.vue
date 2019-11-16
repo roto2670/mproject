@@ -2,7 +2,7 @@
     <div id="infowindow" class="reserve-info-container">
         <div class="reserve-info-panel group">
             <div class="reserve-top-frame">
-                  <div class="reserve-text">Group</div>
+                  <div class="reserve-window-title-text">Group</div>
             </div>
             <div class="reserve-list-frame">
                 <GroupItem v-for="groupId in groupList" :key="groupId" :id="groupId"
@@ -11,7 +11,7 @@
         </div>
         <div class="reserve-info-panel sound">
             <div class="reserve-top-frame">
-                  <div class="reserve-text">Sound</div>
+                  <div class="reserve-window-title-text">Sound</div>
             </div>
             <div class="reserve-list-frame">
                 <SoundItem v-for="soundId in alarmList" :key="soundId" :id="soundId"
@@ -20,16 +20,16 @@
         </div>
         <div class="reserve-info-panel time">
             <div class="reserve-top-frame">
-                  <div class="reserve-text">Time</div>
+                  <div class="reserve-window-title-text">Time</div>
             </div>
             <div class="reserve-list-frame">
                 <ReserveTimeItem v-for="(type, index) in types"
                 :key="index" :type="type" @change-time="handleSelectTime"></ReserveTimeItem>
             </div>
         </div>
-        <div class="reserve-info-panel button">
+        <div class="reserve-info-panel buttonArea">
             <div class="reserve-top-frame">
-                  <div class="reserve-text">Button</div>
+                  <div class="reserve-window-title-text">Button</div>
             </div>
             <div class="reserve-list-frame">
                 <input type="text" class="reserve-name-input" placeholder="Input name" v-model="name"/>
@@ -144,7 +144,7 @@ export default {
 .reserve-info-panel.time {
     border-right: 1px solid rgb(235, 235, 235);
 }
-.reserve-info-panel.button {
+.reserve-info-panel.buttonArea {
     border-top-right-radius: 10px;
     border-bottom-right-radius: 10px;
 }
@@ -154,11 +154,10 @@ export default {
     height: 2.4em;
     background-color: rgb(210, 235, 250);
 }
-.reserve-text {
-    padding-top: 6px;
+.reserve-window-title-text {
     padding-left: 6px;
     color: black;
-    font-weight: bold;
+    font-weight: 500;
     font-size: 1.4em;
     letter-spacing: .4px;
     text-align: center;
@@ -175,10 +174,10 @@ export default {
     cursor: pointer;
 }
 .create-button-text {
-    padding-top: 6px;
+    padding-top: 8px;
     padding-left: 6px;
     font-weight: bold;
-    font-size: 1.4em;
+    font-size: 1.0em;
     letter-spacing: .4px;
     text-align: center;
 }

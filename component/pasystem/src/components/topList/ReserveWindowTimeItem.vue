@@ -108,8 +108,9 @@ export default {
 }
 .reserve-time-select-panel {
     position: absolute;
-    right: 20px;
+    right: 15px;
     top: 50%;
+    font-size: 12px;
     transform: translateY(-50%);
 }
 </style>

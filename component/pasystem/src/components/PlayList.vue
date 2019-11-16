@@ -401,7 +401,7 @@ export default {
     width: 100%;
     height: 100%;
     text-align: center;
-    transform: translateY(30%);
+    transform: translateY(20%);
 }
 .live-record-text.liveRecordStart{
     color: rgb(207, 83, 85);

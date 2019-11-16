@@ -187,7 +187,7 @@ export default {
     /* left: 1em; */
     /* top: 50%; */
     /* transform: translateY(-50%); */
-    padding-top: 6px;
+    padding-top: 2px;
     padding-left: 6px;
     color: black;
     font-weight: bold;
@@ -249,38 +249,38 @@ export default {
   cursor: pointer;
 }
 .left-icon-image.play-icon {
-  background-size: 50%;
+  background-size: 40%;
   background-image: url('../assets/imgs/play.svg');
 }
 .left-icon-image.play-icon:hover {
-  background-size: 55%;
+  background-size: 44%;
   background-image: url('../assets/imgs/play.svg');
 }
 .left-icon-image.playDisabled {
-  background-size: 50%;
+  background-size: 40%;
   background-image: url('../assets/imgs/play-disabled.png');
   cursor: default;
 }
 .left-icon-image.playDisabled:hover {
-  background-size: 50%;
+  background-size: 40%;
   background-image: url('../assets/imgs/play-disabled.png');
   cursor: default;
 }
 .left-icon-image.mic-icon {
-  background-size: 50%;
+  background-size: 40%;
   background-image: url('../assets/imgs/microphone.svg');
 }
 .left-icon-image.mic-icon:hover {
-  background-size: 55%;
+  background-size: 44%;
   background-image: url('../assets/imgs/microphone.svg');
 }
 .left-icon-image.micDisabled {
-  background-size: 50%;
+  background-size: 40%;
   background-image: url('../assets/imgs/muted.svg');
   cursor: default;
 }
 .left-icon-image.micDisabled:hover {
-  background-size: 50%;
+  background-size: 40%;
   background-image: url('../assets/imgs/muted.svg');
   cursor: default;
 }
