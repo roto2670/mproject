@@ -83,6 +83,26 @@ export default {
             playList: [],
             leftSelectedSoundId: '',
             leftSelectedReserveId: '',
+            polygonSetting: {
+                play : {
+                    polygonFill: 'rgb(255, 75, 25)',
+                    polygonOpacity: 0.5,
+                    lineColor: 'rgb(255, 75, 25)',
+                    lineWidth: 4
+                },
+                select : {
+                    polygonFill: 'rgb(235, 255, 25)',
+                    polygonOpacity: 0.5,
+                    lineColor: 'rgb(235, 255, 25)',
+                    lineWidth:4
+                },
+                ready : {
+                    polygonFill: 'rgb(25, 255, 25)',
+                    polygonOpacity: 0.5,
+                    lineColor: 'rgb(25, 255, 25)',
+                    lineWidth: 4
+                }
+            }
         }
     },
     methods: {
@@ -212,7 +232,7 @@ export default {
                             markerHeight: this.zoomLevel,
                             markerDy: 10
                         },
-                        draggable: true
+                        draggable: false
                     }
                   );
             let tag = this._.first(speaker.tags);
@@ -279,12 +299,7 @@ export default {
         _drawPolygon(groupList, tag) {
             const polygonList = this._sortLocationList(groupList);
             const polygon = new maptalks.Polygon(polygonList, {
-                symbol: {
-                    polygonFill: 'rgb(255, 75, 25)',
-                    polygonOpacity: 0.5,
-                    lineColor: 'rgb(255, 75, 25)',
-                    lineWidth: 1
-                }
+                symbol: this.polygonSetting.ready
             });
             polygon.addTo(this.polygonLayers[tag]);
             this.polygons[tag] = polygon;
@@ -449,40 +464,20 @@ export default {
             var zone = this.polygonLayers[item];
             var polygons = this.polygons[item];
             if (checked) {
-                polygons.updateSymbol({
-                    polygonFill: 'rgb(235, 255, 25)',
-                    polygonOpacity: 0.8,
-                    lineColor: 'rgb(235, 255, 25)',
-                    lineWidth: 1
-                })
+                polygons.updateSymbol(this.polygonSetting.select)
             } else {
-                polygons.updateSymbol({
-                    polygonFill: 'rgb(255, 75, 25)',
-                    polygonOpacity: 0.5,
-                    lineColor: 'rgb(255, 75, 25)',
-                    lineWidth: 1
-                })
+                polygons.updateSymbol(this.polygonSetting.ready)
 
             }
         },
         _handleGroupListCheckBoxAll(checked) {
             if (checked) {
                 this._.forEach(this.polygons, polygon => {
-                    polygon.updateSymbol({
-                        polygonFill: 'rgb(235, 255, 25)',
-                        polygonOpacity: 0.8,
-                        lineColor: 'rgb(235, 255, 25)',
-                        lineWidth: 1
-                    })
+                    polygon.updateSymbol(this.polygonSetting.select)
                 });
             } else {
                 this._.forEach(this.polygons, polygon => {
-                    polygon.updateSymbol({
-                        polygonFill: 'rgb(255, 75, 25)',
-                        polygonOpacity: 0.5,
-                        lineColor: 'rgb(255, 75, 25)',
-                        lineWidth: 1
-                    })
+                    polygon.updateSymbol(this.polygonSetting.ready)
                 });
             }
         },
@@ -492,12 +487,7 @@ export default {
                 polygonList.push(this.polygons[groupId]);
             })
             this._.forEach(polygonList, polygon => {
-                polygon.updateSymbol({
-                    polygonFill: 'rgb(255, 75, 25)',
-                    polygonOpacity: 0.5,
-                    lineColor: 'rgb(255, 75, 25)',
-                    lineWidth: 1
-                })
+                polygon.updateSymbol(this.polygonSetting.ready)
             });
         },
         _handleGroupListSelect(groupList) {
@@ -506,12 +496,7 @@ export default {
                 polygonList.push(this.polygons[groupId]);
             })
             this._.forEach(polygonList, polygon => {
-                polygon.updateSymbol({
-                    polygonFill: 'rgb(235, 255, 25)',
-                    polygonOpacity: 0.8,
-                    lineColor: 'rgb(235, 255, 25)',
-                    lineWidth: 1
-                })
+                polygon.updateSymbol(this.polygonSetting.select)
             });
         },
         _handleGroupListReady(groupList) {
@@ -520,12 +505,7 @@ export default {
                 polygonList.push(this.polygons[groupId]);
             })
             this._.forEach(polygonList, polygon => {
-                polygon.updateSymbol({
-                    polygonFill: 'rgb(25, 255, 25)',
-                    polygonOpacity: 0.8,
-                    lineColor: 'rgb(25, 255, 25)',
-                    lineWidth: 1
-                })
+                polygon.updateSymbol(this.polygonSetting.play)
             });
         },
         handleChangedCheckbox(item, checked) {
