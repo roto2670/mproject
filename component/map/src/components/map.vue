@@ -1636,7 +1636,7 @@
                 document.getElementById('beacon-filter-Reset-Button').onclick = () => {
                     this._.forEach(this.gadgetInfoNumber, (index) => {
                         document.getElementById(`beacon-${ index }`).checked = 0;
-                        this.workerLayer[index].show();
+                        this.workerLayer[index].hide();
                     })
                 }
             },
@@ -1767,11 +1767,11 @@
                     document.getElementById('filter-Reset-Button').onclick = () => {
                         document.getElementsByClassName(`item${ type }-${ type }`)[0].checked = 0;
                         document.getElementsByClassName(`item${ type }-${ type + 1 }`)[0].checked = 0;
-                        layers.firstOption.show();
-                        layers.secondOption.show();
+                        layers.firstOption.hide();
+                        layers.secondOption.hide();
                         if (!!document.getElementsByClassName(`item${ type }-${ type + 2 }`)[0]) {
                             document.getElementsByClassName(`item${ type }-${ type + 2 }`)[0].checked = 0;
-                            layers.thirdOption.show();
+                            layers.thirdOption.hide();
                         }
                     }
                     document.getElementsByClassName(`item${ type }-${ type }`)[0].checked = layers.firstOption.isVisible();
@@ -1819,7 +1819,7 @@
                     document.getElementById('filter-Reset-Button').onclick = () => {
                        this._.forEach(groupData, (group, index) => {
                             document.getElementsByClassName(`item${ type }-${ index }`)[0].checked = 0;
-                            layers[index].show();
+                            layers[index].hide();
                        });
                     }
                 }
