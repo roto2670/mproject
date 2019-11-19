@@ -3,7 +3,7 @@
         <div class="beaconListTitleContainer">
             <div class="BeaconListTdFirstContainer">Kind
             </div>
-            <div class="BeaconLIstTdContainer">AT1
+            <div class="BeaconListTdContainer">AT1
             </div>
             <div class="BeaconListTdContainer">AT2
             </div>
