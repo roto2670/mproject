@@ -19,7 +19,7 @@ export default {
     },
     computed: {
         getOnAir() {
-            return !this.isOnAir;
+            return this.isOnAir;
         }
     },
     methods: {
