@@ -3,6 +3,8 @@
     <div :id="id" v-if="isEmptyUrl">
     </div>
     <OnAir :isOnAir="onAir"></OnAir>
+    <BeaconList v-if="showBeaconList" :isShow="showBeaconList" :showBeaconData="showBeaconData"
+    :typeRange="tagKinds"></BeaconList>
     <SpeakerInfoWindow :item="speakerInfoWindowItems" :isForGroup="false" v-if="isShowingInfoWindow" @select-close="handleInfoWindowClose"></SpeakerInfoWindow>
 </div>
 </template>
@@ -12,6 +14,7 @@
     import * as beaconDetector from '@/services/beacon-detector';
     import SpeakerInfoWindow from '@/components/SpeakerInfoWindow';
     import OnAir from '@/components/OnAir';
+    import BeaconList from '@/components/BeaconList';
     import util from '@/services/util';
     import { EventBus } from "../main";
     import { setTimeout, setInterval } from 'timers';
@@ -68,8 +71,9 @@
                 drawnGadgetList: {},
                 isRemoveAll: false,
                 ipcamStreamData: {},
-                gadgetCountInfoWindow: null,
                 onAir: false,
+                showBeaconList: false,
+                showBeaconData : {},
                 markerMap: {
                     hubs: {},
                     cams: {},
@@ -79,12 +83,17 @@
                     xll: ['1', '2', '8'],
                     xl: ['3', '14', '15', '18', '19'],
                     l: ['4', '5', '6', '7', '9', '11']
-                }
+                },
+                tagKinds : [
+                    '1', '2', '3', '4', '5', '6', '7', '8', '9', '10',
+                    '11', '12', '13', '14', '15', '16', '17', '18', '19'
+                ]
             }
         },
         components: {
             SpeakerInfoWindow,
-            OnAir
+            OnAir,
+            BeaconList
         },
         methods: {
             initloadMap() {
@@ -3036,76 +3045,6 @@
                 nameList = respName.join(',');
                 this.sweetbox.fire('speaker does not contain an IP address. Target Speaker : ' + nameList)
             },
-            _getGadgetCountListTr(data, key) {
-                var tr = '<div class="gcTrContainer">' +
-                            '<div class="gcTdFirstContainer">' + data.kind[key] +
-                            '</div>' +
-                            '<div class="gcTdContainer">' + data.at1[key].length +
-                            '</div>' +
-                            '<div class="gcTdContainer">' + data.at2[key].length +
-                            '</div>' +
-                            '<div class="gcTdContainer">' + data.other[key].length +
-                            '</div>' +
-                            '<div class="gcTdContainer">' + (data.at1[key].length + data.at2[key].length + data.other[key].length) +
-                            '</div>' +
-                        '</div>';
-                return tr;
-            },
-            _showGadgetCountList() {
-                if (this.gadgetCountInfoWindow == null) {
-                    this.services.getGadgetCountList((data) => {
-                        var context = '<div class="gcContainer">' +
-                                '<div class="gcTrContainer" style="border-bottom: 1px solid #555555;padding-top:5px">' +
-                                    '<div class="gcTdFirstContainer">Kind' +
-                                    '</div>' +
-                                    '<div class="gcTdContainer">AT1' +
-                                    '</div>' +
-                                    '<div class="gcTdContainer">AT2' +
-                                    '</div>' +
-                                    '<div class="gcTdContainer">Other' +
-                                    '</div>' +
-                                    '<div class="gcTdContainer">Total' +
-                                    '</div>' +
-                                '</div>';
-
-                        context += this._getGadgetCountListTr(data, '1');
-                        context += this._getGadgetCountListTr(data, '2');
-                        context += this._getGadgetCountListTr(data, '3');
-                        context += this._getGadgetCountListTr(data, '4');
-                        context += this._getGadgetCountListTr(data, '5');
-                        context += this._getGadgetCountListTr(data, '6');
-                        context += this._getGadgetCountListTr(data, '7');
-                        context += this._getGadgetCountListTr(data, '8');
-                        context += this._getGadgetCountListTr(data, '9');
-                        context += this._getGadgetCountListTr(data, '10');
-                        context += this._getGadgetCountListTr(data, '11');
-                        context += this._getGadgetCountListTr(data, '12');
-                        context += this._getGadgetCountListTr(data, '13');
-                        context += this._getGadgetCountListTr(data, '14');
-                        context += this._getGadgetCountListTr(data, '15');
-                        context += this._getGadgetCountListTr(data, '16');
-                        context += this._getGadgetCountListTr(data, '17');
-                        context += this._getGadgetCountListTr(data, '18');
-                        context += this._getGadgetCountListTr(data, '19');
-                        context += '</div>';
-                        var options = {
-                            'autoOpenOn' : false,  //set to null if not to open window when clicking on map
-                            'single' : false,
-                            'custom' : true,
-                            'animation': null,
-                            'content' : context
-                        };
-                        var infoWindow = new maptalks.ui.InfoWindow(options);
-                        infoWindow.addTo(this.map).show({x:150, y:45});
-                        this.gadgetCountInfoWindow = infoWindow;
-                    }, (error) => {
-                        console.log("Failed to get gadget count list", error);
-                    });
-                } else {
-                    this.gadgetCountInfoWindow.hide();
-                    this.gadgetCountInfoWindow = null;
-                }
-            },
             _subscribe() {
                 this.services.subscribe(this.info.internal, {
                     added: (data) => {
@@ -3185,7 +3124,15 @@
                 this.removeItems();
             });
             EventBus.$on('beaconCountList', () => {
-                this._showGadgetCountList();
+                if (this.showBeaconList) {
+                    this.showBeaconList = false;
+                    this.showBeaconData = {};
+                } else {
+                    this.services.getGadgetCountList((data) => {
+                        this.showBeaconData = data;
+                        this.showBeaconList = true;
+                    })
+                }
             });
 
             window.addEventListener("beforeunload", () => {
@@ -5085,30 +5032,5 @@
     .context-menu-button-text {
         text-align: center;
         font-size: 0.8em;
-    }
-
-    .gcContainer {
-        width: 450px;
-        background: rgb(85, 185, 250);
-        opacity: 0.9;
-        text-align: center;
-        font-weight: bolder;
-        border-radius: 8px;
-        color: #333333;
-        -webkit-box-shadow: 11px 11px 20px #aaaaaa99;
-        box-shadow: 11px 11px 20px #aaaaaa99;
-    }
-    .gcTrContainer {
-
-    }
-    .gcTdFirstContainer {
-        display: inline-block;
-        width: 160px;
-        padding: 5px;
-    }
-    .gcTdContainer {
-        display: inline-block;
-        width: 60px;
-        padding: 5px;
     }
 </style>
