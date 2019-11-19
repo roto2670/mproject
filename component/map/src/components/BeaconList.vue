@@ -1,15 +1,15 @@
 <template>
     <div v-if="getShowStatus" id="beaconList" class="beaconListContainer">
         <div class="beaconListTitleContainer">
-            <div class="BeaconListTdFirstContainer">Kind
+            <div class="beaconListTdFirstContainer">Kind
             </div>
-            <div class="BeaconListTdContainer">AT1
+            <div class="beaconListTdContainer">AT1
             </div>
-            <div class="BeaconListTdContainer">AT2
+            <div class="beaconListTdContainer">AT2
             </div>
-            <div class="BeaconListTdContainer">Other
+            <div class="beaconListTdContainer">Other
             </div>
-            <div class="BeaconListTdContainer">Total
+            <div class="beaconListTdContainer">Total
             </div>
         </div>
         <div class="beaconListContentContainer">
@@ -18,15 +18,15 @@
             </BeaconListItem>
         </div>
         <div class="beaconListBottomContainer">
-            <div class="BeaconListTdFirstContainer">Total
+            <div class="beaconListTdFirstContainer">Total
             </div>
-            <div class="BeaconListTdContainer">{{ getTotalAt1 }}
+            <div class="beaconListTdContainer">{{ getTotalAt1 }}
             </div>
-            <div class="BeaconListTdContainer">{{ getTotalAt2 }}
+            <div class="beaconListTdContainer">{{ getTotalAt2 }}
             </div>
-            <div class="BeaconListTdContainer">{{ getTotalOther }}
+            <div class="beaconListTdContainer">{{ getTotalOther }}
             </div>
-            <div class="BeaconListTdContainer">{{ getTotal }}
+            <div class="beaconListTdContainer">{{ getTotal }}
             </div>
         </div>
     </div>
@@ -117,12 +117,12 @@ export default {
     box-shadow: 11px 11px 20px #aaaaaa99;
 }
 
-.BeaconListTdFirstContainer {
+.beaconListTdFirstContainer {
     display: inline-block;
     width: 140px;
     padding: 5px;
 }
-.BeaconListTdContainer {
+.beaconListTdContainer {
     display: inline-block;
     width: 40px;
     padding: 5px;

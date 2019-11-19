@@ -56,4 +56,14 @@ export default {
 }
 </script>
 <style>
+.beaconListTdFirstContainer {
+    display: inline-block;
+    width: 140px;
+    padding: 5px;
+}
+.beaconListTdContainer {
+    display: inline-block;
+    width: 40px;
+    padding: 5px;
+}
 </style>
