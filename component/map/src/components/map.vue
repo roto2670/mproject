@@ -2,6 +2,7 @@
 <div class="main-container">
     <div :id="id" v-if="isEmptyUrl">
     </div>
+    <OnAir :isOnAir="onAir"></OnAir>
     <SpeakerInfoWindow :item="speakerInfoWindowItems" :isForGroup="false" v-if="isShowingInfoWindow" @select-close="handleInfoWindowClose"></SpeakerInfoWindow>
 </div>
 </template>
@@ -10,6 +11,7 @@
     import * as maptalks from 'maptalks'
     import * as beaconDetector from '@/services/beacon-detector';
     import SpeakerInfoWindow from '@/components/SpeakerInfoWindow';
+    import OnAir from '@/components/OnAir';
     import util from '@/services/util';
     import { EventBus } from "../main";
     import { setTimeout, setInterval } from 'timers';
@@ -67,6 +69,7 @@
                 isRemoveAll: false,
                 ipcamStreamData: {},
                 gadgetCountInfoWindow: null,
+                onAir: false,
                 markerMap: {
                     hubs: {},
                     cams: {},
@@ -80,7 +83,8 @@
             }
         },
         components: {
-            SpeakerInfoWindow
+            SpeakerInfoWindow,
+            OnAir
         },
         methods: {
             initloadMap() {
@@ -3017,6 +3021,7 @@
                 //TODO: event handling
                 const isStatus = data.v,
                       nowStatus = this.$store.getters.getNowPlaying;
+                this.onAir = isStatus;
                 this.$store.commit('updateStreamingStatus', isStatus)
                 if (!isStatus) {
                     this.$store.commit('updateNowPlaying', 0)

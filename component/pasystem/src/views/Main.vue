@@ -1,5 +1,6 @@
 <template>
     <div id="main" class="main-container">
+        <OnAir :isOnAir="onAir"></OnAir>
         <input class="file-input" type="file" ref="file" @change="handleFileUpload()"/>
         <Top :selectedType="isTopPressedType" @select-top-button="handleTopButton"></Top>
         <List :groupList="groupList" :alarmList="playList" :reserveList="reserveAlarmList"
@@ -43,6 +44,7 @@ import ReserveWindow from '@/components/topList/ReserveWindow';
 import InfoWindow from '@/components/InfoWindow';
 import ContextMenu from '@/components/ContextMenu';
 import ReserveItemInfoWindow from '@/components/topList/ReserveItemInfoWindow';
+import OnAir from '@/components/OnAir';
 import { EventBus } from "@/main";
 export default {
     name: 'Main',
@@ -55,7 +57,8 @@ export default {
         ContextMenu,
         List,
         ReserveWindow,
-        ReserveItemInfoWindow
+        ReserveItemInfoWindow,
+        OnAir
     },
     data() {
         return {
@@ -83,6 +86,7 @@ export default {
             playList: [],
             leftSelectedSoundId: '',
             leftSelectedReserveId: '',
+            onAir: false,
             polygonSetting: {
                 play : {
                     polygonFill: 'rgb(255, 75, 25)',
@@ -853,6 +857,7 @@ export default {
             const isStatus = data.v,
                   nowStatus = this.$store.getters.getNowPlaying;
             this.$store.commit('updateStreamingStatus', isStatus)
+            this.onAir = isStatus;
             if (!isStatus) {
                 this.$store.commit('updateNowPlaying', 0)
             } else {
