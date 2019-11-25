@@ -102,8 +102,8 @@ export default {
 <style>
 .beaconListContainer {
     position:absolute;
-    left: 72%;
-    top: %;
+    right: 0.5%;
+    top: 0.5%;
     z-index: 4;
     width: 370px;
     background: rgb(85, 185, 250);
