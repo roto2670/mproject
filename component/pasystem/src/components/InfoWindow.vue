@@ -42,7 +42,7 @@
             @select-speaker="handleSelectSpeaker" @select-volume="handleVolume" ></GroupPlayList>
         </div>
         <div v-else class="info-right-panel">
-            <PlayList :list="playList" @select-speaker="handleSelectSpeaker" @select-volume="handleVolume" ></PlayList>
+            <PlayList :list="playList" ref="playlist" @select-speaker="handleSelectSpeaker" @select-volume="handleVolume" ></PlayList>
         </div>
         <div class="info-close-button" @click="handleSelectCloseButton"></div>
     </div>
@@ -74,6 +74,7 @@ export default {
             playList: [],
             speakersInGroup: [],
             nowPlaying: null,
+            uuid: null,
             soundVolume: 80
         }
     },
@@ -95,11 +96,24 @@ export default {
             console.log("Select item : ", item);
         },
         handleSelectCloseButton() {
+            this.$refs.playlist.handlePauseRecord();
+            if (this.nowPlaying != 'record') {
+                const jsondata = {};
+                jsondata.uuid = this.uuid;
+                this.services.stopStreamAlarm(jsondata, () => {
+                    console.log("Success to stop alarm");
+                    this.nowPlaying = null;
+                    this.uuid = null;
+                }, (error) => {
+                    console.log("Failed to stop alarm");
+                });
+            }
             this.$emit('select-close');
         },
         handleSelectSpeaker(data) {
             const jsondata = {}
             jsondata.uuid = data.uuid;
+            this.uuid = data.uuid;
             jsondata.volume = data.volume;
             if (data.selectedItem == 'record'){
                 jsondata.alarm_id = data.selectedItem;
@@ -162,6 +176,7 @@ export default {
                     console.log("Failed to send Record item");
                 });
             } else {
+                this.uuid = null;
                 this.services.stopStreamAlarm(jsondata, () => {
                     console.log("Success to send Record item");
                     this.nowPlaying = null;
