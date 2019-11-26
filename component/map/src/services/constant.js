@@ -46,7 +46,8 @@ window.CONSTANTS = {
     CONTEXT_TYPE: {
         SCANNER: 0,
         IPCAM: 1,
-        SPEAKER: 2
+        SPEAKER: 2,
+        ROUTER: 3
     },
     USER_STAGE: {
         SK_ADMIN: 0,
@@ -89,7 +90,8 @@ window.CONSTANTS = {
         IPCAM: "ipcam",
         BEACON: "beacon",
         MIBSSKEC: "mibsskec",
-        SPEAKER: "speaker"
+        SPEAKER: "speaker",
+        ROUTER: "router"
     },
     MICROPHONE_ACCESS_STATE: {
         ALREADY_GRANT: 'granted',

@@ -12,6 +12,7 @@ export default new Vuex.Store({
 		detectedgadgets: {},
 		ipcams: {},
 		speakers: {},
+		routers: {},
 		hubListDetectOneGadget: {},
 		gadgetListDetectedByOneHub: {},
 		speaker: {},
@@ -107,7 +108,13 @@ export default new Vuex.Store({
     },
     getNowPlaying: (state) => {
         return state.nowPlaying;
-    }
+    },
+		getRouters: (state) => {
+			return _.values(state.routers);
+		},
+		getRouter: (state) => (id) => {
+			return state.routers[id];
+		}
 	},
 	mutations: {
 		addHub(state, payload) {
@@ -305,19 +312,30 @@ export default new Vuex.Store({
 			state.alarms[payload.id] = payload.data;
 		},
 		addGroup(state, payload) {
-            if (!_.has(state.groupList, payload.id)) {
-                state.groupList[payload.id] = payload;
-            }
-        },
-        removeGroup(state, id) {
-            if (_.has(state.groupList, id)) {
-                delete state.groupList[id];
-            }
-        },
-        updateGroup(state, payload) {
-            if (_.has(state.groupList, payload.id)) {
-                state.groupList[payload.id] = payload;
-            }
-        }
-	}
+			if (!_.has(state.groupList, payload.id)) {
+				state.groupList[payload.id] = payload;
+			}
+		},
+		removeGroup(state, id) {
+				if (_.has(state.groupList, id)) {
+					delete state.groupList[id];
+				}
+		},
+		updateGroup(state, payload) {
+				if (_.has(state.groupList, payload.id)) {
+					state.groupList[payload.id] = payload;
+				}
+		},
+		addRouter(state, payload) {
+			state.routers[payload.id] = payload;
+		},
+		removeRouter(state, id) {
+			delete state.routers[id];
+		},
+		updateRouterData(state, payload) {
+			if (_.has(state.routers, payload.id)) {
+				_.extend(state.routers[payload.id], payload);
+			}
+		}
+	},
 })
