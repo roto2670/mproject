@@ -1,5 +1,5 @@
 window.CONSTANTS = {
-    IS_DEV: true,
+    IS_DEV: false,
     IS_MOCK: false,
     HUB_VIEW : {
         NOT_IN_MAP : 0,
