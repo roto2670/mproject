@@ -1,5 +1,5 @@
 window.CONSTANTS = {
-    IS_DEV: false,
+    IS_DEV: true,
     IS_MOCK: false,
     HUB_VIEW : {
         NOT_IN_MAP : 0,
@@ -19,23 +19,23 @@ window.CONSTANTS = {
         2: "AT2"
     },
     GADGET_INFO: {
-        1: "JUMBO DRILL(2B)",
-        2: "JUMBO DRILL(3B)",
-        3: "CHARGING CAR",
-        4: "WHEEL LOADER",
-        5: "DUMP TRUCK",
-        6: "EXCAVATOR(WHEEL)",
-        7: "EXCAVATOR(CRAWLER)",
-        8: "SHOTCRETE MACHINE",
+        1: "Jumbo Drill(2B)",
+        2: "Jumbo Drill(3B)",
+        3: "Charging Car",
+        4: "Wheel Loader",
+        5: "Dump Truck",
+        6: "Excavator(Wheel)",
+        7: "Excavator(Crawler)",
+        8: "Shotcrete Machine",
         9: "JCB",
-        10: "CORE DRILLING MACHINE",
-        11: "DOZER",
-        12: "GROUTING MACHINE",
-        13: "MAI PUMP",
-        14: "MOBILE PRODUCTION UNIT",
-        15: "CHARGING PUMP UNIT",
-        16: "BUS",
-        17: "WCBH DRILLING MACHINE",
+        10: "Core Drilling Machine",
+        11: "Dozer",
+        12: "Grouting Rig",
+        13: "Mai Pump",
+        14: "MPU(Mobile Production Unit)",
+        15: "CPU(Charging Pump Unit)",
+        16: "Bus",
+        17: "WCBH Drilling Machine",
         18: "Explosive Van",
         19: "Concrete Mixer Truck"
     },
@@ -117,8 +117,6 @@ window.CONSTANTS = {
 };
 if (window.CONSTANTS.IS_DEV) {
     window.CONSTANTS.URL.CONSOLE = 'http://127.0.0.1:5000';
-    // window.CONSTANTS.URL.CONSOLE = 'http://192.168.0.15:5000';
-    //window.CONSTANTS.URL.WEB_SOCKET = '192.168.0.15';
     window.CONSTANTS.URL.WEB_SOCKET = '127.0.0.1';
     window.CONSTANTS.URL.PA = 'http://127.0.0.1:5561';
 }

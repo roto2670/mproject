@@ -5,7 +5,8 @@
     <OnAir :isOnAir="onAir"></OnAir>
     <BeaconList v-if="showBeaconList" :isShow="showBeaconList" :showBeaconData="showBeaconData"
     :typeRange="tagKinds"></BeaconList>
-    <SpeakerInfoWindow :item="speakerInfoWindowItems" :isForGroup="false" v-if="isShowingInfoWindow" @select-close="handleInfoWindowClose"></SpeakerInfoWindow>
+    <SpeakerInfoWindow :item="speakerInfoWindowItems" :isForGroup="false"
+    v-if="isShowingInfoWindow" @select-close="handleInfoWindowClose"></SpeakerInfoWindow>
 </div>
 </template>
 
@@ -56,6 +57,7 @@
                 alarmData: {},
                 ipcam: '',
                 ipcams: [],
+                routerLayer: '',
                 contextCoordinate: null,
                 infoWindow: null,
                 hubInfoWindow: null,
@@ -152,6 +154,7 @@
                         this.camFixedLayer = new maptalks.VectorLayer('vector25').addTo(this.map);
                         this.camMobileLayer = new maptalks.VectorLayer('vector26').addTo(this.map);
                         this.lostTagCamLayer = new maptalks.VectorLayer('vector27').addTo(this.map);
+                        this.routerLayer = new maptalks.VectorLayer('vector29').addTo(this.map);
                         this.initContextMenu();
                         this.map.fitExtent();
                         this.loadItems(this.info);
@@ -202,7 +205,6 @@
                     };
                     this.map.on('contextmenu', (e) => {
                         this.contextCoordinate = e.coordinate;
-                        // this.map.openMenu(e.coordinate);
                         this.map.closeMenu();
                         this.map.setMenu(this.contextMenuOption).openMenu(e.coordinate);
 
@@ -284,7 +286,8 @@
                         this._handleDetectedGadgets(list);
                     })
 
-                    // this._.forEach(this.markerMap.hubs, (marker, hid) => { //TODO: 디텍트 된 비콘들의 개수를 허브 위치에 숫자로 표현 가능, overlap, 겹침
+                    //TODO: 디텍트 된 비콘들의 개수를 허브 위치에 숫자로 표현 가능, overlap, 겹침
+                    // this._.forEach(this.markerMap.hubs, (marker, hid) => {
                     //     this.countGadgetOnHub(hid);
                     // })
                     console.log("Sucess to detect gadgets");
@@ -381,54 +384,6 @@
                 if (!this._.has(this.speakerLayer, id)) {
                     this.speakerLayer[id] = new maptalks.VectorLayer(`speaker${ id }vector`).addTo(this.map);
                 }
-            },
-            drawItems() {
-                const hubs = this.$store.getters.getHubs,
-                    ipcams = this.$store.getters.getIpCams;
-                this.removeGadgetItems();
-                const currentTime = new Date() / 1000.0;
-                this._.forEach(this.markerMap.hubs, (hub, hid) => {
-                    var list = this.$store.getters.getGadgetListDetectedByOneHub(hid);
-                    this._.forEach(list, (item, gid) => {
-                        if (currentTime - item._t < 15) {
-                            this.$store.commit('removeDetectedGadgetWithHub', item);
-                        }
-                    });
-                });
-                this.hasSameGadget();
-                this._.forEach(hubs, (hub) => {
-                    if (!this._.isEmpty(hub.custom) && !this._.isEmpty(hub.custom.map_location)) {
-                        this.drawHub(hub.id, hub.custom.map_location, true);
-                        this.drawWorkers(hub.id, hub.custom.map_location);
-                    }
-                });
-                if (!!this.hubInfoWindow) {
-                    if (this.isShowingByStage(window.CONSTANTS.USER_STAGE.SK_ADMIN)) {
-                        const content = this.getHubInfoWindowContent(this.hubInfoWindow.id),
-                            infoPanel = document.getElementById('worker-info-panel');
-                        if (!!infoPanel) {
-                            infoPanel.innerHTML = content.context;
-                            document.getElementById('worker-info-count').innerText = content.count;
-                            this.registerGadgetHandlerInHubInfoWindow();
-                        }
-                    } else {
-                        const content = this.getHubInfoWindowContent(this.hubInfoWindow.id),
-                            infoPanel = document.getElementById('normal-worker-info-panel');
-                        if (!!infoPanel) {
-                            infoPanel.innerHTML = content.context;
-                            this.registerGadgetHandlerInHubInfoWindow();
-                        }
-                    }
-                }
-
-                if (!!this.ipcamInfoWindow) { //name 변경된 경우
-                    const content = this.getIpcamInfoWindowContent(this.ipcamInfoWindow.id),
-                        ipcamContent = document.getElementById('ipcamContent');
-                    if (!!ipcamContent) {
-                        ipcamContent.innerHTML = content.content;
-                    }
-                }
-                this.drawIpCams(ipcams, true);
             },
             handleInfoWindowClose() {
                 this.speakerInfoWindowItems = {};
@@ -1451,143 +1406,6 @@
                     }
                 } else {
                     console.warn(`Failed to remove ipcam marker, cannot found ipcam by given id: ${ ipcamId }`);
-                }
-            },
-            // showSpeakerWindow(id, marker) {
-            //     let content = '',
-            //         speaker = this.$store.getters.getSpeaker(id),
-            //         name = null;
-            //     if (!!this.speakerInfoWindowItem) {
-            //         if (this.speakerInfoWindowItem.id === id) {
-            //             marker.removeInfoWindow();
-            //         }
-            //     }
-            //     // <div class="playContainer"><div class="play-button"></div><div class="pause-button"></div></div>
-            //     marker.setInfoWindow({
-            //         content: `<div class="top-speaker-container">
-            //                     <div class="speaker-left-container">
-            //                         <div class="speakerName">SPEAKER</div>
-            //                         <div class="speaker-name" title="${ speaker.name }">${ speaker.name }</div>
-            //                         <div class="custom-speaker-button">
-            //                             <div class="mic-button"><div class="mic-button-title">WANRNING 1</div><div class="playContainer"></div></div>
-            //                             <div class="mic-button"><div class="mic-button-title">WANRNING 2</div></div>
-            //                             <div class="mic-button"><div class="mic-button-title">WANRNING 3</div></div>
-            //                         </div>
-            //                     </div>
-            //                     <div class="speaker-right-container">
-            //                     <div class="speaker-on-off"></div>
-            //                     <img class="speakerImg" src="${ window.CONSTANTS.URL.BASE_IMG }construction-site.png"></img>
-            //                     </div>
-            //                     <div class="speaker-close-button"></div>
-            //                 </div>`,
-            //         custom: true,
-            //         dy: -250,
-            //         autoPan: false
-            //     });
-            //     marker.openInfoWindow();
-            //     document.getElementsByClassName('mic-button-title')[0].onclick = () => {
-            //         var restContainer = document.getElementsByClassName('playContainer')[0];
-            //         if (!!restContainer.classList.length > 1) {
-            //             restContainer.classList.remove('speaker-stop-button');
-            //         } else if (!!restContainer.innerHTML) {
-            //             restContainer.innerHTML = "";
-            //         }
-
-            //         this._checkAccessMicrophone((permissionState) => {
-            //             if (permissionState === window.CONSTANTS.MICROPHONE_ACCESS_STATE.DENIED) {
-            //                 console.log("Denied microphone access");
-            //                 this.sweetbox.fire('Denied microphone access by system or user');
-            //             } else {
-            //                 this._requireAccess();
-            //             }
-            //         });
-            //     }
-
-            //     document.getElementsByClassName('speaker-close-button')[0].onclick = () => {
-            //         marker.removeInfoWindow();
-            //     }
-            // },
-            _checkAccessMicrophone(resultCallback) {
-                navigator.permissions.query({
-                    name: 'microphone'
-                }).then(result => {
-                    resultCallback(result.state);
-                });
-            },
-            _requireAccess() {
-                var playContainerContent = document.getElementsByClassName('playContainer')[0],
-                    onoffClassList = document.getElementsByClassName('speaker-on-off')[0].classList,
-                    content = `<div class="record-button"></div><div class="broadcast-button"></div>`;
-                navigator.mediaDevices.getUserMedia({
-                    audio: true
-                }).then((stream) => {
-                    // const context = new AudioContext(),
-                    //       input = context.createMediaStreamSource(stream),
-                    //       processor = context.createScriptProcessor(4096, 2, 2);
-                    // input.connect(processor);
-                    // // node.connect(context.destination);
-                    // processor.onaudioprocess = function(e){
-                    //     // Do something with the data, i.e Convert this to WAV
-                    //     console.log(e.inputBuffer);
-                    // };
-                    // // node.connect(processor)
-                    // const options = {mimeType: 'video/webm;codecs=vp9'};
-                    const mediaRecorder = new MediaRecorder(stream);
-                    mediaRecorder.ondataavailable = (e) => {
-                        this._playRecordedData(e);
-                    }
-                    mediaRecorder.start();
-                    playContainerContent.innerHTML = content;
-                    document.getElementsByClassName('record-button')[0].onclick = () => {
-                        var speakerStopButton = `<div class="speaker-stop-button"></div>`
-                        playContainerContent.innerHTML = "";
-                        playContainerContent.innerHTML = speakerStopButton;
-                        onoffClassList.add('speaker-on');
-                        document.getElementsByClassName('speaker-stop-button')[0].onclick = () => {
-                            mediaRecorder.stop();
-                            playContainerContent.innerHTML = "";
-                            onoffClassList.remove('speaker-on');
-                            onoffClassList.add('speaker-off');
-                            setTimeout(() => {
-                                onoffClassList.remove('speaker-off');
-                            }, 3000);
-                        }
-                    }
-
-                    document.getElementsByClassName('broadcast-button')[0].onclick = () => {
-                        playContainerContent.innerHTML = "";
-                    }
-
-                    // console.log(processor);
-                }).catch(e => console.log(e));
-            },
-            _playRecordedData(result) {
-                const audioUrl = URL.createObjectURL(result.data),
-                      audio = new Audio(audioUrl);
-                var context = `<div class="play-button"></div>
-                            <div class="pause-button"></div>
-                            <div class="save-button"></div>`,
-                    reader = new window.FileReader(),
-                    base64data = '',
-                    res = '';
-                reader.readAsDataURL(result.data);
-                reader.onloadend = (e) => {
-                    base64data = reader.result,
-                    res = base64data.split(',')[1];
-                    // console.log("speaker res: ", res);
-                }
-                document.getElementsByClassName('playContainer')[0].innerHTML = context;
-
-                document.getElementsByClassName('play-button')[0].onclick = () => {
-                    audio.play();
-                }
-
-                document.getElementsByClassName('pause-button')[0].onclick = () => {
-                    audio.pause();
-                }
-
-                document.getElementsByClassName('save-button')[0].onclick = () => {
-                    this.sweetbox.fire('Success to save record');
                 }
             },
             removeSpeakerMarker(id) {
@@ -4491,253 +4309,6 @@
     .beacon-moi-container {
         position: relative;
         width: 100%;
-    }
-    .top-speaker-container {
-        box-shadow: 10px 10px 25px #aaaaaa;
-        border-radius: 10px;
-        overflow: hidden;
-    }
-
-    .speaker-left-container {
-        width: 240px;
-        height: 270px;
-        color: black;
-        font-weight: 500;
-        background-color: rgb(250, 115, 120);
-        font-size: large;
-        position: absolute;
-        border-top-left-radius: 10px;
-        border-bottom-left-radius: 10px;
-        letter-spacing: 1px;
-        overflow: hidden;
-    }
-
-    .speakerName {
-        text-align: left;
-        font-size: 15px;
-        padding-top: 25px;
-        padding-bottom: 4px;
-        opacity: .5;
-        color: white;
-        padding-left: 20px;
-    }
-
-    .speaker-name {
-        text-align: left;
-        font-size: 15px;
-        padding-right: 10px;
-        font-weight: 900;
-        white-space: nowrap;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        color: white;
-        padding-left: 20px;
-    }
-
-    .speaker[title]:hover::after,
-    .speaker[title]:focus::after {
-        content: attr(title);
-        position: absolute;
-        transform: translate3d(0, 50%, 0);
-        width: auto;
-        white-space: nowrap;
-        background: black;
-        opacity: 0.7;
-        color: #fff;
-        border-radius: 2px;
-        box-shadow: 1px 1px 5px 0 rgba(0, 0, 0, 0.4);
-        font-size: 14px;
-        padding: 3px 5px;
-        border-width: 0.5em 0 0.5em 0.5em;
-        border-color: transparent transparent transparent white;
-        -webkit-filter: drop-shadow(1px 2px 1px #bcbcbc);
-        filter: drop-shadow(1px 2px 1px #bcbcbc);
-    }
-
-    .custom-speaker-button {
-        height: 130px;
-        overflow: scroll;
-        text-align: left;
-        margin-top: 30%;
-        color: white;
-        background-color: rgb(227 95 95);
-    }
-
-    .custom-speaker-button div+div {
-        border-top: 3px solid rgb(250, 115, 120);
-    }
-
-    .mic-button {
-        height: 40px;
-        overflow: hidden;
-        text-align: left;
-        font-size: 15px;
-        padding-left: 12px;
-        font-weight: 900;
-        white-space: nowrap;
-        text-overflow: ellipsis;
-        position: relative;
-    }
-
-    .mic-button-title {
-        display: inline-block;
-        position: absolute;
-        top: 50%;
-        cursor: pointer;
-        transform: translateY(-50%);
-    }
-
-    .speaker-right-container {
-        height: 270px;
-        width: 300px;
-        margin-left: 240px;
-        border-top-right-radius: 10px;
-        border-bottom-right-radius: 10px;
-        background-color: white;
-    }
-
-    .speaker-stop-button {
-        background-image: url('../../public/static/location/imgs/record-stop.svg');
-        background-position: center;
-        background-repeat: no-repeat;
-        background-size: 25px;
-        border-radius: 50%;
-        display: inline-block;
-        margin-left: 50% !important;
-        width: 25px;
-        height: 25px;
-        cursor: pointer;
-    }
-
-    .speaker-on {
-        background-image: url('../../public/static/location/imgs/speaker-on.svg');
-        background-position: center;
-        background-repeat: no-repeat;
-        background-size: 40px;
-        display: inline-block;
-        position: absolute;
-        width: 70px;
-        height: 70px;
-        margin-left: 25%;
-        margin-top: 20%;
-        background-color: gray;
-        z-index: 4;
-        border-radius: 80%;
-        opacity: .7;
-    }
-
-    .speaker-off {
-        background-image: url('../../public/static/location/imgs/speaker-off.svg');
-        background-position: center;
-        background-repeat: no-repeat;
-        background-size: 40px;
-        display: inline-block;
-        position: absolute;
-        width: 70px;
-        height: 70px;
-        margin-left: 25%;
-        margin-top: 20%;
-        background-color: gray;
-        z-index: 4;
-        border-radius: 80%;
-        opacity: .7;
-    }
-
-    .playContainer {
-        transform: translateY(-50%);
-        top: 50%;
-        position: absolute;
-        margin-left: 40%;
-        border-top: 0 !important;
-    }
-
-    .record-button {
-        background-image: url('../../public/static/location/imgs/record-button.svg');
-        background-position: center;
-        background-repeat: no-repeat;
-        background-size: 15px;
-        display: inline-block;
-        border-top: 0 !important;
-        margin-left: 35%;
-        width: 20px;
-        height: 20px;
-        cursor: pointer;
-    }
-
-    .broadcast-button {
-        background-image: url('../../public/static/location/imgs/broadcast-button.svg');
-        background-position: center;
-        background-repeat: no-repeat;
-        background-size: 15px;
-        display: inline-block;
-        border-top: 0 !important;
-        margin-left: 35%;
-        width: 20px;
-        height: 20px;
-        cursor: pointer;
-    }
-
-    .play-button {
-        background-image: url('../../public/static/location/imgs/play-button.svg');
-        background-position: center;
-        background-repeat: no-repeat;
-        background-size: 15px;
-        display: inline-block;
-        border-top: 0 !important;
-        margin-left: 35%;
-        width: 20px;
-        height: 20px;
-        cursor: pointer;
-    }
-
-    .pause-button {
-        background-image: url('../../public/static/location/imgs/pause-button.svg');
-        background-position: center;
-        background-repeat: no-repeat;
-        background-size: 15px;
-        display: inline-block;
-        border-top: 0 !important;
-        margin-left: 11%;
-        width: 20px;
-        height: 20px;
-        cursor: pointer;
-    }
-
-    .save-button {
-        background-image: url('../../public/static/location/imgs/save-button.svg');
-        background-position: center;
-        background-repeat: no-repeat;
-        background-size: 15px;
-        display: inline-block;
-        border-top: 0 !important;
-        margin-left: 11%;
-        width: 20px;
-        height: 20px;
-        cursor: pointer;
-    }
-
-    .speakerImg {
-        height: 270px;
-        width: 300px;
-        border-top-right-radius: 10px;
-        border-bottom-right-radius: 10px;
-        background-color: white;
-    }
-
-    .speaker-close-button {
-        position: absolute;
-        background-size: 13px !important;
-        background-color: rgba(255 117 117) !important;
-        background-image: url(../../public/static/location/imgs/close.svg);
-        border-radius: 4px 4px 0 0!important;
-        z-index: -1;
-        height: 35px;
-        width: 35px;
-        background-repeat: no-repeat;
-        background-position: center center;
-        left: 91%;
-        top: -13%;
-        cursor: pointer;
     }
 
     .bcns {
