@@ -96,17 +96,19 @@ export default {
             console.log("Select item : ", item);
         },
         handleSelectCloseButton() {
-            this.$refs.playlist.handlePauseRecord();
-            if (this.nowPlaying != 'record') {
-                const jsondata = {};
-                jsondata.uuid = this.uuid;
-                this.services.stopStreamAlarm(jsondata, () => {
-                    console.log("Success to stop alarm");
-                    this.nowPlaying = null;
-                    this.uuid = null;
-                }, (error) => {
-                    console.log("Failed to stop alarm");
-                });
+            if (!!this.nowPlaying) {
+                this.$refs.playlist.handlePauseRecord();
+                if (this.nowPlaying != 'record') {
+                    const jsondata = {};
+                    jsondata.uuid = this.uuid;
+                    this.services.stopStreamAlarm(jsondata, () => {
+                        console.log("Success to stop alarm");
+                        this.nowPlaying = null;
+                        this.uuid = null;
+                    }, (error) => {
+                        console.log("Failed to stop alarm");
+                    });
+                }
             }
             this.$emit('select-close');
         },
