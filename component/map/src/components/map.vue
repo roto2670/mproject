@@ -63,8 +63,10 @@
                 hubInfoWindow: null,
                 ipcamInfoWindow: null,
                 speakerInfoWindow: null,
+                routerInfoWindow: null,
                 checkedMoiFilter: false,
                 checkSpeakerFilter: false,
+                checkRouterFilter: false,
                 setIntervalData: {},
                 gadgetCount: {},
                 gadgetInfoWindow: null,
@@ -79,7 +81,8 @@
                 markerMap: {
                     hubs: {},
                     cams: {},
-                    speakers: {}
+                    speakers: {},
+                    routers: {}
                 },
                 tags: {
                     xll: ['1', '2', '8'],
@@ -136,25 +139,25 @@
                     });
                     this.map.once('baselayerload', () => {
                         // this._.first(document.getElementsByClassName('loader')).remove();
-                        this.hubPortalLayer = new maptalks.VectorLayer('vector21').addTo(this.map);
-                        this.hubAT1Layer = new maptalks.VectorLayer('vector22').addTo(this.map);
-                        this.hubAT2Layer = new maptalks.VectorLayer('vector23').addTo(this.map);
-                        this.lostTagHubLayer = new maptalks.VectorLayer('vector28').addTo(this.map);
+                        this.hubPortalLayer = new maptalks.VectorLayer('vector31').addTo(this.map);
+                        this.hubAT1Layer = new maptalks.VectorLayer('vector32').addTo(this.map);
+                        this.hubAT2Layer = new maptalks.VectorLayer('vector33').addTo(this.map);
+                        this.lostTagHubLayer = new maptalks.VectorLayer('vector38').addTo(this.map);
                         this._.forEach(this.gadgetInfoNumber, (index) => {
                             this.workerLayer[index] = new maptalks.VectorLayer(`vector${ index }`).addTo(this.map);
                             this.workerLayer[index].setZIndex(1);
                         })
-                        this.lostTagWorkerLayer = new maptalks.VectorLayer('vector20').addTo(this.map);
+                        this.lostTagWorkerLayer = new maptalks.VectorLayer('vector30').addTo(this.map);
                         this.lostTagWorkerLayer.setZIndex(1);
                         this.noGroupSpeakerkLayer = new maptalks.VectorLayer('speakerVector4').addTo(this.map);
                         this.hubPortalLayer.setZIndex(3);
                         this.hubAT1Layer.setZIndex(3);
                         this.hubAT2Layer.setZIndex(3);
                         this.lostTagHubLayer.setZIndex(3);
-                        this.camFixedLayer = new maptalks.VectorLayer('vector25').addTo(this.map);
-                        this.camMobileLayer = new maptalks.VectorLayer('vector26').addTo(this.map);
-                        this.lostTagCamLayer = new maptalks.VectorLayer('vector27').addTo(this.map);
-                        this.routerLayer = new maptalks.VectorLayer('vector29').addTo(this.map);
+                        this.camFixedLayer = new maptalks.VectorLayer('vector35').addTo(this.map);
+                        this.camMobileLayer = new maptalks.VectorLayer('vector36').addTo(this.map);
+                        this.lostTagCamLayer = new maptalks.VectorLayer('vector37').addTo(this.map);
+                        this.routerLayer = new maptalks.VectorLayer('vector39').addTo(this.map);
                         this.initContextMenu();
                         this.map.fitExtent();
                         this.loadItems(this.info);
@@ -197,9 +200,11 @@
                         'items': `<div class="custom_menu"><div class="plus-symbol"></div>
                             <div class="deviceText">Device</div><div class="addText">ADD</div>
                             <div class="additem">
-                            <div id="scanneritem">Add SCANNER</div>
-                            <div id="camitem">Add IPCAM</div>
-                            <div id="speakeritem">Add SPEAKER</div></div></div>`,
+                            <div id="scanneritem">Add Scanner</div>
+                            <div id="camitem">Add Ipcam</div>
+                            <div id="speakeritem">Add Speaker</div>
+                            <div id="routeritem">Add Router</div>
+                            </div></div>`,
                         dx: -75,
                         animation: 'fade'
                     };
@@ -209,15 +214,16 @@
                         this.map.setMenu(this.contextMenuOption).openMenu(e.coordinate);
 
                         document.getElementById('scanneritem').onclick = () => {
-                            this.handleAddItem('hub', e.coordinate);
+                            this.handleAddItem(window.CONSTANTS.PRODUCT_KIND.HUB, e.coordinate);
                         }
-
                         document.getElementById('camitem').onclick = () => {
-                            this.handleAddItem('ipcam', e.coordinate);
+                            this.handleAddItem(window.CONSTANTS.PRODUCT_KIND.IPCAM, e.coordinate);
                         }
-
                         document.getElementById('speakeritem').onclick = () => {
-                            this.handleAddItem('speaker', e.coordinate);
+                            this.handleAddItem(window.CONSTANTS.PRODUCT_KIND.SPEAKER, e.coordinate);
+                        }
+                        document.getElementById('routeritem').onclick = () => {
+                            this.handleAddItem(window.CONSTANTS.PRODUCT_KIND.ROUTER, e.coordinate);
                         }
                     });
                 }
@@ -232,6 +238,8 @@
                         drawMethod = this.drawIpcam;
                     } else if (kind === window.CONSTANTS.PRODUCT_KIND.SPEAKER)  {
                         drawMethod = this.drawSpeaker;
+                    } else if (kind === window.CONSTANTS.PRODUCT_KIND.ROUTER)  {
+                        drawMethod = this.drawRouter;
                     }
                     if (!!drawMethod) {
                         drawMethod(id, coordinate, false);
@@ -244,15 +252,19 @@
                     markers = {};
                 if (kind === window.CONSTANTS.PRODUCT_KIND.HUB) {
                     list = this.$store.getters.getHubs;
-                    kindName = 'SCANNER';
+                    kindName = 'Scanner';
                     markers = this.markerMap.hubs;
                 } else if (kind === window.CONSTANTS.PRODUCT_KIND.IPCAM) {
                     list = this.$store.getters.getIpCams;
-                    kindName = 'IPCAM';
+                    kindName = 'IPcam';
                     markers = this.markerMap.cams;
                 } else if (kind === window.CONSTANTS.PRODUCT_KIND.SPEAKER)  {
                     list = this.$store.getters.getSpeakers;
-                    kindName = 'SPEAKER';
+                    kindName = 'Speaker';
+                    markers = this.markerMap.speakers;
+                } else if (kind === window.CONSTANTS.PRODUCT_KIND.ROUTER)  {
+                    list = this.$store.getters.getRouters;
+                    kindName = 'Router';
                     markers = this.markerMap.speakers;
                 }
                 const context = `<div class="custom_menu"><div class="plus-symbol"></div>
@@ -368,7 +380,15 @@
                     this._.forEach(speakers, speaker => {
                         this.$store.commit('addSpeaker', speaker);
                     })
-                    this.drawSpeakers(speakers);
+                    this.drawSpeakers(speakers, true);
+                });
+
+                this.services.getRouters(routers => {
+                    console.log("Sucesss to get Routers", routers);
+                    this._.forEach(routers, router => {
+                        this.$store.commit('addRouter', router);
+                    })
+                    this.drawRouters(routers, true);
                 });
 
                 this.services.getAlarmList(alarms => {
@@ -422,10 +442,6 @@
                     )
 
                     let tagData = this._.first(hubData.tags);
-                    if (window.CONSTANTS.IS_MOCK) {
-                        tagData = parseInt(tagData) - 100;
-                        tagData = tagData.toString();
-                    }
                     if (tagData === "0") {
                         marker.addTo(this.hubPortalLayer);
                         this.markerMap.hubs[hubId] = marker;
@@ -532,6 +548,9 @@
                     } else if (kind === window.CONSTANTS.PRODUCT_KIND.SPEAKER) {
                         data = this.$store.getters.getSpeaker(id);
                         marker = this.markerMap.speakers[id];
+                    } else if (kind === window.CONSTANTS.PRODUCT_KIND.ROUTER) {
+                        data = this.$store.getters.getRouter(id);
+                        marker = this.markerMap.routers[id];
                     }
                     if (this._.has(data.custom, "map_location")) {
                         this._updateData([data], kind, (failedIdList) => {
@@ -743,22 +762,7 @@
                     let markerImg = this._selectBeaconFileUrl(beacon.gid).fileUrl;
                     if (!this._.isEmpty(beacon.tags)) {
                         tag = this._.first(beacon.tags);
-                        if (window.CONSTANTS.IS_MOCK) {
-                            if (parseInt(tag) < 100) {
-                               customLayer = this.lostTagWorkerLayer;
-                            } else {
-                                tag = parseInt(tag) - 100;
-                                tag = tag.toString();
-                                customLayer = this.workerLayer[tag];
-                            }
-                        } else {
-                            if (tag >= 100) {
-                                customLayer = this.lostTagWorkerLayer;
-                            } else {
-                                customLayer = this.workerLayer[tag];
-                            }
-                        }
-
+                        customLayer = this.workerLayer[tag];
                     } else {
                         customLayer = this.lostTagWorkerLayer;
                     }
@@ -818,14 +822,8 @@
                     }
                 }
                 if (!this._.isEmpty(gadget.tags)) {
-                    if (window.CONSTANTS.IS_MOCK) {
-                        tag = parseInt(this._.first(gadget.tags)) - 100;
-                        tag = tag.toString();
-                        gadgetKind = window.CONSTANTS.GADGET_INFO[tag];
-                    } else {
-                        tag = this._.first(gadget.tags);
-                        gadgetKind = window.CONSTANTS.GADGET_INFO[tag];
-                    }
+                    tag = this._.first(gadget.tags);
+                    gadgetKind = window.CONSTANTS.GADGET_INFO[tag];
                 }
 
                 if (!this._.isEmpty(hubIdList)) {
@@ -1060,10 +1058,6 @@
 
                     const fileUrl = this._selectIpcamFileUrl(ipcamId).fileUrl;
                     let tagData = this._.first(ipcamData.tags);
-                    if (window.CONSTANTS.IS_MOCK) {
-                        tagData = parseInt(tagData) - 100;
-                        tagData = tagData.toString();
-                    }
 
                     if (tagData === "0") {
                         customLayer = this.camFixedLayer;
@@ -1415,7 +1409,6 @@
                     marker.remove();
                     if (!!speaker && !!speaker.custom.map_location) {
                         delete speaker.custom.map_location;
-                        delete speaker.custom.is_visible_moi;
                         delete this.markerMap.speakers[id];
                         //TODO: change
                         this.$store.commit('updateSpeakerData', speaker);
@@ -1428,6 +1421,155 @@
                         console.warn(`Failed to clear speaker location, cannot found speaker model by given id: ${ id }`);
                     }
                 }
+            },
+            removeRouterMarker(id) {
+                let marker = this.markerMap.routers[id];
+                if (!!marker) {
+                    let router = this.$store.getters.getRouter(id);
+                    marker.remove();
+                    if (!!router && !!router.custom.map_location) {
+                        delete router.custom.map_location;
+                        delete this.markerMap.routers[id];
+                        //TODO: change
+                        this.$store.commit('updateRouterData', router);
+                        this._updateData([router], 'router', (failedIdList) => { //TODO
+                            if (!this._.isEmpty(failedIdList)) {
+                                this.sweetbox.fire('Sorry, router remove failed');
+                            }
+                        });
+                    } else {
+                        console.warn(`Failed to clear router location, cannot found router model by given id: ${ id }`);
+                    }
+                }
+            },
+            drawRouters(routerList, isUpdatedData) {
+                this._.forEach(routerList, (router) => {
+                    if (!this._.isEmpty(router.custom) && !this._.isEmpty(router.custom.map_location)) {
+                        this.drawRouter(router.id, router.custom.map_location, isUpdatedData);
+                    }
+                });
+            },
+            drawRouter(routerId, coordinate, isUpdatedData) {
+                console.debug('Try draw router, id: ', routerId);
+                let marker = null,
+                    routerData = this.$store.getters.getRouter(routerId);
+                let fileUrl = `${ window.CONSTANTS.URL.BASE_IMG }router.svg`; // if changed, declare const
+                // TODO: offline
+                // if (!speakerData.status) {
+                //     fileUrl = `${ window.CONSTANTS.URL.BASE_IMG }speaker-offline.png`;
+                // }
+
+                if (this._.has(this.markerMap.routers, routerId)) {
+                    if (!(this.markerMap.routers[routerId]._coordinates.x === coordinate.x) && !(this.markerMap.routers[routerId]._coordinates.y === coordinate.y)) {
+                        marker = this.markerMap.routers[routerId];
+                        marker.removeInfoWindow();
+                        marker.setCoordinates(coordinate);
+                        this.markerMap.routers[routerId] = marker;
+                    }
+                } else {
+                    marker = new maptalks.Marker(
+                        [coordinate.x, coordinate.y], {
+                            'symbol': {
+                                markerFile: fileUrl,
+                                markerWidth: this.markerWidth,
+                                markerHeight: this.markerHeight
+                            },
+                            draggable: this.isShowingByStage(window.CONSTANTS.USER_STAGE.SK_ADMIN)
+                        }
+                    )
+                    let tagData = this._.first(routerData.tags),
+                        customLayer = this.routerLayer;
+                    marker.addTo(customLayer);
+                    marker.on('click', (e) => {
+                        e.domEvent.stopPropagation();
+                        marker.closeInfoWindow();
+                        this.showRouterWindow(routerId, marker);
+                    });
+                    this.markerMap.routers[routerId] = marker;
+                    if (this.isShowingByStage(window.CONSTANTS.USER_STAGE.SK_ADMIN)) {
+                        marker.on('contextmenu', () => {
+                            marker.closeInfoWindow();
+                            this.showContextMenu(routerId, 3, marker);
+                        });
+                        marker.on('dragstart', () => {
+                            marker.closeInfoWindow();
+                        });
+                        marker.on('dragend', (e) => {
+                            const routerMarkerLocation = this.markerMap.routers[routerId]._coordinates;
+                            routerData.custom.map_location = {
+                                x: routerMarkerLocation.x,
+                                y: routerMarkerLocation.y
+                            }
+                            this.$store.commit('updateRouterData', routerData);
+
+                            if (!this._.has(this.setIntervalData, routerId)) {
+                                this.setLocationTimeOut(routerId, 'router');
+                            }
+                        });
+                        routerData.custom.map_location = {
+                            x: coordinate.x,
+                            y: coordinate.y
+                        }
+                        if (!isUpdatedData) {
+                            this._updateData([routerData], 'router', (failedList) => {
+                                if (!this._.isEmpty(failedList)) {
+                                    this.sweetbox.fire('Sorry, router location update failed');
+                                }
+                                this.$store.commit('updateRouterData', routerData);
+                            });
+                        }
+                    }
+                }
+            },
+            showRouterWindow(routerId, marker) {
+                let routerData = this.$store.getters.getRouter(routerId);
+
+                if(!this._.isEmpty(this.infoWindow)) {
+                    this.infoWindow.remove();
+                }
+                if (!!this.routerInfoWindow) {
+                    marker.removeInfoWindow();
+                    this.routerInfoWindow = null;
+                }
+                marker.setInfoWindow({ // TODO: vue component
+                    content: `<div class="routerInfo">
+                                <div class="routerContainer">
+                                    <div class="routerSubContainer">
+                                      <div class="routerSubTitle">Name</div>
+                                      <div class="routerSubValue">${ routerData.name }</div>
+                                    </div>
+                                    <div class="routerSubContainer">
+                                      <div class="routerSubTitle">IP Address</div>
+                                      <div class="routerSubValue">${ routerData.custom.ip }</div>
+                                    </div>
+                                    <div class="router-status"></div>
+                                </div>
+                                <div class="router-close-button-custom"></div>
+                              </div>`,
+                    width: 350,
+                    custom: true,
+                    autoPan: false,
+                    dy: -15  // TODO:  before -300
+                });
+                marker.openInfoWindow();
+                if (routerData.custom.lock) {
+                    document.getElementsByClassName('router-status')[0].classList.add('lock-img');
+                } else {
+                    document.getElementsByClassName('router-status')[0].classList.add('unlock-img');
+                }
+                this.routerInfoWindow = {
+                    id: routerId,
+                    item: marker._infoWindow
+                };
+
+                this._.last(document.getElementsByClassName('router-close-button-custom')).onclick = () => {
+                    marker.removeInfoWindow();
+                }
+                this.routerInfoWindow.item.on('remove', () => {
+                    if (!!this.routerInfoWindow) {
+                        this.routerInfoWindow = null;
+                    }
+                })
             },
             _updateData(data, kind, resultCallback) {
                 this.services.updateData(data, kind, (failedIdList) => {
@@ -1482,19 +1624,24 @@
                     <div class="infoFilterIpcam">IPCam</div>
                     <button id="filterItemSpeaker" class="filterSpeakerIcon"></button>
                     <div class="infoFilterSpeaker">Speaker</div>
+                    <button id="filterItemRouter" class="filterRouterIcon"></button>
+                    <div class="infoFilterRouter">Router</div>
                     <button id="filterItemMoi" class="filterMoiIcon"></button>
                     <div class="infoFilterMoi">MOI</div>`,
                     showCancelButton: false,
                     showConfirmButton: true,
                     confirmButtonColor: '#3085d6',
                     showCloseButton: true,
-                    width: 550
+                    width: 650
                 })
                 if (this.checkedMoiFilter) {
                    document.getElementsByClassName('filterMoiIcon')[0].classList.add('moiFilter');
                 }
                 if (this.checkSpeakerFilter) {
                     document.getElementsByClassName('filterSpeakerIcon')[0].classList.add('speakerFilter');
+                }
+                if (this.checkRouterFilter) {
+                    document.getElementsByClassName('filterRouterIcon')[0].classList.add('routerFilter');
                 }
                 document.getElementsByClassName('filterHubIcon')[0].onclick = () => {
                     this.filterItems(1);
@@ -1515,6 +1662,16 @@
                     } else {
                         this.noGroupSpeakerkLayer.show();
                         document.getElementsByClassName('filterSpeakerIcon')[0].classList.remove('speakerFilter');
+                    }
+                },
+                document.getElementsByClassName('filterRouterIcon')[0].onclick = () => {
+                    this.checkRouterFilter = !this.checkRouterFilter;
+                    if (this.checkRouterFilter) {
+                        this.routerLayer.hide();
+                        document.getElementsByClassName('filterRouterIcon')[0].classList.add('routerFilter');
+                    } else {
+                        this.routerLayer.show();
+                        document.getElementsByClassName('filterRouterIcon')[0].classList.remove('routerFilter');
                     }
                 },
                 document.getElementsByClassName('filterMoiIcon')[0].onclick = () => {
@@ -1687,11 +1844,19 @@
                         break;
                     case window.CONSTANTS.CONTEXT_TYPE.SPEAKER:
                         data = this.$store.getters.getSpeaker(id);
-                        _type = 'SPEAKER';
+                        _type = 'Speaker';
                         if (!!data) {
                             _name = data.name;
                         }
                         _removeMethod = this.removeSpeakerMarker;
+                        break;
+                    case window.CONSTANTS.CONTEXT_TYPE.ROUTER:
+                        data = this.$store.getters.getRouter(id);
+                        _type = 'Router';
+                        if (!!data) {
+                            _name = data.name;
+                        }
+                        _removeMethod = this.removeRouterMarker;
                         break;
                 }
 
@@ -1729,6 +1894,14 @@
                             this.$store.commit('updateIpcamData', data);
                             this._updateData([data], 'ipcam', (failedList) => {});
                         break;
+                        case window.CONSTANTS.CONTEXT_TYPE.SPEAKER:
+                            this.$store.commit('updateSpeakerData', data);
+                            this._updateData([data], 'speaker', (failedList) => {});
+                        break;
+                        case window.CONSTANTS.CONTEXT_TYPE.ROUTER:
+                            this.$store.commit('updateRouterData', data);
+                            this._updateData([data], 'router', (failedList) => {});
+                        break;
                     }
                 }
                 document.getElementById('remove-button').onclick = () =>{
@@ -1752,6 +1925,7 @@
                         this.removeGadgetItems();
                         this.removeIpcamItems();
                         this.removeSpeakerItems();
+                        this.removeRouterItems();
                         this.isRemoveAll = false;
                     }
                 })
@@ -1813,7 +1987,6 @@
                     let speaker = this._.cloneDeep(this.$store.getters.getSepaker(speakerId));
                     if (!this._.isEMpty(speaker)) {
                         delete speaker.custom.map_location;
-                        delete speaker.custom.is_visible_moi;
                         this.$store.commit('updateSpeakerData', speaker);
                         this.markerMap.speakers[speakerId].remove();
                         delete this.markerMap.spakers[speakerId];
@@ -1827,6 +2000,28 @@
 
                     this._.forEach(this.markerMap.speakers, (marker, speakerId) => {
                         this.removeSpeakerMarker(speakerId);
+                    })
+                }
+            },
+            removeRouterItems() {
+                let routerList = [];
+                this._.forEach(this.markerMap.routers, (marker, routerId) => {
+                    let router = this._.cloneDeep(this.$store.getters.getRouter(routerId));
+                    if (!this._.isEMpty(router)) {
+                        delete router.custom.map_location;
+                        this.$store.commit('updateRouterData', router);
+                        this.markerMap.routers[routerId].remove();
+                        delete this.markerMap.routers[routerId];
+                        routerList.push(router);
+                    }
+                });
+                if (!!routerList) {
+                    this._updateData(routerList, 'router', (failedIdList) => {
+                        console.debug("Succedd to remove router data");
+                    })
+
+                    this._.forEach(this.markerMap.routers, (marker, routerId) => {
+                        this.removeRouterMarker(routerId);
                     })
                 }
             },
@@ -2239,6 +2434,8 @@
                     this._handleAddGadget(data.v);
                 } else if (this.isSpeaker(data.kind)) {
                     this._handleAddSpeaker(data.v);
+                } else if (this.isRouter(data.kind)) {
+                    this._handleAddRouter(data.v);
                 } else {
                     this._handleAddAlarm(data.v);
                 }
@@ -2258,6 +2455,9 @@
             _handleAddSpeaker(data) {
                 this.$store.commit('addSpeaker', data);
             },
+            _handleAddRouter(data) {
+                this.$store.commit('addRouter', data);
+            },
             _handleAddAlarm(data) {
                 this.$store.commit('addAlarms', data);
             },
@@ -2268,8 +2468,10 @@
                     this._handleUpdatedIpcam(data.v);
                 } else if (this.isBeacon(data.kind)) {
                     this._handleUpdatedBeacon(data.v); //비콘 업데이트
-                } else {
+                } else if (this.isSpeaker(data.kind)) {
                     this._handleUpdatedSpeaker(data.v); //스피커 업데이트
+                } else if (this.isRouter(data.kind)) {
+                    this._handleUpdatedRouter(data.v); //스피커 업데이트
                 }
             },
             _handleUpdatedHub(data) {
@@ -2472,10 +2674,6 @@
                     // 비콘 tags, img, moi, name이 바뀐경우
                     if (!!data.tags) {
                         let tag = this._.first(data.tags);
-                        if (window.CONSTANTS.IS_MOCK) {
-                            tag = parseInt(tag) - 100;
-                            tag = tag.toString();
-                        }
                         if (!!bcnMarker) {
                             const coordinates = bcnData.marker._coordinates;
                             bcnMarker.remove();
@@ -2581,10 +2779,22 @@
                         }
                     }
                 }
+            },
+            _handleUpdatedRouter(data) {
+                let routerMarker = this.markerMap.routers[data.id],
+                    routerData = this._.cloneDeep(this.$store.getters.getRouter(data.id));
 
-                if (!!data.name) {
-                    if (!!this.speakerInfoWindowItems) {
+                this._.extend(routerData, data);
+                this.$store.commit('updateRouterData', routerData);
 
+                if (!!data.custom) {
+                    if (this._.has(data.custom, 'map_location')) {
+                        this.drawRouter(data.id, data.custom.map_location, true);
+                    } else {
+                        if (!!routerMarker) {
+                            routerMarker.remove();
+                            delete this.markerMap.routers[data.id];
+                        }
                     }
                 }
             },
@@ -2597,28 +2807,31 @@
                     this._handleGadgetRemoved(data.v);
                 } else if (this.isSpeaker(data.kind)) {
                     this._handleSpeakerRemoved(data.v);
+                } else if (this.isRouter(data.kind)) {
+                    this._handleRouterRemoved(data.v);
                 } else {
                     this._handleAlarmRemoved(data.v);
                 }
             },
             _handleHubRemoved(data) {
-                // console.log("removeHub", data);
                 this.$store.commit('removeHub', data.id);
                 this.removeHubMarker(data.id);
             },
             _handleIpcamRemoved(data) {
-                // console.log("removeIpcam", data);
                 this.$store.commit('removeIpcam', data.id);
                 this.removeIpcamMarker(data.id);
             },
             _handleGadgetRemoved(data) {
-                // console.log("removeGadget", data);
                 this.$store.commit('removeGadget', data.id)
                 this.removeGadget(data.id);
             },
             _handleSpeakerRemoved(data) {
                 this.$store.commit('removeSpeaker', data.id);
                 this.removeSpeakerMarker(data.id);
+            },
+            _handleRouterRemoved(data) {
+                this.$store.commit('removeRouter', data.id);
+                this.removeRouterMarker(data.id);
             },
             _handleAlarmRemoved(data) {
                 this.$store.commit('removeAlarms', data.id);
@@ -2704,6 +2917,9 @@
                     case window.CONSTANTS.PRODUCT_KIND.SPEAKER:
                         this._handleSpeakerOnline(data.v);
                     break;
+                    // case window.CONSTANTS.PRODUCT_KIND.ROUTER:
+                    //     this._handleRouterOnline(data.v);
+                    // break;
                 }
             },
             _handleOffline(data) {
@@ -2717,6 +2933,9 @@
                     case window.CONSTANTS.PRODUCT_KIND.SPEAKER:
                         this._handleSpeakerOffline(data.v);
                     break;
+                    // case window.CONSTANTS.PRODUCT_KIND.ROUTER:
+                    //     this._handleRouterOffline(data.v);
+                    // break;
                 }
             },
             _handleHubOnline(data) {
@@ -3073,6 +3292,13 @@
         position: absolute;
     }
 
+    .infoFilterRouter {
+        display: inline-block;
+        transform: translateX(-140%);
+        top: 65%;
+        position: absolute;
+    }
+
     .infoFilterMoi{
         display: inline-block;
         transform: translateX(-235%);
@@ -3138,6 +3364,20 @@
         border: none;
     }
 
+    .filterRouterIcon {
+        width: 60px;
+        height: 60px;
+        cursor: pointer;
+        border-color: #fff;
+        margin-left: 18px;
+        margin-bottom: 20px;
+        margin-top: 15px;
+        background-repeat: no-repeat;
+        background-image: url('../../public/static/location/imgs/router.svg');
+        background-color: white;
+        border: none;
+    }
+
     .filterMoiIcon {
         width: 60px;
         height: 60px;
@@ -3155,6 +3395,11 @@
 
     .speakerFilter {
         background-image: url('../../public/static/location/imgs/speaker-tab.svg');
+    }
+
+    .routerFilter {
+        background-size: 60px;
+        background-image: url('../../public/static/location/imgs/router-offline.png');
     }
 
     .moiFilter {
@@ -4513,6 +4758,89 @@
         height: 200px
     }
 
+    .routerInfo {
+        width: 100%;
+        height: 200px;
+        list-style: none;
+        padding: 0;
+        text-align: center;
+        margin-block-start: 0px !important;
+        margin-block-end: 0 !important;
+        border-radius: 10px;
+        overflow: hidden;
+        box-shadow: 11px 11px 20px #aaaaaa99;
+    }
+
+    .routerContainer {
+        height: 200px;
+        width: 200px;
+        background-color: rgb(22, 220, 120);
+        border-radius: 10px;
+        letter-spacing: 1px;
+        padding-top: 20px;
+    }
+
+    .routerSubContainer {
+        width: 100%;
+        height: 70px;
+        margin: -2px 0px 0px 15px;
+        color: white;
+        overflow: hidden;
+        text-align: left;
+        font-weight: 900;
+        letter-spacing: 1px;
+    }
+
+    .routerSubTitle {
+        font-weight: 350;
+        font-size: 13px;
+        padding-bottom: 5px;
+        padding-top: 5px;
+    }
+    .routerSubValue {
+        width: 100%;
+        height: 40px;
+        color: white;
+        text-align: left;
+        overflow: hidden;
+        font-weight: 900;
+        font-size: large;
+    }
+    .router-status.lock-img {
+        background-image: url(../../public/static/location/imgs/lock.svg);
+        background-size: 20px;
+        background-repeat: no-repeat;
+        background-position: center;
+        width: 20px;
+        height: 20px;
+        margin-left: 10%;
+    }
+    .router-status.unlock-img {
+        background-image: url(../../public/static/location/imgs/unlock.svg);
+        background-size: 20px;
+        background-repeat: no-repeat;
+        background-position: center;
+        width: 20px;
+        height: 20px;
+        margin-left: 10%;
+    }
+
+    .router-close-button-custom {
+        position: absolute;
+        background-size: 13px !important;
+        background-color: rgba(255 117 117) !important;
+        background-image: url(../../public/static/location/imgs/close.svg);
+        border-radius: 4px 4px 0 0!important;
+        z-index: -1;
+        height: 30px;
+        width: 35px;
+        background-repeat: no-repeat;
+        background-position: center center;
+        left: 77%;
+        top: -30px;
+        cursor: pointer;
+    }
+
     .context-menu-container {
         width: 180px;
         height: auto;
@@ -4532,6 +4860,10 @@
 
     .context-menu-container.speaker {
         background-color: rgb(250, 115, 120);
+    }
+
+    .context-menu-container.router {
+        background-color: rgb(22, 220, 120);
     }
 
     .context-menu-top-panel {
@@ -4581,12 +4913,17 @@
 
     .context-menu-button-frame.ipcam {
         background-color: rgb(107, 175, 134);
-        border-top: thin solid rgb(87, 160, 134);
+        border-top: thin solid rgb(22, 160, 134);
     }
 
     .context-menu-button-frame.speaker {
         background-color: rgb(255, 140, 144);
         border-top: thin solid rgb(250, 115, 120)
+    }
+
+    .context-menu-button-frame.router {
+        background-color: rgb(115, 232, 115);
+        border-top: thin solid rgb(16, 210, 111);
     }
 
     .context-menu-button-frame.lock {

@@ -346,3 +346,13 @@ export const getAlarmList = (successCallback, failCallback) => {
         failCallback();
     });
 }
+
+export const getRouters = (handler) => {
+    socket.call({
+        e: window.CONSTANTS.REQUEST_TYPE.GET_DATA,
+        kwargs: {
+            kind: window.CONSTANTS.PRODUCT_KIND.ROUTER
+        },
+        _t: _getTimestamp()
+    }, handler);
+}

@@ -4,6 +4,7 @@ export default {
         isScanner: (kind) => { return _.isEqual(kind, window.CONSTANTS.PRODUCT_KIND.HUB)},
         isIpcam: (kind) => { return _.isEqual(kind, window.CONSTANTS.PRODUCT_KIND.IPCAM)},
         isBeacon: (kind) => { return _.isEqual(kind, window.CONSTANTS.PRODUCT_KIND.MIBSSKEC)},
-        isSpeaker: (kind) => { return _.isEqual(kind, window.CONSTANTS.PRODUCT_KIND.SPEAKER)}
+        isSpeaker: (kind) => { return _.isEqual(kind, window.CONSTANTS.PRODUCT_KIND.SPEAKER)},
+        isRouter: (kind) => { return _.isEqual(kind, window.CONSTANTS.PRODUCT_KIND.ROUTER)}
     }
 }
