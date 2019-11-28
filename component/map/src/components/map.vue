@@ -265,7 +265,7 @@
                 } else if (kind === window.CONSTANTS.PRODUCT_KIND.ROUTER)  {
                     list = this.$store.getters.getRouters;
                     kindName = 'Router';
-                    markers = this.markerMap.speakers;
+                    markers = this.markerMap.routers;
                 }
                 const context = `<div class="custom_menu"><div class="plus-symbol"></div>
                                 <div class="addText"${ kindName }</div>
