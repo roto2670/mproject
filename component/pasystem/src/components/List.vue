@@ -12,8 +12,6 @@
             </div>
             <div class="list-alarm-container">
               <div class="list-top-frame">
-                  <div class="reset-icon"
-                  @click="handleResetButton"></div>
                   <div class="list-text list-alarm-left-title">Play List</div>
                   <div class="list-text list-alarm-right-title"></div>
               </div>
@@ -98,8 +96,12 @@ export default {
           }
           this.$emit('select-group-check', item, checked);
       },
-      handleChangeSoundRadioButton(itemId) {
-          this.selectedSoundId = itemId;
+      handleChangeSoundRadioButton(itemId, isSelected) {
+          if (isSelected) {
+              this.selectedSoundId = itemId;
+          } else {
+              this.selectedSoundId = '';
+          }
           // this.$emit('select-sound', item);
       },
       handleChangeReserveItem(reserveId) {
@@ -124,12 +126,6 @@ export default {
                   // console.log("check list is empty");
               }
           }
-      },
-      handleResetButton(e) {
-        if (this.selectedSoundId != '') {
-            this.selectedSoundId = '';
-            EventBus.$emit('g-sounditem-reset', '');
-        }
       },
     },
     created() {
@@ -283,20 +279,5 @@ export default {
   background-size: 40%;
   background-image: url('../assets/imgs/muted.svg');
   cursor: default;
-}
-.reset-icon {
-  position: absolute;
-  right: 14px;
-  top: 2px;
-  width: 28px;
-  height: 28px;
-  background-size: 90%;
-  background-repeat: no-repeat;
-  background-position: center center;
-  background-image: url('../assets/imgs/reset.svg');
-  cursor: pointer;
-}
-.reset-icon:hover {
-  background-size: 100%;
 }
 </style>

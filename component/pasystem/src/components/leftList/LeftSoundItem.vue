@@ -2,10 +2,10 @@
     <div id="sound-item" class="left-sound-item-panel">
         <div class="left-sound-item-wrapper">
             <label class="left-sound-item-label">
-                <input type="radio" class="left-sound-item-checkbox"
-                :value='getItemId' v-bind:checked="checked"
-                v-model="picked" :disabled="disabled"
-                @change="handleSelectedCheckbox">{{ getItemName }}
+                <input type="radio" class="left-sound-item-checkbox" :id='getItemId'
+                :value='getItemId' :checked="checked"
+                v-model="checked" :disabled="disabled"
+                @click="handleSelectedCheckbox">{{ getItemName }}
             </label>
         </div>
         <div v-if="isShowingEditButton" class="left-sound-remove-button"
@@ -27,7 +27,6 @@ export default {
         return {
             alarm: {},
             checked: false,
-            picked: '',
             disabled: false
         }
     },
@@ -45,8 +44,8 @@ export default {
     },
     methods: {
         handleSelectedCheckbox() {
-            this.$emit('select-radio-button', this.id);
-            this.checked = true;
+            this.checked = !this.checked;
+            this.$emit('select-radio-button', this.id, this.checked);
             EventBus.$emit('g-sound-item-select', this.id);
         },
         handleRemoveButton() {
@@ -63,7 +62,6 @@ export default {
         EventBus.$on('g-close-infowindow', (v) => {
             this.disabled = false;
             this.checked = false;
-            this.picked = '';
         })
         EventBus.$on('g-open-infowindow', (v) => {
             this.disabled = true;
@@ -71,18 +69,11 @@ export default {
         EventBus.$on('g-sound-item-select', (selectedSoundItemId) => {
             if (selectedSoundItemId != this.id) {
                 this.checked = false;
-                this.picked = '';
             }
-        })
-        EventBus.$on('g-sounditem-reset', (v) => {
-            this.disabled = false;
-            this.checked = false;
-            this.picked = '';
         })
         EventBus.$on('g-close-reserve-infowindow', (v) => {
             this.disabled = false;
             this.checked = false;
-            this.picked = '';
         })
         EventBus.$on('g-open-reserve-infowindow', (v) => {
             this.disabled = true;
