@@ -5,12 +5,13 @@
             class="remain-container"></div>
             <GroupItem v-for="(value, key) in groupList"
             :key="key" :item="value" :filterList="checkList" :type="type"
-            @select-checkbox="handleChangedCheckBox"></GroupItem>
+            @select-checkbox="handleChangedCheckBox"
+            @handle-remove="handleRemoveGroupItem"></GroupItem>
         </div>
         <div v-if="isShowingInput" class="group-item-panel add">
             <div class="group-add-frame">
                 <div class="ga-left-frame">
-                    <input type="text" class="ga-name-input" v-model="groupName"/>
+                    <input type="text" class="ga-name-input" v-model="groupName" maxlength="30" />
                 </div>
                 <div class="ga-right-frame">
                     <div class="ga-button-panel" @click="handleAddGroup">
@@ -99,8 +100,12 @@ export default {
                     name: this.groupName
                 }
             this.services.addGroupData(data, () => {
+                this.isShowingInput = false;
+                this.groupName = '';
                 console.log("Succeed to add group data");
             }, (error) => {
+                this.isShowingInput = false;
+                this.groupName = '';
                 console.warn("Failed to add group data ", error);
             });
             this.groupName = '';
@@ -110,6 +115,7 @@ export default {
             this.groupName = '';
         },
         selectedRemove() {
+            // TODO: button change(group edit?)
             const data = {
                 id_list: this.groupCheckList
             }
@@ -119,6 +125,16 @@ export default {
             }, (error) => {
                 console.log("Failed to remove group data");
             });
+        },
+        handleRemoveGroupItem(idList) {
+            this.services.removeGroupData(idList, () => {
+                this.groupCheckList = [];
+                console.log("Succeed to remove group data ", idList);
+            }, (error) => {
+                this.groupCheckList = [];
+                console.log("Failed to remove group data");
+            });
+
         }
     },
     computed: {
@@ -207,7 +223,7 @@ export default {
     position: absolute;
     top: 50%;
     transform: translateY(-50%);
-    width: 190px;
+    width: 160px;
     height: 30px;
 }
 .ga-name-input {
@@ -222,7 +238,7 @@ export default {
     position: absolute;
     top: 7.5px;
     right: 0;
-    width: 70px;
+    width: 110px;
 }
 .ga-button-panel {
     width: 30px;
@@ -243,6 +259,10 @@ export default {
 }
 .ga-button.cancel {
     background-image: url('../../assets/imgs/icon-close(red).svg');
+    background-size: 60%;
+}
+.ga-button.remove {
+    background-image: url('../../assets/imgs/trash.svg');
     background-size: 60%;
 }
 .remain-container {

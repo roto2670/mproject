@@ -7,7 +7,7 @@
                 </label>
             </div>
             <div class="sa-right-frame">
-                <div class="sa-button-panel" @click="handleSoundItemAdd">
+                <div class="sa-button-panel" @click="handleSoundItemRemove">
                     <div class="sa-button"></div>
                 </div>
                 <div class="sa-button-panel cancel" @click="handleCancel">
@@ -20,6 +20,7 @@
         <div class="sound-item-wrapper">
             <label class="sound-item-label">
                 <input type="checkbox" class="sound-item-checkbox"
+                v-model="checked"
                 @change="handleSelectedCheckbox">
                 <div class="sound-item-text" :title="itemName">{{ itemName }}</div>
             </label>
@@ -31,6 +32,7 @@
     </div>
 </template>
 <script>
+import { EventBus } from '@/main.js';
 export default {
     name: 'SoundItem',
     props: {
@@ -41,6 +43,7 @@ export default {
     data() {
         return {
             alarm: {},
+            checked: false,
             isEdit: false
         }
     },
@@ -62,14 +65,10 @@ export default {
         handleEditButton() {
             this.isEdit = true;
         },
-        handleSoundItemAdd() {
+        handleSoundItemRemove() {
             this.isEdit = false;
             const data = [this.id];
-            this.services.addPlayList(data, (ret) => {
-                // console.log("Add playlist ret. ", ret);
-            }, (error) => {
-                console.warn("Failed to add playlist.", error);
-            })
+            this.$emit('select-remove', data);
         },
         handleCancel() {
             this.isEdit = false;
@@ -77,6 +76,9 @@ export default {
     },
     created() {
         this.alarm = this.$store.getters.getAlarmData(this.id);
+        EventBus.$on('g-sound-playlist-finish', (v) => {
+            this.checked = false;
+        })
     }
 }
 </script>
@@ -177,7 +179,7 @@ export default {
 .sa-button {
     width: 100%;
     height: 100%;
-    background-image: url('../../assets/imgs/list-add.svg');
+    background-image: url('../../assets/imgs/trash.svg');
     background-size: 75%;
     background-repeat: no-repeat;
     background-position: center center;

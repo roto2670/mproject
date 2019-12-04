@@ -12,7 +12,8 @@
             <div v-else class="list-panel">
                 <div class="list-wrapper">
                     <SoundItem v-for="id in list" :key="id"
-                    :id="id" @select-checkbox="handleSelectCheckbox"></SoundItem>
+                    :id="id" @select-checkbox="handleSelectCheckbox"
+                    @select-remove="handleSelectRemove"></SoundItem>
                 </div>
                 <div class="sound-button-wrapper">
                     <div class="sound-button-panel" :class="{ deactive: !deactive }"
@@ -20,8 +21,8 @@
                         <div class="sound-button-text">UPLOAD</div>
                     </div>
                     <div class="sound-button-panel right" :class="{ deactive: deactive }"
-                    @click="selectedRemove">
-                        <div class="sound-button-text">REMOVE</div>
+                    @click="selectedAddPlayList">
+                        <div class="sound-button-text">ADD PLAYLIST</div>
                     </div>
                 </div>
             </div>
@@ -30,6 +31,7 @@
 </template>
 <script>
 import SoundItem from '@/components/topList/SoundItem'
+import { EventBus } from '@/main.js';
 export default {
     name: 'SoundList',
     components: {
@@ -49,9 +51,15 @@ export default {
         selectedAddSound() {
             this.$emit('select-add');        //TODO: alarm file을 올릴 수 있습니다.
         },
-        selectedRemove() {
-            this.$emit('select-remove', this.selectedList);
-            this.selectedList = [];
+        selectedAddPlayList() {
+            this.services.addPlayList(this.selectedList, (ret) => {
+                this.selectedList = [];
+                EventBus.$emit('g-sound-playlist-finish', true);
+            }, (error) => {
+                this.selectedList = [];
+                EventBus.$emit('g-sound-playlist-finish', true);
+                console.warn("Failed to add playlist.", error);
+            })
         },
         handleSelectCheckbox(id) {
             if (!this._.includes(this.selectedList, id)) {
@@ -59,6 +67,9 @@ export default {
             } else {
                 this.selectedList = this._.without(this.selectedList, id);
             }
+        },
+        handleSelectRemove(idList) {
+            this.$emit('select-remove', idList);
         }
     },
     computed: {
