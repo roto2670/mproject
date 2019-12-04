@@ -1,8 +1,8 @@
 <template>
-    <div id="reserveitem" class="sound-item-panel">
-        <div class="sound-item-wrapper">
-            <label class="sound-item-label">
-                <input type="checkbox" class="sound-item-checkbox"
+    <div id="reserveitem" class="r-sound-item-panel">
+        <div class="r-sound-item-wrapper">
+            <label class="r-sound-item-label">
+                <input type="checkbox" class="r-sound-item-checkbox"
                 @change="handleSelectedCheckbox">{{ itemName }}
             </label>
         </div>
@@ -42,26 +42,26 @@ export default {
 }
 </script>
 <style>
-.sound-item-panel {
+.r-sound-item-panel {
     position: relative;
     width: 100%;
     height: 45px;
     padding: 15px;
     border-bottom: 1px solid rgb(235, 235, 235);
 }
-.sound-item-wrapper {
+.r-sound-item-wrapper {
     position: absolute;
     top: 50%;
     transform: translateY(-50%);
 }
-.sound-item-label {
+.r-sound-item-label {
     font-size: 20px;
     user-select: none;
     color: rgb(128, 128, 128);
     font-weight: bold;
     cursor: pointer;
 }
-.sound-item-checkbox {
+.r-sound-item-checkbox {
     margin: -1px 10px 0 !important;
     width: 17px;
     height: 17px;

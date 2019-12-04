@@ -3,7 +3,7 @@
         <div class="sound-add-frame">
             <div class="sa-left-frame">
                 <label class="sound-item-label">
-                    {{ itemName }}
+                    <div class="sound-item-edit-text" :title="itemName">{{ itemName }}</div>
                 </label>
             </div>
             <div class="sa-right-frame">
@@ -20,7 +20,8 @@
         <div class="sound-item-wrapper">
             <label class="sound-item-label">
                 <input type="checkbox" class="sound-item-checkbox"
-                @change="handleSelectedCheckbox">{{ itemName }}
+                @change="handleSelectedCheckbox">
+                <div class="sound-item-text" :title="itemName">{{ itemName }}</div>
             </label>
         </div>
         <div v-if="isShowingEditButton" class="sound-edit-button"
@@ -88,9 +89,7 @@ export default {
     border-bottom: 1px solid rgb(235, 235, 235);
 }
 .sound-item-wrapper {
-    position: absolute;
-    top: 50%;
-    transform: translateY(-50%);
+    transform: translateY(-15%);
 }
 .sound-item-label {
     font-size: 20px;
@@ -103,6 +102,14 @@ export default {
     margin: -1px 10px 0 !important;
     width: 17px;
     height: 17px;
+    vertical-align: middle;
+}
+.sound-item-text {
+    display: inline-block;
+    width: 70%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
     vertical-align: middle;
 }
 .sound-edit-button {
@@ -121,6 +128,14 @@ export default {
     background-image: url('../../assets/imgs/icon-modify.svg');
     background-position: center center;
     background-repeat: no-repeat;
+}
+.sound-item-edit-text {
+    display: inline-block;
+    width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    vertical-align: middle;
 }
 
 .sound-item-panel.add {

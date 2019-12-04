@@ -4,7 +4,8 @@
             <label class="reserve-group-item-label">
                 <input type="checkbox" class="reserve-group-item-checkbox"
                 v-model="checked"
-                @change="handleSelectedCheckbox">{{ getItemName }}
+                @change="handleSelectedCheckbox">
+                <div class="reserve-group-item-text" :title="getItemName">{{ getItemName }}</div>
             </label>
         </div>
     </div>
@@ -51,9 +52,7 @@ export default {
     background-color: rgb(255, 255, 255)
 }
 .reserve-group-item-wrapper {
-    position: absolute;
-    top: 50%;
-    transform: translateY(-50%);
+    transform: translateY(-10%);
 }
 .reserve-group-item-label {
     font-size: 20px;
@@ -66,6 +65,13 @@ export default {
     margin: -1px 10px 0 !important;
     width: 17px;
     height: 17px;
+}
+.reserve-group-item-text {
+    display: inline-block;
     vertical-align: middle;
+    width: 80%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
 }
 </style>

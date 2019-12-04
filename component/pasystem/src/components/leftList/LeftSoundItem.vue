@@ -5,7 +5,8 @@
                 <input type="radio" class="left-sound-item-checkbox" :id='getItemId'
                 :value='getItemId' :checked="checked"
                 v-model="checked" :disabled="disabled"
-                @click="handleSelectedCheckbox">{{ getItemName }}
+                @click="handleSelectedCheckbox">
+                <div class="left-sound-item-text" :title="getItemName">{{ getItemName }}</div>
             </label>
         </div>
         <div v-if="isShowingEditButton" class="left-sound-remove-button"
@@ -92,9 +93,7 @@ export default {
     border-bottom: 1px solid rgb(235, 235, 235);
 }
 .left-sound-item-wrapper {
-    position: absolute;
-    top: 50%;
-    transform: translateY(-50%);
+    transform: translateY(-10%);
 }
 .left-sound-item-label {
     font-size: 20px;
@@ -102,12 +101,20 @@ export default {
     color: rgb(128, 128, 128);
     font-weight: bold;
     cursor: pointer;
+    vertical-align: middle;
 }
 .left-sound-item-checkbox {
     margin: -1px 10px 0 !important;
     width: 17px;
     height: 17px;
+}
+.left-sound-item-text {
+    display: inline-block;
     vertical-align: middle;
+    width: 70%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
 }
 .left-sound-remove-button {
     position: absolute;

@@ -4,7 +4,8 @@
             <label class="group-item-label">
                 <input type="checkbox" class="group-item-checkbox"
                 v-model="checked"
-                @change="handleSelectedCheckbox">{{ this.item.name }}
+                @change="handleSelectedCheckbox">
+                <div class="group-item-text" :title="getItemName">{{ this.item.name }}</div>
             </label>
         </div>
         <div v-if="isShowingEditButton" class="group-edit-button"
@@ -124,9 +125,7 @@ export default {
     border-bottom: 1px solid rgb(235, 235, 235);
 }
 .group-item-wrapper {
-    position: absolute;
-    top: 50%;
-    transform: translateY(-50%);
+    transform: translateY(-15%);
 }
 .group-item-label {
     font-size: 20px;
@@ -139,6 +138,14 @@ export default {
     margin: -1px 10px 0 !important;
     width: 17px;
     height: 17px;
+    vertical-align: middle;
+}
+.group-item-text {
+    display: inline-block;
+    width: 70%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
     vertical-align: middle;
 }
 .group-edit-button {

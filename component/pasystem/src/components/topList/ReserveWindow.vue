@@ -32,7 +32,7 @@
                   <div class="reserve-window-title-text">Button</div>
             </div>
             <div class="reserve-list-frame">
-                <input type="text" class="reserve-name-input" placeholder="Input name" v-model="name"/>
+                <input type="text" class="reserve-name-input" placeholder="Input Alarm Name" v-model="name" maxlength="30" />
                 <div class="create-button-panel" @click="selectedAddReserve">
                     <div class="create-button-text">CREATE</div>
                 </div>

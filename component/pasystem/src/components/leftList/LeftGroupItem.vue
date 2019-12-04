@@ -4,7 +4,8 @@
             <label class="left-group-item-label">
                 <input type="checkbox" class="left-group-item-checkbox"
                 v-model="checked" :disabled="disabled"
-                @change="handleSelectedCheckbox">{{ getItemName }}
+                @change="handleSelectedCheckbox">
+                <div class="left-group-item-text" :title="getItemName">{{ getItemName }}</div>
             </label>
         </div>
     </div>
@@ -65,9 +66,7 @@ export default {
     border-bottom: 1px solid rgb(235, 235, 235);
 }
 .left-group-item-wrapper {
-    position: absolute;
-    top: 50%;
-    transform: translateY(-50%);
+    transform: translateY(-10%);
 }
 .left-group-item-label {
     font-size: 20px;
@@ -80,6 +79,13 @@ export default {
     margin: -1px 10px 0 !important;
     width: 17px;
     height: 17px;
+}
+.left-group-item-text {
+    display: inline-block;
     vertical-align: middle;
+    width: 80%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
 }
 </style>

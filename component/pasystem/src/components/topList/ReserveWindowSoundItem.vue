@@ -5,7 +5,8 @@
                 <input type="radio" class="reserve-sound-item-checkbox"
                 :value='getItemId' v-bind:checked="checked"
                 v-model="picked"
-                @change="handleSelectedCheckbox">{{ getItemName }}
+                @change="handleSelectedCheckbox">
+                <div class="reserve-sound-item-text" :title="getItemName">{{ getItemName }}</div>
             </label>
         </div>
     </div>
@@ -64,9 +65,7 @@ export default {
     border-bottom: 1px solid rgb(235, 235, 235);
 }
 .reserve-sound-item-wrapper {
-    position: absolute;
-    top: 50%;
-    transform: translateY(-50%);
+    transform: translateY(-10%);
 }
 .reserve-sound-item-label {
     font-size: 20px;
@@ -79,6 +78,13 @@ export default {
     margin: -1px 10px 0 !important;
     width: 17px;
     height: 17px;
+}
+.reserve-sound-item-text {
+    display: inline-block;
     vertical-align: middle;
+    width: 80%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
 }
 </style>
