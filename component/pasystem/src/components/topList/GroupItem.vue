@@ -16,9 +16,12 @@
     <div v-else-if="isEdit" class="group-item-panel add">
         <div class="group-add-frame">
             <div class="ga-left-frame">
-                <input type="text" class="ga-name-input" v-model="name"/>
+                <input type="text" class="ga-name-input" v-model="name" maxlength="30" />
             </div>
             <div class="ga-right-frame">
+                <div class="ga-button-panel" @click="handleRemoveGroup">
+                    <div class="ga-button remove"></div>
+                </div>
                 <div class="ga-button-panel" @click="handleEditGroup">
                     <div class="ga-button"></div>
                 </div>
@@ -80,6 +83,12 @@ export default {
         },
         handleEditButton() {
             this.isEdit = true;
+        },
+        handleRemoveGroup() {
+            const data = {
+                id_list: [this.item.id]
+            }
+            this.$emit('handle-remove', data);
         },
         handleEditGroup() {
             if (this.name !== this.item.name) {
