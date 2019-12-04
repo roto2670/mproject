@@ -2,7 +2,7 @@
     <div id="reserve-item" class="left-reserve-item-panel" :class="{ deactive: deactive, selected:selected }" @click="handleSelectedItem">
         <div class="left-reserve-item-wrapper">
             <label class="left-reserve-item-label">
-                {{ getItemName }}
+                <div class="left-reserve-item-text" :title="getItemName">{{ getItemName }}</div>
             </label>
         </div>
         <div class="left-reserve-repeat-button">
@@ -103,9 +103,7 @@ export default {
     background-color: rgb(48, 124, 124);
 }
 .left-reserve-item-wrapper {
-    position: absolute;
-    top: 50%;
-    transform: translateY(-50%);
+    transform: translateY(-10%);
 }
 .left-reserve-item-label {
     font-size: 20px;
@@ -113,6 +111,13 @@ export default {
     color: rgb(128, 128, 128);
     font-weight: bold;
     cursor: pointer;
+}
+.left-reserve-item-text {
+    display: inline-block;
+    width: 90%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
 }
 .left-reserve-repeat-button {
     position: absolute;
