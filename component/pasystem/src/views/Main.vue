@@ -486,7 +486,7 @@ export default {
                 });
             }
         },
-        _handleGroupListUnSelect(groupList) {
+        _handleGroupListReady(groupList) {
             let polygonList = [];
             this._.forEach(groupList, groupId => {
                 polygonList.push(this.polygons[groupId]);
@@ -504,7 +504,7 @@ export default {
                 polygon.updateSymbol(this.polygonSetting.select)
             });
         },
-        _handleGroupListReady(groupList) {
+        _handleGroupListPlay(groupList) {
             let polygonList = [];
             this._.forEach(groupList, groupId => {
                 polygonList.push(this.polygons[groupId]);
@@ -858,13 +858,16 @@ export default {
         },
         _handleStreamingStatus(data) {
             //TODO: event handling
-            const isStatus = data.v,
+            const isStatus = data.v.status,
+                  groupIdList = data.v.groupIdList,
                   nowStatus = this.$store.getters.getNowPlaying;
             this.$store.commit('updateStreamingStatus', isStatus)
             this.onAir = isStatus;
             if (!isStatus) {
                 this.$store.commit('updateNowPlaying', 0)
+                this._handleGroupListReady(groupIdList);
             } else {
+                this._handleGroupListPlay(groupIdList);
                 if (nowStatus == 0) {
                     this.$store.commit('updateNowPlaying', 2)
                 }
@@ -950,7 +953,7 @@ export default {
             this.services.unsubscribe();
         });
         EventBus.$on('g-open-infowindow', (v) => {
-            this._handleGroupListReady(v);
+            this._handleGroupListPlay(v);
         })
         EventBus.$on('g-close-infowindow', (v) => {
             this._handleGroupListCheckBoxAll(false);
@@ -959,7 +962,7 @@ export default {
             this._handleGroupListSelect(v);
         })
         EventBus.$on('g-close-reserve-item-infowindow', (v) => {
-            this._handleGroupListUnSelect(v);
+            this._handleGroupListReady(v);
         })
     }
 }

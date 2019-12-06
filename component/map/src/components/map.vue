@@ -3065,7 +3065,7 @@
             },
             _handleStreamingStatus(data) {
                 //TODO: event handling
-                const isStatus = data.v,
+                const isStatus = data.v.status,
                       nowStatus = this.$store.getters.getNowPlaying;
                 this.onAir = isStatus;
                 this.$store.commit('updateStreamingStatus', isStatus)
