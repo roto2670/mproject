@@ -36,6 +36,9 @@
                 <div class="create-button-panel" @click="selectedAddReserve">
                     <div class="create-button-text">CREATE</div>
                 </div>
+                <div class="cancel-button-panel" @click="selectedCancel">
+                    <div class="cancel-button-text">CANCEL</div>
+                </div>
             </div>
         </div>
     </div>
@@ -98,6 +101,10 @@ export default {
           }
           this.data.name = this.name;
           this.$emit('select-add-reserve', this.data);
+      },
+      selectedCancel(e) {
+          e.stopPropagation();
+          this.$emit('select-cancel');
       }
     },
     computed: {
@@ -165,15 +172,33 @@ export default {
 .reserve-list-frame {
 }
 .create-button-panel {
-    position: relative;
-    display: inline-block;
-    width: 100%;
-    height: 2.4em;
+    position: absolute;
+    top: 86%;
+    width: 125px;
+    height: 2.5em;
     background-color: rgb(85, 185, 250);
     color: white;
     cursor: pointer;
 }
 .create-button-text {
+    padding-top: 8px;
+    padding-left: 6px;
+    font-weight: bold;
+    font-size: 1.0em;
+    letter-spacing: .4px;
+    text-align: center;
+}
+.cancel-button-panel {
+    position: absolute;
+    top: 86%;
+    right: 0%;
+    width: 125px;
+    height: 2.5em;
+    background-color: rgb(255, 80, 80);
+    color: white;
+    cursor: pointer;
+}
+.cancel-button-text {
     padding-top: 8px;
     padding-left: 6px;
     font-weight: bold;

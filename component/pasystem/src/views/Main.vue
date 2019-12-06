@@ -20,7 +20,8 @@
         @select-remove="handleReserveRemove"></ReserveList>
         <ReserveWindow v-if="isShowingTopList('reserve')"
         :groupList="groupList" :alarmList="alarmList"
-        @select-add-reserve="handleReserveWindowButton"></ReserveWindow>
+        @select-add-reserve="handleReserveWindowButton"
+        @select-cancel="handleReserveCancelButton"></ReserveWindow>
         <InfoWindow :isForGroup="isForGroup" :item="infoWindowItem" :leftSoundItemId="leftSelectedSoundId"
         v-if="isShowingInfoWindow"
         @select-close="handleInfoWindowClose"></InfoWindow>
@@ -98,7 +99,7 @@ export default {
                     polygonFill: 'rgb(235, 255, 25)',
                     polygonOpacity: 0.5,
                     lineColor: 'rgb(235, 255, 25)',
-                    lineWidth:4
+                    lineWidth: 4
                 },
                 ready : {
                     polygonFill: 'rgb(25, 255, 25)',
@@ -629,6 +630,9 @@ export default {
             }, (error) => {
                 console.log("Failed to add reserve alarm");
             });
+            this.isTopPressedType = '';
+        },
+        handleReserveCancelButton() {
             this.isTopPressedType = '';
         },
         handleReserveButton(data) {
