@@ -136,35 +136,38 @@ export default {
             data.volume = this.soundVolume;
             if (this.selectedItem === `record`) {
                 if (!!!this.context) {
-                    this._checkAccessMicrophone((permissionState) => {
-                        if (permissionState === window.CONSTANTS.MICROPHONE_ACCESS_STATE.DENIED) {
-                            console.log("Denied microphone access");
-                        } else {
-                            this.$emit('select-speaker', data);
-                            this.$store.commit('updateNowPlaying', 1);
-                            this._requireAccess();
-                        }
-                    });
-                } else {
-                    if (isStatus && nowStatus == 1) {
-                        this.handlePauseRecord();
-                    } else if (isStatus && nowStatus == 2) {
+                    if (isStatus && nowStatus == window.CONSTANTS.PLAY_STATUS.OTHER_STREAM) {
                         this.sweetbox.fire("Another user is broadcasting first. Please try again later.")
+                    } else {
+                        this._checkAccessMicrophone((permissionState) => {
+                            if (permissionState === window.CONSTANTS.MICROPHONE_ACCESS_STATE.DENIED) {
+                                console.log("Denied microphone access");
+                            } else {
+                                this.$emit('select-speaker', data);
+                                this.$store.commit('updateNowPlaying', window.CONSTANTS.PLAY_STATUS.MY_STREAM);
+                                this._requireAccess();
+                            }
+                        });
                     }
+                } else {
+                    this.handlePauseRecord();
                 }
             } else if (!!this.selectedItem) {
-                console.log("Success to send Record");
-                if (this.uuid == null) {
-                    this.uuid = this.getUUID();
-                }
+                console.log("Success to send Record", this.selectedItem);
                 const data = {}
                 data.selectedItem = this.selectedItem;
                 data.uuid = this.uuid;
-                data.volume = this.soundVolume
-                this.$emit('select-speaker', data);
-                if (this.isPlayed) {
+                data.volume = this.soundVolume;
+                if (isStatus && nowStatus == window.CONSTANTS.PLAY_STATUS.MY_STREAM) {
+                    this.$emit('select-speaker', data);
                     this.handlePauseRecord();
+                } else if (isStatus && nowStatus == window.CONSTANT.PLAY_STATUS.OTHER_STREAM) {
+                    this.sweetbox.fire("Another user is broadcasting first. Please try again later.")
+                    this.uuid = null;
+                    this.selectedItem = null;
                 } else {
+                    this.$emit('select-speaker', data);
+                    this.$store.commit('updateNowPlaying', window.CONSTANTS.PLAY_STATUS.MY_STREAM);
                     this.isPlayed = true;
                     setTimeout(this.handleIsPlayed, 5000);
                 }

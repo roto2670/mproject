@@ -85,6 +85,10 @@ window.CONSTANTS = {
         UPDATE_STREAMING_STATUS: 'update_streaming_status',
         FAILED_LIST : 'failed_list'
     },
+    PLAY_STATUS: {
+        MY_STREAM: 1,
+        OTHER_STREAM: 2
+    },
     PRODUCT_KIND: {
         HUB: "hub",
         IPCAM: "ipcam",
