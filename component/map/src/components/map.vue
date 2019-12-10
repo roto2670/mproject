@@ -2157,7 +2157,7 @@
                 if (!!gadgetData) {
                     if (!!gadgetData.img_url) {
                         let imgElement = document.getElementById(`${ gadget.gid }img`);
-                        if (!this._.isEmpty(imgElement)) {
+                        if (imgElement !== null) {
                             imgElement.src = gadgetData.img_url;
                         }
                     }
