@@ -27,6 +27,10 @@ window.CONSTANTS = {
         FAILED_LIST : 'failed_list',
         UPDATE_PLAY_LIST : 'update_play_list'
     },
+    PLAY_STATUS: {
+        MY_STREAM: 1,
+        OTHER_STREAM: 2
+    },
     PRODUCT_KIND: {
         SPEAKER: "speaker"
     },
