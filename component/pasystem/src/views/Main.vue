@@ -874,6 +874,7 @@ export default {
                     this.$store.commit('updateNowPlaying', 2)
                 }
             }
+            EventBus.$emit("g-streaming-status", data.v);
         },
         _handleOnline(data) {
             switch(data.kind) {
