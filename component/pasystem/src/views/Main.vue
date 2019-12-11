@@ -417,7 +417,9 @@ export default {
                        _coordinates = marker._coordinates,
                       _position = this.map.coordinateToContainerPoint(_coordinates, this.zoomLevel);
                 this.markerPosition = {
-                    x: _position.x,
+                    // TODO: X position
+                    //x: _position.x, // origin
+                    x: _position.x + 250,
                     y: _position.y
                 }
             }

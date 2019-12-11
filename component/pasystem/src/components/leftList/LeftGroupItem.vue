@@ -8,6 +8,9 @@
                 <div class="left-group-item-text" :title="getItemName">{{ getItemName }}</div>
             </label>
         </div>
+        <div v-if="isOnair" class="left-group-onair-container">
+            <div class="left-group-onair-image"></div>
+        </div>
     </div>
 </template>
 <script>
@@ -23,12 +26,16 @@ export default {
         return {
             group: {},
             checked: false,
-            disabled: false
+            disabled: false,
+            onair: false
         }
     },
     computed: {
         getItemName() {
             return `${ this.group.name }`;
+        },
+        isOnair() {
+            return this.onair;
         }
     },
     methods: {
@@ -51,6 +58,11 @@ export default {
         })
         EventBus.$on('g-open-reserve-infowindow', (v) => {
             this.disabled = true;
+        })
+        EventBus.$on('g-streaming-status', (v) => {
+            if (v.groupIdList.indexOf(this.id) >= 0) {
+                this.onair = v.status;
+            }
         })
     },
     watch: {
@@ -87,5 +99,22 @@ export default {
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
+}
+.left-group-onair-container {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    right: 10px;
+    width: 24px;
+    height: 24px;
+    cursor: pointer;
+}
+.left-group-onair-image {
+    width: 100%;
+    height: 100%;
+    background-size: 100%;
+    background-image: url('../../assets/imgs/onair-group-speaker.svg');
+    background-position: center center;
+    background-repeat: no-repeat;
 }
 </style>
