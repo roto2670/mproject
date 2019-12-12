@@ -1,9 +1,13 @@
 <template>
-    <div id="reserve-item" class="left-reserve-item-panel" :class="{ deactive: deactive, selected:selected }" @click="handleSelectedItem">
-        <div class="left-reserve-item-wrapper">
+    <div id="reserve-item" class="left-reserve-item-panel" :class="{ deactive: deactive, selected:selected }">
+        <div class="left-reserve-item-wrapper" @click="handleSelectedItem">
             <label class="left-reserve-item-label">
                 <div class="left-reserve-item-text" :title="getItemName">{{ getItemName }}</div>
             </label>
+        </div>
+        <div class="left-reserve-switch-button">
+            <div class="left-reserve-switch-on-image" :class="{ off: isPause }"
+                @click="handleSwitch"></div>
         </div>
         <div class="left-reserve-repeat-button">
             <div class="left-reserve-repeat-image" :class="{ nonRepeat: isRepeat }"></div>
@@ -24,7 +28,8 @@ export default {
             reserve: {},
             alarm: {},
             checked: false,
-            disabled: false
+            disabled: false,
+            pause: false
         }
     },
     computed: {
@@ -46,6 +51,9 @@ export default {
             } else {
                 return false;
             }
+        },
+        isPause() {
+            return this.pause;
         }
 
     },
@@ -55,10 +63,19 @@ export default {
             this.checked = true;
             EventBus.$emit('g-reserve-item-select', this.id);
         },
+        handleSwitch() {
+            let isPause = !this.reserve.pause;
+            this.$emit('select-pause', this.id, isPause);
+        }
     },
     created() {
         this.reserve = this.$store.getters.getReserveAlarmData(this.id);
         this.alarm = this.$store.getters.getAlarmData(this.reserve.alarm_id);
+        if (this.reserve.pause === 0) {
+            this.pause = false;
+        } else {
+            this.pause = true;
+        }
         EventBus.$on('g-close-infowindow', (v) => {
             this.disabled = false;
             this.checked = false;
@@ -78,6 +95,16 @@ export default {
         EventBus.$on('g-reserve-item-select', (v) => {
             if (v !== this.id) {
                 this.checked = false;
+            }
+        })
+        EventBus.$on('g-reserve-item-pause', (v) => {
+            if (this.id === v.id) {
+                this.reserve = v;
+                if (this.reserve.pause === 0) {
+                    this.pause = false;
+                } else {
+                    this.pause = true;
+                }
             }
         })
     },
@@ -114,7 +141,7 @@ export default {
 }
 .left-reserve-item-text {
     display: inline-block;
-    width: 90%;
+    width: 70%;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
@@ -144,5 +171,33 @@ export default {
     background-image: url('../../assets/imgs/non-repeat.svg');
     background-position: center center;
     background-repeat: no-repeat;
+}
+.left-reserve-switch-button {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    right: 40px;
+    width: 30px;
+    height: 30px;
+    opacity: 0.6;
+    cursor: default;
+}
+.left-reserve-switch-on-image {
+    width: 100%;
+    height: 100%;
+    background-size: 100%;
+    background-image: url('../../assets/imgs/switch-on.svg');
+    background-position: center center;
+    background-repeat: no-repeat;
+    cursor: pointer;
+}
+.left-reserve-switch-on-image.off {
+    width: 100%;
+    height: 100%;
+    background-size: 100%;
+    background-image: url('../../assets/imgs/switch-off.svg');
+    background-position: center center;
+    background-repeat: no-repeat;
+    cursor: pointer;
 }
 </style>

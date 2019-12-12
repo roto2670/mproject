@@ -7,10 +7,11 @@
                 <div class="reserve-item-repeat-button">
                     <div class="reserve-item-repeat-image" :class="{ nonRepeat: !isRepeat }"></div>
                 </div>
-                <div v-if="isRepeat" class="reserve-item-play-button">
+                <!-- TODO: unused -->
+                <!-- <div v-if="isRepeat" class="reserve-item-play-button">
                     <div class="reserve-item-play-image" :class="{ pause: !isPause }"
                     @click="handlePauseButton"></div>
-                </div>
+                </div> -->
                 <div class="reserve-item-trash-button">
                     <div class="reserve-item-trash-image"
                     @click="handleRemoveButton"></div>
@@ -78,11 +79,13 @@ export default {
         EventBus.$emit('g-open-reserve-infowindow', true);
         EventBus.$emit('g-open-reserve-item-infowindow', this.reserve.group_id_list);
         EventBus.$on('g-reserve-item-pause', (v) => {
-            this.reserve = v;
-            if (this.reserve.pause === 0) {
-                this.pause = false;
-            } else {
-                this.pause = true;
+            if (this.id === v.id) {
+                this.reserve = v;
+                if (this.reserve.pause === 0) {
+                    this.pause = false;
+                } else {
+                    this.pause = true;
+                }
             }
         })
         if (this.reserve.pause === 0) {
