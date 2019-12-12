@@ -35,7 +35,8 @@
               </div>
               <div class="list-reserve-frame">
                   <ReserveItem v-for="reserveId in reserveList" :key="reserveId" :id="reserveId"
-                  @select-item="handleChangeReserveItem"></ReserveItem>
+                  @select-item="handleChangeReserveItem"
+                  @select-pause="handlePause"></ReserveItem>
               </div>
             </div>
         </div>
@@ -106,6 +107,9 @@ export default {
       },
       handleChangeReserveItem(reserveId) {
           this.$emit('select-reserve-item', reserveId);
+      },
+      handlePause(reserveId, isPause) {
+          this.$emit('select-pause', reserveId, isPause);
       },
       handleMicButton(e) {
           if (!this.disabledMic) {

@@ -96,11 +96,18 @@ export default {
       },
       selectedAddReserve(e) {
           e.stopPropagation();
-          if (this.name == '') {
-              this.name = "" + this.data.hour + ":" + this.data.minute;
+          if (this._.isEmpty(this.data['groupList'])) {
+              this.sweetbox.fire("Please select a group")
           }
-          this.data.name = this.name;
-          this.$emit('select-add-reserve', this.data);
+          else if (this.data.alarmId == null || this.data.alarmId == '') {
+              this.sweetbox.fire("Please select a sound")
+          } else {
+              if (this.name == '') {
+                  this.name = "" + this.data.hour + ":" + this.data.minute;
+              }
+              this.data.name = this.name;
+              this.$emit('select-add-reserve', this.data);
+          }
       },
       selectedCancel(e) {
           e.stopPropagation();

@@ -6,7 +6,8 @@
         <List :groupList="groupList" :alarmList="playList" :reserveList="reserveAlarmList"
         @select-group-check="_handleGroupListCheckbox"
         @select-button="handleBroadCastLeftMenu"
-        @select-reserve-item="handleReserveItemInfoWindow"></List>
+        @select-reserve-item="handleReserveItemInfoWindow"
+        @select-pause="handleReservePause"></List>
         <GroupList v-if="isShowingTopList('filter') ||
                          isShowingTopList('broadcast') ||
                          isShowingTopList('group_set_up')"

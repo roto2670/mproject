@@ -2,7 +2,9 @@
     <div class="reserve-item-group-item-panel">
         <div class="reserve-item-group-item-wrapper">
             <label class="reserve-item-group-item-label">
-                {{ getItemName }}
+                <div class="reserve-item-group-item-text">
+                    {{ getItemName }}
+                </div>
             </label>
         </div>
     </div>
@@ -44,9 +46,7 @@ export default {
     border-bottom: 1px solid rgb(235, 235, 235);
 }
 .reserve-item-group-item-wrapper {
-    position: absolute;
-    top: 50%;
-    transform: translateY(-50%);
+    transform: translateY(-15%);
 }
 .reserve-item-group-item-label {
     font-size: 20px;
@@ -59,5 +59,12 @@ export default {
     width: 17px;
     height: 17px;
     vertical-align: middle;
+}
+.reserve-item-group-item-text {
+    display: inline-block;
+    width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
 }
 </style>
