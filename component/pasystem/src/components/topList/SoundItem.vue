@@ -91,9 +91,10 @@ export default {
     border-bottom: 1px solid rgb(235, 235, 235);
 }
 .sound-item-wrapper {
-    transform: translateY(-15%);
+    transform: translateY(-25%);
 }
 .sound-item-label {
+    width: 100%;
     font-size: 20px;
     user-select: none;
     color: rgb(128, 128, 128);
@@ -149,7 +150,7 @@ export default {
 .sa-left-frame {
     position: absolute;
     top: 26px;
-    transform: translateY(-50%);
+    transform: translateY(-65%);
     width: 190px;
     height: 30px;
 }
