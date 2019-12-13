@@ -52,9 +52,10 @@ export default {
     background-color: rgb(255, 255, 255)
 }
 .reserve-group-item-wrapper {
-    transform: translateY(-10%);
+    transform: translateY(-25%);
 }
 .reserve-group-item-label {
+    width: 100%;
     font-size: 20px;
     user-select: none;
     color: rgb(128, 128, 128);

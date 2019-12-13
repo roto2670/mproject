@@ -130,9 +130,10 @@ export default {
     background-color: rgb(48, 124, 124);
 }
 .left-reserve-item-wrapper {
-    transform: translateY(-10%);
+    transform: translateY(-25%);
 }
 .left-reserve-item-label {
+    width: 100%;
     font-size: 20px;
     user-select: none;
     color: rgb(128, 128, 128);

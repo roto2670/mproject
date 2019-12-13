@@ -3,7 +3,7 @@
         <div class="reserve-item-info-panel">
             <div class="reserve-item-top-frame">
                 <div class="reserve-item-title" :title="getItemName">{{ getItemName }}</div>
-                <div class="reserve-item-text">{{ getItemInfo }}</div>
+                <div class="reserve-item-text" :title="getItemInfo">{{ getItemInfo }}</div>
                 <div class="reserve-item-repeat-button">
                     <div class="reserve-item-repeat-image" :class="{ nonRepeat: !isRepeat }"></div>
                 </div>
@@ -132,7 +132,7 @@ export default {
 }
 .reserve-item-title {
     padding-top: 6px;
-    padding-left: 16px;
+    padding-left: 30px;
     color: black;
     font-weight: bold;
     font-size: 1.4em;
@@ -145,8 +145,12 @@ export default {
     cursor: default;
 }
 .reserve-item-text {
+    width: 85%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
     padding-top: 6px;
-    padding-left: 6px;
+    padding-left: 20px;
     color: black;
     font-size: 1em;
     letter-spacing: .4px;

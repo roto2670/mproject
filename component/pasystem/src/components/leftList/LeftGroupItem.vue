@@ -78,9 +78,10 @@ export default {
     border-bottom: 1px solid rgb(235, 235, 235);
 }
 .left-group-item-wrapper {
-    transform: translateY(-10%);
+    transform: translateY(-25%);
 }
 .left-group-item-label {
+    width: 100%;
     font-size: 20px;
     user-select: none;
     color: rgb(128, 128, 128);
