@@ -435,6 +435,8 @@ export default {
     font-size: 20px;
     user-select: none;
     color: black;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 .alarm-play-frame {
     position: absolute;
