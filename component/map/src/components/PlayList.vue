@@ -161,7 +161,7 @@ export default {
                 if (isStatus && nowStatus == window.CONSTANTS.PLAY_STATUS.MY_STREAM) {
                     this.$emit('select-speaker', data);
                     this.handlePauseRecord();
-                } else if (isStatus && nowStatus == window.CONSTANT.PLAY_STATUS.OTHER_STREAM) {
+                } else if (isStatus && nowStatus == window.CONSTANTS.PLAY_STATUS.OTHER_STREAM) {
                     this.sweetbox.fire("Another user is broadcasting first. Please try again later.")
                     this.uuid = null;
                     this.selectedItem = null;
