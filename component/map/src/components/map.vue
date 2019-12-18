@@ -1583,6 +1583,7 @@
                                 <img id="worker${ index }" class="workerImg" src="${ window.CONSTANTS.URL.BASE_IMG }icon-worker${ index }-tab.svg">
                                 <input class="beaconItem" id="beacon-${ index }" type="checkbox" checked></label>`
                 })
+                context += `<button id="beacon-filter-Selectall-Button" class="beacon-filter-Selectall-Button">Select All</button>`;
                 context += `<button id="beacon-filter-Reset-Button" class="beacon-filter-Reset-Button">Reset</button>`;
 
                 this.sweetbox.fire({
@@ -1610,6 +1611,13 @@
                     this._.forEach(this.gadgetInfoNumber, (index) => {
                         document.getElementById(`beacon-${ index }`).checked = 0;
                         this.workerLayer[index].hide();
+                    })
+                }
+
+                document.getElementById('beacon-filter-Selectall-Button').onclick = () => {
+                    this._.forEach(this.gadgetInfoNumber, (index) => {
+                        document.getElementById(`beacon-${ index }`).checked = 1;
+                        this.workerLayer[index].show();
                     })
                 }
             },
@@ -1710,6 +1718,7 @@
                             <div class="selectTn">
                             <label id="tn"><input class="thirdSelectOption item${ type }-${ type + 2 }" type="checkbox" checked>
                             ${ context.thirdSelectOption }</label></div>
+                            <button id="filter-Selectall-Button" class="filter-Selectall-Button">Select All</button>
                             <button id="filter-Reset-Button" class="filter-Reset-Button">Reset</button>`
                 } else if (type === 2) {
                    layers = {
@@ -1726,6 +1735,7 @@
                             <div class="selectTn">
                             <label id="tn"><input class="secondSelectOption item${ type }-${ type + 1 }" type="checkbox" checked>
                             ${ context.secondSelectOption }</label></div>
+                            <button id="filter-Selectall-Button" class="filter-Selectall-Button">Select All</button>
                             <button id="filter-Reset-Button" class="filter-Reset-Button">Reset</button>`
                 } else if (type === 3) {
                     const groupData = this.$store.getters.getGroupList;
@@ -1760,6 +1770,16 @@
                         if (!!document.getElementsByClassName(`item${ type }-${ type + 2 }`)[0]) {
                             document.getElementsByClassName(`item${ type }-${ type + 2 }`)[0].checked = 0;
                             layers.thirdOption.hide();
+                        }
+                    }
+                    document.getElementById('filter-Selectall-Button').onclick = () => {
+                        document.getElementsByClassName(`item${ type }-${ type }`)[0].checked = 1;
+                        document.getElementsByClassName(`item${ type }-${ type + 1 }`)[0].checked = 1;
+                        layers.firstOption.show();
+                        layers.secondOption.show();
+                        if (!!document.getElementsByClassName(`item${ type }-${ type + 2 }`)[0]) {
+                            document.getElementsByClassName(`item${ type }-${ type + 2 }`)[0].checked = 1;
+                            layers.thirdOption.show();
                         }
                     }
                     document.getElementsByClassName(`item${ type }-${ type }`)[0].checked = layers.firstOption.isVisible();
@@ -3758,7 +3778,20 @@
 
     .filter-Reset-Button {
         display: inline-block;
-        margin-left: 6.5em;
+        margin-left: 2.5em;
+        width: 80px;
+        height: 40px;
+        border: 0;
+        border-radius: .25em;
+        background-color: #aaa;
+        font-size: 1.0625em;
+        color: #fff;
+        font-weight: 500;
+        cursor: pointer;
+    }
+    .filter-Selectall-Button {
+        display: inline-block;
+        margin-left: 2.5em;
         width: 80px;
         height: 40px;
         border: 0;
@@ -3992,7 +4025,21 @@
 
     .beacon-filter-Reset-Button {
         display: inline-block;
-        margin: 1em 5em 0 5em;
+        margin: 1em 3em 0 3em;
+        width: 80px;
+        height: 40px;
+        border: 0;
+        border-radius: .25em;
+        background-color: #aaa;
+        font-size: 1.0625em;
+        color: #fff;
+        font-weight: 500;
+        cursor: pointer;
+    }
+
+    .beacon-filter-Selectall-Button {
+        display: inline-block;
+        margin: 1em 3em 0 3em;
         width: 80px;
         height: 40px;
         border: 0;
