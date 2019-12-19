@@ -150,7 +150,7 @@ export default {
           </div>
           `
           this.sweetbox.fire({
-              width: 300,
+              width: 260,
               titleText: 'Group Information',
               html: content
           });
@@ -347,6 +347,9 @@ export default {
 .help-container-text {
     display: inline-block;
     text-align: left;
+    font-size: 1.6em;
+    font-weight: 400;
+    line-height: normal;
 }
 
 </style>
