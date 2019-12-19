@@ -310,7 +310,7 @@ export const closeIpcamStream = (ipcamId, handler) => {
 
 export const getGroupData = (successCallback, failCallback) => {
     axios({
-        url: `${ window.CONSTANTS.URL.CONSOLE }/pa/group/list`,
+        url: `${ window.CONSTANTS.URL.PA }/pa/group/list`,
         method: 'GET'
     }).then(response => {
         if(response.data) {

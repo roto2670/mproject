@@ -168,9 +168,13 @@ export default {
     },
     computed: {
         getGroupName() {
-            const group = this._.first(this.item.tags);
-            if (!!group) {
-                return `Group - ${ group }`;
+            const groupId = this._.first(this.item.tags);
+            if (!!groupId) {
+                let group = this.$store.getters.getGroup(groupId);
+                if (!!group) {
+                    return `${ group.name }`;
+                }
+                return '';
             }
             return '';
         }

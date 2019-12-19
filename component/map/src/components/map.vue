@@ -357,23 +357,23 @@
                     this.drawIpCams(ipcams, true);
                 });
 
-                // this.services.getGroupData(groups => { //TODO: group에 따른 speaker layer을 생성할 수 있게 함
-                //     console.log("Sucess to get Groups", groups);
-                //     this._.forEach(groups, group => {
-                //         this.addGroupLayer(group.id);
-                //         this.$store.commit('addGroup', group);
-                //     })
+                this.services.getGroupData(groups => { //TODO: group에 따른 speaker layer을 생성할 수 있게 함
+                    console.log("Sucess to get Groups", groups);
+                    this._.forEach(groups, group => {
+                        // this.addGroupLayer(group.id);
+                        this.$store.commit('addGroup', group);
+                    })
 
-                //     this.services.getSpeakers(speakers => {
-                //         console.log("Sucesss to get Speakers", speakers);
-                //         this._.forEach(speakers, speaker => {
-                //             this.$store.commit('addSpeaker', speaker);
-                //         })
-                //         this.drawSpeakers(speakers);
-                //     });
-                // }, (error) => {
-                //     console.log("Failed to get Groups", error);
-                // });
+                    // this.services.getSpeakers(speakers => {
+                    //     console.log("Sucesss to get Speakers", speakers);
+                    //     this._.forEach(speakers, speaker => {
+                    //         this.$store.commit('addSpeaker', speaker);
+                    //     })
+                    //     this.drawSpeakers(speakers);
+                    // });
+                }, (error) => {
+                    console.log("Failed to get Groups", error);
+                });
 
                 this.services.getSpeakers(speakers => {
                     console.log("Sucesss to get Speakers", speakers);
