@@ -23,6 +23,9 @@
             <div class="list-group-container">
               <div class="list-top-frame">
                   <div class="list-text">Group</div>
+                  <div class="left-group-frame-help-button" @click="handleHelpButton">
+                      <div class="left-group-frame-help-image"></div>
+                  </div>
               </div>
               <div class="list-group-frame">
                 <GroupItem v-for="groupId in groupList" :key="groupId" :id="groupId"
@@ -131,6 +134,27 @@ export default {
               }
           }
       },
+      handleHelpButton() {
+          let content = `
+          <div class="help-container">
+              <div class="help-container-color define"></div>
+              <div class="help-container-text">Zone Define</div>
+          </div>
+          <div class="help-container">
+              <div class="help-container-color select"></div>
+              <div class="help-container-text">Selected Zone</div>
+          </div>
+          <div class="help-container">
+              <div class="help-container-color onair"></div>
+              <div class="help-container-text">OnAir Zone</div>
+          </div>
+          `
+          this.sweetbox.fire({
+              width: 300,
+              titleText: 'Group Information',
+              html: content
+          });
+      }
     },
     created() {
         console.log("Create list view ", this.groupList);
@@ -230,6 +254,23 @@ export default {
     overflow-y: scroll;
     background: white;
 }
+.left-group-frame-help-button {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    right: 10px;
+    width: 24px;
+    height: 24px;
+    cursor: pointer;
+}
+.left-group-frame-help-image {
+    width: 100%;
+    height: 100%;
+    background-size: 100%;
+    background-image: url('../assets/imgs/question.svg');
+    background-position: center center;
+    background-repeat: no-repeat;
+}
 .list-reserve-frame {
     position: relative;
     width: 100%;
@@ -284,4 +325,28 @@ export default {
   background-image: url('../assets/imgs/muted.svg');
   cursor: default;
 }
+.help-container {
+    text-align: left;
+}
+.help-container-color {
+    width: 14px;
+    height: 14px;
+    display: inline-block;
+    margin-left: 40px;
+    margin-right: 20px;
+}
+.help-container-color.define {
+    background: rgb(25, 255, 25);
+}
+.help-container-color.select {
+    background: rgb(235, 255, 25);
+}
+.help-container-color.onair {
+    background: rgb(255, 75, 25);
+}
+.help-container-text {
+    display: inline-block;
+    text-align: left;
+}
+
 </style>
