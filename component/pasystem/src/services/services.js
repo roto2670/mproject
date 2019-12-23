@@ -464,3 +464,18 @@ export const removePlayList = (data, successCallback, failCallback) => {
         failCallback(error);
     });
 }
+
+export const getPaStatus = (successCallback, failCallback) => {
+    axios({
+        url: `${ window.CONSTANTS.URL.PA }/pa/stream/status`,
+        method: 'GET'
+    }).then(response => {
+        if(response.data) {
+            successCallback(response.data);
+        } else {
+            failCallback();
+        }
+    }).catch(error => {
+        failCallback();
+    });
+}

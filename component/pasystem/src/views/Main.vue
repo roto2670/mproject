@@ -161,6 +161,7 @@ export default {
                         this.paLayers['none'] = new maptalks.VectorLayer('panone').addTo(this.map);
                         this.paLayers['none'].setZIndex(1);
                     }
+                    this._getPaStatus();
                 });
                 this.map.on('zoomend moveend', (e) => {
                     this.zoomLevel = 50 * (this.map.getZoom() / 11);
@@ -182,6 +183,19 @@ export default {
                 this.paLayers[tag].setZIndex(1);
                 this.polygonLayers[tag] = new maptalks.VectorLayer(`polygon${tag}`).addTo(this.map);
             }
+        },
+        _getPaStatus() {
+            this.services.getPaStatus(info => {
+                if (Object.keys(info).length !== 0) {
+                    const groupIdList = info.alarm_id;
+                    this.onAir = true;
+                    this.$store.commit('updateStreamingStatus', true);
+                    this._handleGroupListPlay(groupIdList);
+                    EventBus.$emit("g-streaming-status", {"groupIdList": groupIdList});
+                }
+            }, (error) => {
+                console.log("Failed to get pa status.", error);
+            });
         },
         _getGroupList() {
             this._registerItemsByTag('none');

@@ -347,6 +347,21 @@ export const getAlarmList = (successCallback, failCallback) => {
     });
 }
 
+export const getPaStatus = (successCallback, failCallback) => {
+    axios({
+        url: `${ window.CONSTANTS.URL.PA }/pa/stream/status`,
+        method: 'GET'
+    }).then(response => {
+        if(response.data) {
+            successCallback(response.data);
+        } else {
+            failCallback();
+        }
+    }).catch(error => {
+        failCallback();
+    });
+}
+
 export const getRouters = (handler) => {
     socket.call({
         e: window.CONSTANTS.REQUEST_TYPE.GET_DATA,

@@ -371,6 +371,14 @@
                     //     })
                     //     this.drawSpeakers(speakers);
                     // });
+                    this.services.getPaStatus(info => {
+                        if (Object.keys(info).length !== 0) {
+                            this.onAir = true;
+                            this.$store.commit('updateStreamingStatus', true);
+                        }
+                    }, (error) => {
+                        console.log("Failed to get pa status.", error);
+                    });
                 }, (error) => {
                     console.log("Failed to get Groups", error);
                 });
