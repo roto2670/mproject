@@ -77,7 +77,8 @@ export default {
             soundVolume: 80,
             isPlayed: false,
             firstChk: true,
-            disabled: this.onAir
+            disabled: this.onAir,
+            isOnAir: this.onAir
         }
     },
     methods: {
@@ -122,9 +123,10 @@ export default {
                 } else if (!!!this.selectedItem || this.selectedItem.id !== item.id) {
                     this.selectedItem = item;
                 } else {
-                    this.selectedItem = null;
+                    if (!this.isOnAir) {
+                        this.selectedItem = null;
+                    }
                 }
-                console.log("selected item", this.selectedItem);
             }
         },
         getUUID() {
@@ -377,11 +379,15 @@ export default {
     },
     created() {
         EventBus.$on('g-streaming-status', (v) => {
-            if (v.status) {
-                this.disabled = true;
-            } else {
-                this.disabled = false;
+            const nowStatus = this.$store.getters.getNowPlaying;
+            if (nowStatus !== window.CONSTANTS.PLAY_STATUS.MY_STREAM) {
+                if (v.status) {
+                    this.disabled = true;
+                } else {
+                    this.disabled = false;
+                }
             }
+            this.isOnAir = v.status;
         })
     }
 }
