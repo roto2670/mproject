@@ -6,7 +6,8 @@
     <BeaconList v-if="showBeaconList" :isShow="showBeaconList" :showBeaconData="showBeaconData"
     :typeRange="tagKinds"></BeaconList>
     <SpeakerInfoWindow ref="infowindow" :item="speakerInfoWindowItems" :isForGroup="false"
-    v-if="isShowingInfoWindow" @select-close="handleInfoWindowClose"></SpeakerInfoWindow>
+    v-if="isShowingInfoWindow" :onAir="onAir"
+    @select-close="handleInfoWindowClose"></SpeakerInfoWindow>
 </div>
 </template>
 
@@ -422,6 +423,7 @@
                         this.$store.commit('updateStreamingStatus', true)
                         this.$store.commit('updateNowPlaying', window.CONSTANTS.PLAY_STATUS.OTHER_STREAM)
                         this.onAir = true;
+                        EventBus.$emit("g-streaming-status", {"status": true});
                     }
                 }, (error) => {
                     console.log("Failed to get stream data");
@@ -3115,6 +3117,7 @@
                 const isStatus = data.v.status,
                       nowStatus = this.$store.getters.getNowPlaying;
                 this.onAir = isStatus;
+                EventBus.$emit("g-streaming-status", {"status": isStatus});
                 this.$store.commit('updateStreamingStatus', isStatus)
                 if (!isStatus) {
                     this.$store.commit('updateNowPlaying', 0)

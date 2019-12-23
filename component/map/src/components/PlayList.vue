@@ -49,12 +49,16 @@
     </div>
 </template>
 <script>
+import { EventBus } from "../main";
 export default {
     name: 'PlayList',
     props: {
         list: {
             type: Object,
             default: {}
+        },
+        onAir: {
+            type: Boolean
         }
     },
     data() {
@@ -72,7 +76,8 @@ export default {
             uuid: null,
             soundVolume: 80,
             isPlayed: false,
-            firstChk: true
+            firstChk: true,
+            disabled: this.onAir
         }
     },
     methods: {
@@ -80,11 +85,13 @@ export default {
             return this.selectedTabItem == item;
         },
         handleTabItem(item) {
-            this.selectedTabItem = item;
-            if (item === 'record') {
-                this.selectedItem = 'record';
-            } else {
-                this.selectedItem = null;
+            if (!this.disabled) {
+                this.selectedTabItem = item;
+                if (item === 'record') {
+                    this.selectedItem = 'record';
+                } else {
+                    this.selectedItem = null;
+                }
             }
         },
         isSelectedItem(item) {
@@ -102,21 +109,23 @@ export default {
             }
         },
         handleSelectedItem(item) {
-            if (item === `record`) {                 //TODO: command 푸시면 alarm이나 streaming이 선택될 수 있습니다.
-                if (!!!this.selectedItem) {
-                    this.selectedItem = `record`;
-                } else {
-                    if (this.isPlaying()) {
-                        this.handlePauseRecord();
+            if (!this.disabled) {
+                if (item === `record`) {                 //TODO: command 푸시면 alarm이나 streaming이 선택될 수 있습니다.
+                    if (!!!this.selectedItem) {
+                        this.selectedItem = `record`;
+                    } else {
+                        if (this.isPlaying()) {
+                            this.handlePauseRecord();
+                        }
+                        this.selectedItem = null;
                     }
+                } else if (!!!this.selectedItem || this.selectedItem.id !== item.id) {
+                    this.selectedItem = item;
+                } else {
                     this.selectedItem = null;
                 }
-            } else if (!!!this.selectedItem || this.selectedItem.id !== item.id) {
-                this.selectedItem = item;
-            } else {
-                this.selectedItem = null;
+                console.log("selected item", this.selectedItem);
             }
-            console.log("selected item", this.selectedItem);
         },
         getUUID() {
           return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
@@ -125,6 +134,11 @@ export default {
           });
         },
         handleStartPlay() {
+            if (!this.disabled) {
+                _handleStartPlay();
+            }
+        },
+        _handleStartPlay() {
             const isStatus = this.$store.getters.getStreamingStatus,
                   nowStatus = this.$store.getters.getNowPlaying,
                   data = {};
@@ -334,23 +348,26 @@ export default {
             return buf.buffer;
         },
         handleVolumeUp() {
-            if (this.soundVolume < 100) {
-                this.soundVolume += 5
-                console.log("Volume Up", this.soundVolume);
-            } else {
-                console.log("Volume MAX", this.soundVolume);
+            if (!this.disabled) {
+                if (this.soundVolume < 100) {
+                    this.soundVolume += 5
+                    console.log("Volume Up", this.soundVolume);
+                } else {
+                    console.log("Volume MAX", this.soundVolume);
+                }
+                this.$emit('select-volume', this.soundVolume);
             }
-            this.$emit('select-volume', this.soundVolume);
         },
         handleVolumeDown() {
-            if (this.soundVolume > 0){
-                this.soundVolume -= 5
-                console.log("Volume Down", this.soundVolume);
-            } else {
-                console.log("Volume Mute", this.soundVolume);
+            if (!this.disabled) {
+                if (this.soundVolume > 0){
+                    this.soundVolume -= 5
+                    console.log("Volume Down", this.soundVolume);
+                } else {
+                    console.log("Volume Mute", this.soundVolume);
+                }
+                this.$emit('select-volume', this.soundVolume);
             }
-            this.$emit('select-volume', this.soundVolume);
-
         },
     },
     computed: {
@@ -359,6 +376,13 @@ export default {
         }
     },
     created() {
+        EventBus.$on('g-streaming-status', (v) => {
+            if (v.status) {
+                this.disabled = true;
+            } else {
+                this.disabled = false;
+            }
+        })
     }
 }
 </script>

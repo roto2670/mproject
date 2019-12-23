@@ -42,7 +42,8 @@
             @select-speaker="handleSelectSpeaker" @select-volume="handleVolume" ></GroupPlayList>
         </div>
         <div v-else class="info-right-panel">
-            <PlayList :list="playList" ref="playlist" @select-speaker="handleSelectSpeaker" @select-volume="handleVolume" ></PlayList>
+            <PlayList :list="playList" :onAir="onAir" ref="playlist"
+            @select-speaker="handleSelectSpeaker" @select-volume="handleVolume" ></PlayList>
         </div>
         <div class="info-close-button" @click="handleSelectCloseButton"></div>
     </div>
@@ -67,6 +68,9 @@ export default {
         },
         leftSoundItemId: {
             type: String
+        },
+        onAir: {
+            type: Boolean
         }
     },
     data() {
@@ -75,7 +79,7 @@ export default {
             speakersInGroup: [],
             nowPlaying: null,
             uuid: null,
-            soundVolume: 80
+            soundVolume: 80,
         }
     },
     methods: {

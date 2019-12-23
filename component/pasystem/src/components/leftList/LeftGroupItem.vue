@@ -8,7 +8,7 @@
                 <div class="left-group-item-text" :title="getItemName">{{ getItemName }}</div>
             </label>
         </div>
-        <div v-if="isOnair" class="left-group-onair-container">
+        <div v-if="isOnairMe" class="left-group-onair-container">
             <div class="left-group-onair-image"></div>
         </div>
     </div>
@@ -27,15 +27,16 @@ export default {
             group: {},
             checked: false,
             disabled: false,
-            onair: false
+            onAir: false,
+            isMe: false
         }
     },
     computed: {
         getItemName() {
             return `${ this.group.name }`;
         },
-        isOnair() {
-            return this.onair;
+        isOnairMe() {
+            return this.isMe;
         }
     },
     methods: {
@@ -46,22 +47,39 @@ export default {
     created() {
         this.group = this.$store.getters.getGroup(this.id);
         EventBus.$on('g-close-infowindow', (v) => {
-          this.disabled = false;
-          this.checked = false;
+            if (!this.onAir) {
+                this.disabled = false;
+                this.checked = false;
+            }
         })
         EventBus.$on('g-open-infowindow', (v) => {
-          this.disabled = true;
+            if (!this.onAir) {
+                this.disabled = true;
+            }
         })
         EventBus.$on('g-close-reserve-infowindow', (v) => {
-            this.disabled = false;
-            this.checked = false;
+            if (!this.onAir) {
+                this.disabled = false;
+                this.checked = false;
+            }
         })
         EventBus.$on('g-open-reserve-infowindow', (v) => {
-            this.disabled = true;
+            if (!this.onAir) {
+                this.disabled = true;
+            }
         })
         EventBus.$on('g-streaming-status', (v) => {
             if (v.groupIdList.indexOf(this.id) >= 0) {
-                this.onair = v.status;
+                this.isMe = v.status;
+            }
+            if (v.status) {
+                this.disabled = true;
+                this.onAir = true;
+            } else {
+                this.disabled = false;
+                this.checked = false;
+                this.onAir = false;
+                this.isMe = false;
             }
         })
     },

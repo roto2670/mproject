@@ -24,7 +24,7 @@
         @select-add-reserve="handleReserveWindowButton"
         @select-cancel="handleReserveCancelButton"></ReserveWindow>
         <InfoWindow :isForGroup="isForGroup" ref="infowindow" :item="infoWindowItem" :leftSoundItemId="leftSelectedSoundId"
-        v-if="isShowingInfoWindow"
+        v-if="isShowingInfoWindow" :onAir="onAir"
         @select-close="handleInfoWindowClose"></InfoWindow>
         <ContextMenu v-if="isShowingContextMenu" :speaker="contextMenuItem" :position="markerPosition"
         @select-edit="handleEditGroup"></ContextMenu>
@@ -196,7 +196,7 @@ export default {
                     this.onAir = true;
                     const groupIdList = info.alarm_id;
                     this._handleGroupListPlay(groupIdList);
-                    EventBus.$emit("g-streaming-status", {"groupIdList": groupIdList});
+                    EventBus.$emit("g-streaming-status", {"groupIdList": groupIdList, "status": true});
                 }
             }, (error) => {
                 console.log("Failed to get stream data");

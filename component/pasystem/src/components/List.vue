@@ -162,6 +162,20 @@ export default {
             this.selectedSoundId = '';
             this.checkedGroupList = [];
         })
+        EventBus.$on('g-streaming-status', (v) => {
+            const nowStatus = this.$store.getters.getNowPlaying;
+            if (nowStatus !== window.CONSTANTS.PLAY_STATUS.MY_STREAM) {
+                if (v.status) {
+                    this.disabledMic = true;
+                    this.disabledSound = true;
+                } else {
+                    this.disabledMic = false;
+                    this.disabledSound = true;
+                    this.selectedSoundId = '';
+                    this.checkedGroupList = [];
+                }
+            }
+        })
     },
     mounted() {
     },
