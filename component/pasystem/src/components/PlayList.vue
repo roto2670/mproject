@@ -512,7 +512,7 @@ export default {
     background-color: rgb(255, 255, 255);
     border-radius: 100%;
 }
-.icon-image.micStop {
+.icon-image.stopMic {
     background-size: 75%;
     background-image: url('../assets/imgs/muted.svg');
     background-color: rgb(255, 255, 255);
