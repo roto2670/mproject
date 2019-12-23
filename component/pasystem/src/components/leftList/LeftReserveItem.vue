@@ -29,7 +29,8 @@ export default {
             alarm: {},
             checked: false,
             disabled: false,
-            pause: false
+            pause: false,
+            onAir: false
         }
     },
     computed: {
@@ -77,20 +78,28 @@ export default {
             this.pause = true;
         }
         EventBus.$on('g-close-infowindow', (v) => {
-            this.disabled = false;
-            this.checked = false;
+            if (!this.onAir) {
+                this.disabled = false;
+                this.checked = false;
+            }
         })
         EventBus.$on('g-open-infowindow', (v) => {
-            this.disabled = true;
-            this.checked = false;
+            if (!this.onAir) {
+                this.disabled = true;
+                this.checked = false;
+            }
         })
         EventBus.$on('g-close-reserve-infowindow', (v) => {
-            this.disabled = false;
-            this.checked = false;
+            if (!this.onAir) {
+                this.disabled = false;
+                this.checked = false;
+            }
         })
         EventBus.$on('g-open-reserve-infowindow', (v) => {
-            this.disabled = true;
-            this.checked = false;
+            if (!this.onAir) {
+                this.disabled = true;
+                this.checked = false;
+            }
         })
         EventBus.$on('g-reserve-item-select', (v) => {
             if (v !== this.id) {
@@ -105,6 +114,15 @@ export default {
                 } else {
                     this.pause = true;
                 }
+            }
+        })
+        EventBus.$on('g-streaming-status', (v) => {
+            if (v.status) {
+                this.disabled = true;
+                this.onAir = true;
+            } else {
+                this.disabled = false;
+                this.onAir = false;
             }
         })
     },

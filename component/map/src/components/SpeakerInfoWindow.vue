@@ -36,8 +36,8 @@
             </div>
         </div>
         <div class="info-right-panel">
-            <PlayList :list="playList" ref="playlist" @select-speaker="handleSelectSpeaker" @select-volume="handleVolume" ></PlayList>
-                @select-volume="handleVolume"></PlayList>
+            <PlayList :list="playList" :onAir="onAir" ref="playlist"
+            @select-speaker="handleSelectSpeaker" @select-volume="handleVolume" ></PlayList>
         </div>
         <div class="info-close-button" @click="handleSelectCloseButton"></div>
     </div>
@@ -56,6 +56,9 @@ export default {
         },
         item: {
             required: true
+        },
+        onAir: {
+            type: Boolean
         }
     },
     data() {

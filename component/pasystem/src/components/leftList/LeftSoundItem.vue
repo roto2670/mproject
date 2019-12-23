@@ -28,7 +28,8 @@ export default {
         return {
             alarm: {},
             checked: false,
-            disabled: false
+            disabled: false,
+            onAir: false
         }
     },
     computed: {
@@ -61,11 +62,15 @@ export default {
     created() {
         this.alarm = this.$store.getters.getAlarmData(this.id);
         EventBus.$on('g-close-infowindow', (v) => {
-            this.disabled = false;
-            this.checked = false;
+            if (!this.onAir) {
+                this.disabled = false;
+                this.checked = false;
+            }
         })
         EventBus.$on('g-open-infowindow', (v) => {
-            this.disabled = true;
+            if (!this.onAir) {
+                this.disabled = true;
+            }
         })
         EventBus.$on('g-sound-item-select', (selectedSoundItemId) => {
             if (selectedSoundItemId != this.id) {
@@ -73,11 +78,25 @@ export default {
             }
         })
         EventBus.$on('g-close-reserve-infowindow', (v) => {
-            this.disabled = false;
-            this.checked = false;
+            if (!this.onAir) {
+                this.disabled = false;
+                this.checked = false;
+            }
         })
         EventBus.$on('g-open-reserve-infowindow', (v) => {
-            this.disabled = true;
+            if (!this.onAir) {
+                this.disabled = true;
+            }
+        })
+        EventBus.$on('g-streaming-status', (v) => {
+            if (v.status) {
+                this.disabled = true;
+                this.onAir = true;
+            } else {
+                this.disabled = false;
+                this.checked = false;
+                this.onAir = false;
+            }
         })
     },
     watch: {
