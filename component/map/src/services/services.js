@@ -326,6 +326,24 @@ export const getGroupData = (successCallback, failCallback) => {
     });
 }
 
+export const getStreamStatus = (successCallback, failCallback) => {
+    axios({
+        url: `${ window.CONSTANTS.URL.PA }/pa/stream/status`,
+        method: 'GET'
+    }).then(response => {
+        if(response.data) {
+            console.log('Success to get stream status', response.data);
+            successCallback(response.data);
+        } else {
+            console.warn('Failed to get stream status');
+            failCallback();
+        }
+    }).catch(error => {
+        console.warn("Failed to get stream status ", error);
+        failCallback();
+    });
+}
+
 export const getAlarmList = (successCallback, failCallback) => {
     axios({
         url: `${ window.CONSTANTS.URL.PA }/pa/alarm/list`,

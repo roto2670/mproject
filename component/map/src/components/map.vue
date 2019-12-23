@@ -5,7 +5,7 @@
     <OnAir :isOnAir="onAir"></OnAir>
     <BeaconList v-if="showBeaconList" :isShow="showBeaconList" :showBeaconData="showBeaconData"
     :typeRange="tagKinds"></BeaconList>
-    <SpeakerInfoWindow :item="speakerInfoWindowItems" :isForGroup="false"
+    <SpeakerInfoWindow ref="infowindow" :item="speakerInfoWindowItems" :isForGroup="false"
     v-if="isShowingInfoWindow" @select-close="handleInfoWindowClose"></SpeakerInfoWindow>
 </div>
 </template>
@@ -372,9 +372,14 @@
                     //     this.drawSpeakers(speakers);
                     // });
                     this.services.getPaStatus(info => {
-                        if (Object.keys(info).length !== 0) {
+                        if (Object.keys(info).length == 0) {
+                            this.onAir = false;
+                            this.$store.commit('updateStreamingStatus', false);
+                            this.$store.commit('updateNowPlaying', window.CONSTANTS.PLAY_STATUS.READY_FOR_STREAM)
+                        } else {
                             this.onAir = true;
                             this.$store.commit('updateStreamingStatus', true);
+                            this.$store.commit('updateNowPlaying', window.CONSTANTS.PLAY_STATUS.OTHER_STREAM)
                         }
                     }, (error) => {
                         console.log("Failed to get pa status.", error);
@@ -406,6 +411,20 @@
                     })
                 }, (error) => {
                     console.log("Failed to get Alarms", error);
+                });
+
+                this.services.getStreamStatus(data => {
+                    if (Object.keys(data).length == 0) {
+                        this.$store.commit('updateStreamingStatus', false)
+                        this.$store.commit('updateNowPlaying', window.CONSTANTS.PLAY_STATUS.READY_FOR_STREAM)
+                        this.onAir = false;
+                    } else {
+                        this.$store.commit('updateStreamingStatus', true)
+                        this.$store.commit('updateNowPlaying', window.CONSTANTS.PLAY_STATUS.OTHER_STREAM)
+                        this.onAir = true;
+                    }
+                }, (error) => {
+                    console.log("Failed to get stream data");
                 });
             },
             addGroupLayer(id) {
@@ -3201,6 +3220,7 @@
             });
 
             window.addEventListener("beforeunload", () => {
+                this.$refs.infowindow.handleSelectCloseButton();
                 this.services.unsubscribe();
             });
 

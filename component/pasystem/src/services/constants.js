@@ -28,6 +28,7 @@ window.CONSTANTS = {
         UPDATE_PLAY_LIST : 'update_play_list'
     },
     PLAY_STATUS: {
+        READY_FOR_STREAM: 0,
         MY_STREAM: 1,
         OTHER_STREAM: 2
     },

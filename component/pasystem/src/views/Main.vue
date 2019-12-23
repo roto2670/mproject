@@ -23,7 +23,7 @@
         :groupList="groupList" :alarmList="alarmList"
         @select-add-reserve="handleReserveWindowButton"
         @select-cancel="handleReserveCancelButton"></ReserveWindow>
-        <InfoWindow :isForGroup="isForGroup" :item="infoWindowItem" :leftSoundItemId="leftSelectedSoundId"
+        <InfoWindow :isForGroup="isForGroup" ref="infowindow" :item="infoWindowItem" :leftSoundItemId="leftSelectedSoundId"
         v-if="isShowingInfoWindow"
         @select-close="handleInfoWindowClose"></InfoWindow>
         <ContextMenu v-if="isShowingContextMenu" :speaker="contextMenuItem" :position="markerPosition"
@@ -161,7 +161,7 @@ export default {
                         this.paLayers['none'] = new maptalks.VectorLayer('panone').addTo(this.map);
                         this.paLayers['none'].setZIndex(1);
                     }
-                    this._getPaStatus();
+                    this._getStreamingStatus();
                 });
                 this.map.on('zoomend moveend', (e) => {
                     this.zoomLevel = 50 * (this.map.getZoom() / 11);
@@ -184,17 +184,22 @@ export default {
                 this.polygonLayers[tag] = new maptalks.VectorLayer(`polygon${tag}`).addTo(this.map);
             }
         },
-        _getPaStatus() {
-            this.services.getPaStatus(info => {
-                if (Object.keys(info).length !== 0) {
-                    const groupIdList = info.alarm_id;
+        _getStreamingStatus() {
+            this.services.getStreamStatus(data => {
+                if (Object.keys(data).length == 0) {
+                    this.$store.commit('updateStreamingStatus', false)
+                    this.$store.commit('updateNowPlaying', window.CONSTANTS.PLAY_STATUS.READY_FOR_STREAM)
+                    this.onAir = false;
+                } else {
+                    this.$store.commit('updateStreamingStatus', true)
+                    this.$store.commit('updateNowPlaying', window.CONSTANTS.PLAY_STATUS.OTHER_STREAM)
                     this.onAir = true;
-                    this.$store.commit('updateStreamingStatus', true);
+                    const groupIdList = info.alarm_id;
                     this._handleGroupListPlay(groupIdList);
                     EventBus.$emit("g-streaming-status", {"groupIdList": groupIdList});
                 }
             }, (error) => {
-                console.log("Failed to get pa status.", error);
+                console.log("Failed to get stream data");
             });
         },
         _getGroupList() {
@@ -968,6 +973,7 @@ export default {
             }
         });
         window.addEventListener("beforeunload", () => {
+            this.$refs.infowindow.handleSelectCloseButton();
             this.services.unsubscribe();
         });
         EventBus.$on('g-open-infowindow', (v) => {
