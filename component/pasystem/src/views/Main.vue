@@ -192,7 +192,7 @@ export default {
                     this.$store.commit('updateStreamingStatus', true)
                     this.$store.commit('updateNowPlaying', window.CONSTANTS.PLAY_STATUS.OTHER_STREAM)
                     this.onAir = true;
-                    const groupIdList = data.alarm_id;
+                    const groupIdList = data.cast_id;
                     this._handleGroupListPlay(groupIdList);
                     EventBus.$emit("g-streaming-status", {"groupIdList": groupIdList, "status": true});
                 }
