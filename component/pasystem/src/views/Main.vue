@@ -155,13 +155,11 @@ export default {
                     this._getGroupList();
                     this._getAlarmList();
                     this._getPlayList();
-                    this._getSpeakers();
                     this._getReserveAlarmList();
                     if (!this._.has(this.paLayers, 'none')) {
                         this.paLayers['none'] = new maptalks.VectorLayer('panone').addTo(this.map);
                         this.paLayers['none'].setZIndex(1);
                     }
-                    this._getStreamingStatus();
                 });
                 this.map.on('zoomend moveend', (e) => {
                     this.zoomLevel = 50 * (this.map.getZoom() / 11);
@@ -210,6 +208,7 @@ export default {
                     this.groupList.push(group.id);
                     this._registerItemsByTag(group.id);
                 });
+                this._getSpeakers();
             }, (error) => {
                 console.log("Failed to get group list");
             });
@@ -236,6 +235,7 @@ export default {
                         }
                     });
                     this._drawPolygons();
+                    this._getStreamingStatus();
                 } else {
                     console.log("Failed to get speakers", speakers);
                 }
