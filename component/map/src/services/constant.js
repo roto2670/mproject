@@ -37,7 +37,9 @@ window.CONSTANTS = {
         16: "Bus",
         17: "WCBH Drilling Machine",
         18: "Explosive Van",
-        19: "Concrete Mixer Truck"
+        19: "Concrete Mixer Truck",
+        20: "Shuttle",
+        21: "Worker"
     },
     MINIMUM_NUMBER : {
         HUB : 1,
