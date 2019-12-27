@@ -72,6 +72,7 @@ export default {
             zoomLevel: 0,
             markers: {},
             polygons: {},
+            polygonTitles: {},
             speakerByTags: {},
             infoWindowItem: null,
             contextMenuItem: null,
@@ -328,12 +329,57 @@ export default {
             });
             polygon.addTo(this.polygonLayers[tag]);
             this.polygons[tag] = polygon;
+            this._drawPolygonTitle(polygonList, tag);
+        },
+        _drawPolygonTitle(polygonList, tag) {
+                let xLocation = 0,
+                    yLocation = 0,
+                    size = 0;
+                this._.forEach(polygonList, (location) => {
+                    xLocation += location[0];
+                    yLocation += location[1];
+                    size += 1;
+                });
+                if (this.polygonTitles[tag] !== undefined) {
+                    this.polygonTitles[tag].remove();
+                    delete this.polygonTitles[tag];
+                }
+                if (size > 1) {
+                    const group = this.$store.getters.getGroup(tag),
+                          text = new maptalks.Marker(
+                        [(xLocation / size), (yLocation / size)],
+                        {
+                            'properties': {
+                                'name': group.name
+                            },
+                            'symbol': {
+                                'textSize': 20,
+                                'textName': '{name}',
+                                'textWeight': 'bold',
+                                'textFill': '#34495e',
+                                'textOpacity': 1,
+                                'textHaloFill': '#fff',
+                                'textHaloRadius': 2,
+                                'textLineSpacing': 0,
+                                'textHorizontalAlignment': 'middle',
+                                'textVerticalAlignment': 'middle',
+                                'textAlign': 'center'
+                            }
+                        }
+                    );
+                    text.addTo(this.polygonLayers[tag]);
+                    this.polygonTitles[tag] = text;
+                }
         },
         _removePolygon(tag) {
             const polygon = this.polygons[tag];
             if (!!polygon) {
                 polygon.hide();
                 delete this.polygons[tag];
+                if (this.polygonTitles[tag] !== undefined) {
+                    this.polygonTitles[tag].remove();
+                    delete this.polygonTitles[tag];
+                }
             }
         },
         _updatePolygon(tag) {
@@ -342,6 +388,9 @@ export default {
             if (!!polygon) {
                 const locationList = this._sortLocationList(groupList);
                 polygon.setCoordinates(locationList);
+                this._drawPolygonTitle(locationList, tag);
+            } else {
+                this._drawPolygon(groupList, tag);
             }
         },
         _getAlarmList() {
@@ -568,7 +617,9 @@ export default {
                         this._updatePolygon(tag);
                     }
                     speaker.tags = [groupId];
-                    this.speakerByTags[groupId].push(speaker.id);
+                    if (this.speakerByTags[groupId] === undefined) {
+                        this.speakerByTags[groupId].push(speaker.id);
+                    }
                     this._updatePolygon(groupId);
                 }
                 this.updateData(speaker);
@@ -856,10 +907,18 @@ export default {
                 } else if (data.kind === 'remove') {
                     this.$store.commit('removeGroup', item); //TODO
                     this.groupList = this._.without(this.groupList, item);
+                    this._removePolygon(item);
+                    this._.forEach(this.speakerByTags[item], speakerId => {
+                        const speaker = this.$store.getters.getSpeaker(speakerId);
+                        speaker.tags = [];
+                        this.updateData(speaker);
+                        this.$store.commit('updateSpeaker', speaker);
+                    });
                 } else if (data.kind === 'update') {
                     const group = this.$store.getters.getGroup(item.id);
                     group.name = item.name;
                     this.$store.commit('updateGroup', group);
+                    this._updatePolygon(item.id);
                 }
             });
         },
