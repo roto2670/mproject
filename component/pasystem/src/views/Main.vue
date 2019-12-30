@@ -390,7 +390,9 @@ export default {
                 polygon.setCoordinates(locationList);
                 this._drawPolygonTitle(locationList, tag);
             } else {
-                this._drawPolygon(groupList, tag);
+                if (groupList.length > 0) {
+                    this._drawPolygon(groupList, tag);
+                }
             }
         },
         _getAlarmList() {
