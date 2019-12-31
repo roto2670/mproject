@@ -1,6 +1,7 @@
 <template>
     <div id="main" class="main-container">
         <OnAir :isOnAir="onAir"></OnAir>
+        <Grouping></Grouping>
         <input class="file-input" type="file" ref="file" @change="handleFileUpload()"/>
         <Top :selectedType="isTopPressedType" @select-top-button="handleTopButton"></Top>
         <List :groupList="groupList" :alarmList="playList" :reserveList="reserveAlarmList"
@@ -47,6 +48,7 @@ import InfoWindow from '@/components/InfoWindow';
 import ContextMenu from '@/components/ContextMenu';
 import ReserveItemInfoWindow from '@/components/topList/ReserveItemInfoWindow';
 import OnAir from '@/components/OnAir';
+import Grouping from '@/components/Grouping';
 import { EventBus } from "@/main";
 export default {
     name: 'Main',
@@ -60,7 +62,8 @@ export default {
         List,
         ReserveWindow,
         ReserveItemInfoWindow,
-        OnAir
+        OnAir,
+        Grouping
     },
     data() {
         return {
@@ -90,6 +93,9 @@ export default {
             leftSelectedSoundId: '',
             leftSelectedReserveId: '',
             onAir: false,
+            groupingGroupId: null,
+            isGrouping: false,
+            groupingList: [],
             polygonSetting: {
                 play : {
                     polygonFill: 'rgb(255, 75, 25)',
@@ -289,25 +295,46 @@ export default {
 
             marker.on('click', (e) => {
                 e.domEvent.stopPropagation();
-                this.isTopPressedType = '';
-                this.infoWindowItem = {};
-                this.$nextTick(() => {
-                    this.infoWindowItem = speaker;
-                    this.contextMenuItem = null;
-                    this.isForGroup = false;
-                });
+                if (this.isGrouping) {
+                    if (this.groupingList.indexOf(speaker.id) >=0 ) {
+                        this.groupingList = this._.without(this.groupingList, speaker.id);
+                        if (speaker.status) {
+                            marker.updateSymbol({
+                                markerFile: `${ window.CONSTANTS.URL.BASE_IMG }icon-pa-round.svg`
+                            });
+                        } else {
+                            marker.updateSymbol({
+                                markerFile: `${ window.CONSTANTS.URL.BASE_IMG }speaker-offline.png`
+                            });
+                        }
+                    } else {
+                        this.groupingList.push(speaker.id);
+                        marker.updateSymbol({
+                            markerFile: `${ window.CONSTANTS.URL.BASE_IMG }speaker-check.png`
+                        });
+                    }
+                } else {
+                    this.isTopPressedType = '';
+                    this.infoWindowItem = {};
+                    this.$nextTick(() => {
+                        this.infoWindowItem = speaker;
+                        this.contextMenuItem = null;
+                        this.isForGroup = false;
+                    });
+                }
             });
 
-            marker.on('contextmenu', (e) => {
-                e.domEvent.stopPropagation();
-                this.isTopPressedType = '';
-                this.infoWindowItem = null;
-                this.contextMenuItem = {};
-                this.$nextTick(() => {
-                    this.contextMenuItem = speaker;
-                    this._setContextMenuPosition();
-                });
-            });
+            // Right click context menu
+            // marker.on('contextmenu', (e) => {
+            //     e.domEvent.stopPropagation();
+            //     this.isTopPressedType = '';
+            //     this.infoWindowItem = null;
+            //     this.contextMenuItem = {};
+            //     this.$nextTick(() => {
+            //         this.contextMenuItem = speaker;
+            //         this._setContextMenuPosition();
+            //     });
+            // });
         },
         setLocationTimeout(id) {
             this.setIntervalData[id] = setTimeout(() => {
@@ -1048,6 +1075,65 @@ export default {
         })
         EventBus.$on('g-close-reserve-item-infowindow', (v) => {
             this._handleGroupListReady(v);
+        })
+        EventBus.$on('g-grouping-fire', (v) => {
+            if (this.speakerByTags[v.id] !== null) {
+                this._.forEach(this.speakerByTags[v.id], speakerId => {
+                    let marker = this.markers[speakerId];
+                    this.markers[speakerId].updateSymbol({
+                        markerFile: `${ window.CONSTANTS.URL.BASE_IMG }speaker-check.png`
+                    });
+                    this.groupingList.push(speakerId);
+                });
+            }
+            this.isGrouping = true;
+            this.groupingGroupId = v.id;
+            this.isTopPressedType = '';
+        })
+        EventBus.$on('g-grouping-finish', (v, info) => {
+            if (v) {
+                const group = this.$store.getters.getGroup(info.id);
+                if (!!group) {
+                    group.speaker_id_list = this.groupingList;
+                    this.speakerByTags[info.id] = this.groupingList;
+                    this.updateGroupData(group);
+
+                    this._.forEach(group.speaker_id_list, speakerId => {
+                        const speaker = this.$store.getters.getSpeaker(speakerId),
+                            marker = this.markers[speaker.id];
+                        speaker.tags = [info.id];
+                        this.$store.commit('updateSpeaker', speaker);
+                        this.updateData(speaker);
+                        if (speaker.status) {
+                            marker.updateSymbol({
+                                markerFile: `${ window.CONSTANTS.URL.BASE_IMG }icon-pa-round.svg`
+                            });
+                        } else {
+                            marker.updateSymbol({
+                                markerFile: `${ window.CONSTANTS.URL.BASE_IMG }speaker-offline.png`
+                            });
+                        }
+                    });
+                    this._updatePolygon(info.id);
+                }
+            } else {
+                this._.forEach(this.speakerByTags[info.id], speakerId => {
+                    const speaker = this.$store.getters.getSpeaker(speakerId),
+                          marker = this.markers[speaker.id];
+                    if (speaker.status) {
+                        marker.updateSymbol({
+                            markerFile: `${ window.CONSTANTS.URL.BASE_IMG }icon-pa-round.svg`
+                        });
+                    } else {
+                        marker.updateSymbol({
+                            markerFile: `${ window.CONSTANTS.URL.BASE_IMG }speaker-offline.png`
+                        });
+                    }
+                });
+            }
+            this.isGrouping = false;
+            this.groupingList = [];
+            this.groupingGroupId = null;
         })
     }
 }

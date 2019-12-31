@@ -82,6 +82,13 @@ export default {
                 this.isMe = false;
             }
         })
+        EventBus.$on('g-grouping-fire', (v) => {
+            this.disabled = true;
+        })
+        EventBus.$on('g-grouping-finish', (v, info) => {
+            this.disabled = false;
+            this.checked = false;
+        })
     },
     watch: {
     }
