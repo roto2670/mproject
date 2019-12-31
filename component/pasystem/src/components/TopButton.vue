@@ -14,6 +14,7 @@
     </div>
 </template>
 <script>
+import { EventBus } from '@/main.js';
 export default {
     name: 'TopButton',
     props: {
@@ -25,9 +26,16 @@ export default {
             type: String
         }
     },
+    data() {
+        return {
+            disabled: false
+        }
+    },
     methods: {
         handleSelectedButton() {
-            this.$emit('select-button', this.type);
+            if (!this.disabled) {
+                this.$emit('select-button', this.type);
+            }
         }
     },
     computed: {
@@ -52,11 +60,13 @@ export default {
             return text;
         },
         pressed() {
-            if (this.type === window.CONSTANTS.TOP_BUTTON_TYPE.PLUS ||
-                this.type === window.CONSTANTS.TOP_BUTTON_TYPE.MINUS) {
-                return false;
-            } else {
-                return this.selectedType === this.type;
+            if (!this.disabled) {
+                if (this.type === window.CONSTANTS.TOP_BUTTON_TYPE.PLUS ||
+                    this.type === window.CONSTANTS.TOP_BUTTON_TYPE.MINUS) {
+                    return false;
+                } else {
+                    return this.selectedType === this.type;
+                }
             }
         },
         classObj() {
@@ -65,6 +75,14 @@ export default {
             obj[`${this.type}-pressed`] = this.pressed;
             return obj;
         }
+    },
+    created() {
+        EventBus.$on('g-grouping-fire', (v) => {
+            this.disabled = true;
+        })
+        EventBus.$on('g-grouping-finish', (v, info) => {
+            this.disabled = false;
+        })
     }
 }
 </script>

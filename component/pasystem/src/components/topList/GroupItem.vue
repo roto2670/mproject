@@ -8,6 +8,10 @@
                 <div class="group-item-text" :title="getItemName">{{ this.item.name }}</div>
             </label>
         </div>
+        <div v-if="isShowingEditButton" class="group-grouping-button"
+        @click="handleGroupingButton">
+            <div class="group-grouping-image"></div>
+        </div>
         <div v-if="isShowingEditButton" class="group-edit-button"
         @click="handleEditButton">
             <div class="group-edit-image"></div>
@@ -33,6 +37,7 @@
     </div>
 </template>
 <script>
+import { EventBus } from '@/main.js';
 export default {
     name: 'GroupItem',
     props: {
@@ -83,6 +88,9 @@ export default {
         },
         handleEditButton() {
             this.isEdit = true;
+        },
+        handleGroupingButton() {
+            EventBus.$emit('g-grouping-fire', this.item);
         },
         handleRemoveGroup() {
             const data = {
@@ -162,7 +170,7 @@ export default {
     position: absolute;
     top: 50%;
     transform: translateY(-50%);
-    right: 10px;
+    right: 0px;
     width: 40px;
     height: 40px;
     cursor: pointer;
@@ -172,6 +180,23 @@ export default {
     height: 100%;
     background-size: 100%;
     background-image: url('../../assets/imgs/icon-modify.svg');
+    background-position: center center;
+    background-repeat: no-repeat;
+}
+.group-grouping-button {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    right: 35px;
+    width: 20px;
+    height: 20px;
+    cursor: pointer;
+}
+.group-grouping-image {
+    width: 100%;
+    height: 100%;
+    background-size: 100%;
+    background-image: url('../../assets/imgs/grouping.svg');
     background-position: center center;
     background-repeat: no-repeat;
 }

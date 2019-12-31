@@ -176,6 +176,16 @@ export default {
                 }
             }
         })
+        EventBus.$on('g-grouping-fire', (v) => {
+            this.disabledMic = true;
+            this.disabledSound = true;
+        })
+        EventBus.$on('g-grouping-finish', (v, info) => {
+            this.disabledMic = false;
+            this.disabledSound = true;
+            this.selectedSoundId = '';
+            this.checkedGroupList = [];
+        })
     },
     mounted() {
     },
