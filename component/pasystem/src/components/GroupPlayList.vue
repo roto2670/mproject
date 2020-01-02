@@ -35,6 +35,7 @@
     </div>
 </template>
 <script>
+import { EventBus } from "@/main";
 export default {
     name: 'GroupPlayList',
     props: {
@@ -44,6 +45,9 @@ export default {
         },
         soundItemId: {
             type: String
+        },
+        onAir: {
+            type: Boolean
         }
     },
     data() {
@@ -61,7 +65,9 @@ export default {
             uuid: null,
             soundVolume: 80,
             isPlayed: false,
-            alarmList: []
+            alarmList: [],
+            disabled: this.onAir,
+            isOnAir: this.onAir
         }
     },
     methods: {
@@ -80,19 +86,23 @@ export default {
             }
         },
         handleSelectedItem(item) {
-            if (item === `record`) {                 //TODO: command 푸시면 alarm이나 streaming이 선택될 수 있습니다.
-                if (!!!this.selectedItem) {
-                    this.selectedItem = `record`;
-                } else {
-                    if (this.isPlaying()) {
-                        this.handlePauseRecord();
+            if (!this.disabled) {
+                if (item === `record`) {                 //TODO: command 푸시면 alarm이나 streaming이 선택될 수 있습니다.
+                    if (!!!this.selectedItem) {
+                        this.selectedItem = `record`;
+                    } else {
+                        if (this.isPlaying()) {
+                            this.handlePauseRecord();
+                        }
+                        this.selectedItem = null;
                     }
-                    this.selectedItem = null;
+                } else if (!!!this.selectedItem || this.selectedItem.id !== item.id) {
+                    this.selectedItem = item;
+                } else {
+                    if (!this.isOnAir) {
+                        this.selectedItem = null;
+                    }
                 }
-            } else if (!!!this.selectedItem || this.selectedItem.id !== item.id) {
-                this.selectedItem = item;
-            } else {
-                this.selectedItem = null;
             }
         },
         getUUID() {
@@ -102,6 +112,11 @@ export default {
           });
         },
         handleStartPlay() {
+            if (!this.disabled) {
+                _handleStartPlay();
+            }
+        },
+        _handleStartPlay() {
             const isStatus = this.$store.getters.getStreamingStatus,
                   nowStatus = this.$store.getters.getNowPlaying,
                   data = {};
@@ -309,22 +324,26 @@ export default {
             return buf.buffer;
         },
         handleVolumeUp() {
-              if (this.soundVolume < 100) {
-                  this.soundVolume += 5
-                  console.log("Volume Up", this.soundVolume);
-              } else {
-                  console.log("Volume MAX", this.soundVolume);
-              }
-              this.$emit('select-volume', this.soundVolume);
+            if (!this.disabled) {
+                if (this.soundVolume < 100) {
+                    this.soundVolume += 5
+                    console.log("Volume Up", this.soundVolume);
+                } else {
+                    console.log("Volume MAX", this.soundVolume);
+                }
+                this.$emit('select-volume', this.soundVolume);
+            }
         },
         handleVolumeDown() {
-            if (this.soundVolume > 0){
-                this.soundVolume -= 5
-                console.log("Volume Down", this.soundVolume);
-            } else {
-                console.log("Volume Mute", this.soundVolume);
+            if (!this.disabled) {
+                if (this.soundVolume > 0){
+                    this.soundVolume -= 5
+                    console.log("Volume Down", this.soundVolume);
+                } else {
+                    console.log("Volume Mute", this.soundVolume);
+                }
+                this.$emit('select-volume', this.soundVolume);
             }
-            this.$emit('select-volume', this.soundVolume);
         },
     },
     computed: {
@@ -341,6 +360,18 @@ export default {
             this.alarmList = [];
             this.selectedItem = `record`;
         }
+        EventBus.$on('g-streaming-status', (v) => {
+            const nowStatus = this.$store.getters.getNowPlaying;
+            if (nowStatus !== window.CONSTANTS.PLAY_STATUS.MY_STREAM) {
+                if (v.status) {
+                    this.disabled = true;
+                } else {
+                    this.disabled = false;
+                }
+            }
+            this.isOnAir = v.status;
+        })
+
     }
 }
 </script>

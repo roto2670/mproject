@@ -38,7 +38,7 @@
             </div>
         </div>
         <div v-if="isForGroup" class="info-right-panel">
-            <GroupPlayList :list="playList" :soundItemId="leftSoundItemId"
+            <GroupPlayList :list="playList" :onAir="onAir" :soundItemId="leftSoundItemId"
             @select-speaker="handleSelectSpeaker" @select-volume="handleVolume" ></GroupPlayList>
         </div>
         <div v-else class="info-right-panel">
