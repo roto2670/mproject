@@ -1612,8 +1612,8 @@
                                 <img id="worker${ index }" class="workerImg" src="${ window.CONSTANTS.URL.BASE_IMG }icon-worker${ index }-tab.svg">
                                 <input class="beaconItem" id="beacon-${ index }" type="checkbox" checked></label>`
                 })
-                context += `<button id="beacon-filter-Selectall-Button" class="beacon-filter-Selectall-Button">Select All</button>`;
-                context += `<button id="beacon-filter-Reset-Button" class="beacon-filter-Reset-Button">Reset</button>`;
+                context += `<div><button id="beacon-filter-Selectall-Button" class="beacon-filter-Selectall-Button">Select All</button>`;
+                context += `<button id="beacon-filter-Reset-Button" class="beacon-filter-Reset-Button">Reset</button></div>`;
 
                 this.sweetbox.fire({
                     showCancelButton: false,
@@ -1621,7 +1621,7 @@
                     showCloseButton: true,
                     titleText: 'Choose the beacon to filter',
                     html: context,
-                    width: 550
+                    width: 600
                 })
 
                 this._.forEach(this.gadgetInfoNumber, (index) => {
