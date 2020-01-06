@@ -137,7 +137,7 @@ export default {
         },
         handleStartPlay() {
             if (!this.disabled) {
-                _handleStartPlay();
+                this._handleStartPlay();
             }
         },
         _handleStartPlay() {
