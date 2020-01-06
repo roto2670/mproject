@@ -298,11 +298,12 @@ export default {
 .list-reserve-frame {
     position: relative;
     width: 100%;
-    height: 180px;
+    height: 200px;
     /* height: calc(100% - 2.5em); */
     overflow-x: hidden;
     overflow-y: scroll;
     background: white;
+    border-bottom: 3px solid #d2ebfa;
 }
 .left-icon-image {
   width: 50%;
