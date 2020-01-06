@@ -108,11 +108,13 @@ export default {
         })
         EventBus.$on('g-reserve-item-pause', (v) => {
             if (this.id === v.id) {
-                this.reserve = v;
-                if (this.reserve.pause === 0) {
-                    this.pause = false;
-                } else {
-                    this.pause = true;
+                if (this.reserve.repeat === 0) {  // Non repeat
+                    this.reserve = v;
+                    if (this.reserve.pause === 0) {
+                        this.pause = false;
+                    } else {
+                        this.pause = true;
+                    }
                 }
             }
         })
