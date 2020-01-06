@@ -812,8 +812,35 @@ export default {
                 pause: 0
             };
             this.services.createReserveAlarm(_data, (resdata) => {
+                const fileDel = this.services.removeAlarmData,
+                      delFileData = {},
+                      removeAlarmData = this.$store.commit;
                 if (resdata === '1') {
                   this.sweetbox.fire('There is a pre-scheduled broadcast at the requested time. Your request has been canceled.');
+                } else if (resdata === '2') {
+                    this.sweetbox.fire({
+                        title: 'Alarm file does not exist.',
+                        text: "There is no alarm file available to play. Please remove it from the list and re-register it. You want to delete it?",
+                        type: 'warning',
+                        showCancelButton: true,
+                        confirmButtonColor: '#3085d6',
+                        cancelButtonColor: '#d33',
+                        confirmButtonText: 'Yes, delete it!',
+                        cancelButtonText: 'No, cancel!',
+                        confirmButtonClass: 'btn btn-success',
+                        cancelButtonClass: 'btn btn-danger',
+                        buttonsStyling: true
+                    }).then(function(isConfirm) {
+                        if (isConfirm.value === true) {
+                            delFileData.id_list = [_data.alarm_id];
+                            fileDel(delFileData, (resp) => {
+                              console.log("Succeed to remove alarm data");
+                              removeAlarmData('removeAlarmData', _data.alarm_id);
+                            }, (error) => {
+                              console.error("Failed to remove alarm data ", error);
+                            });
+                        }
+                    });
                 } else {
                   console.log("Succeed to add reserve alarm");
                 }
@@ -856,7 +883,7 @@ export default {
                     this.reserveAlarmList = this._.without(this.reserveAlarmList, id);
                 });
             }, (error) => {
-                console.log("Failed to remove reserve alarm", error);
+                console.error("Failed to remove reserve alarm", error);
             });
             this.isTopPressedType = '';
         },
@@ -947,6 +974,10 @@ export default {
                 updatePlayList: (data) => {
                     this._handlePlayList(data);
                 },
+                fileNone: (data) => {
+                    console.log("received", data);
+                    this._handleNoneFile(data);
+                }
             });
         },
         _handleAdded(data) {
@@ -1123,6 +1154,43 @@ export default {
                     this.$store.commit('removePlayList', item);
                     this.playList = this._.without(this.playList, item);
                 }
+            });
+        },
+        _handleNoneFile(data) {
+            var resIdList = [];
+            const alarmID = data.v,
+                  reserveList = this.reserveAlarmList,
+                  fileDel = this.services.removeAlarmData,
+                  reserveRemove = this.handleReserveRemove,
+                  delFileData = {};
+            this._.forEach(reserveList, reserveID => {
+                var reserveData = this.$store.getters.getReserveAlarmData(reserveID);
+                if (alarmID == reserveData.alarm_id) {
+                    resIdList.push(reserveID);
+                }
+            });
+            this.sweetbox.fire({
+                title: 'Alarm file does not exist.',
+                text: "There is no alarm file available to play. Please remove it from the list and re-register it. You want to delete it?",
+                type: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#3085d6',
+                cancelButtonColor: '#d33',
+                confirmButtonText: 'Yes, delete it!',
+                cancelButtonText: 'No, cancel!',
+                confirmButtonClass: 'btn btn-success',
+                cancelButtonClass: 'btn btn-danger',
+                buttonsStyling: true
+            }).then(function(isConfirm) {
+                if (isConfirm.value === true) {
+                    delFileData.id_list = [alarmID];
+                    fileDel(delFileData, (resp) => {
+                      console.log("Succeed to remove alarm data");
+                    }, (error) => {
+                      console.error("Failed to remove alarm data ", error);
+                    });
+                }
+                reserveRemove(resIdList);
             });
         }
     },

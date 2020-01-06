@@ -25,7 +25,8 @@ window.CONSTANTS = {
         UPDATE_RESERVE_LIST: 'update_reserve_list',
         UPDATE_STREAMING_STATUS: 'update_streaming_status',
         FAILED_LIST : 'failed_list',
-        UPDATE_PLAY_LIST : 'update_play_list'
+        UPDATE_PLAY_LIST : 'update_play_list',
+        FILE_NONE : 'file_none'
     },
     PLAY_STATUS: {
         READY_FOR_STREAM: 0,
