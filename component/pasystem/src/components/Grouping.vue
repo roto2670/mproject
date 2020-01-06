@@ -41,12 +41,10 @@ export default {
         }
     },
     created() {
-        console.log("### create")
         EventBus.$on('g-grouping-fire', (v) => {
             this.isGrouping = true;
             this.groupName = v.name;
             this.groupInfo = v;
-            console.log("vvv) : ", v);
         })
     }
 }

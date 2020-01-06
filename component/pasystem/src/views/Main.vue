@@ -1099,8 +1099,13 @@ export default {
                     this.updateGroupData(group);
 
                     this._.forEach(group.speaker_id_list, speakerId => {
+                        this._.forEach(this.speakerByTags, (value, key) => {
+                            if (key !== info.id) {
+                                this.speakerByTags[key] = this._.without(this.speakerByTags[key], speakerId);
+                            }
+                        })
                         const speaker = this.$store.getters.getSpeaker(speakerId),
-                            marker = this.markers[speaker.id];
+                              marker = this.markers[speaker.id];
                         speaker.tags = [info.id];
                         this.$store.commit('updateSpeaker', speaker);
                         this.updateData(speaker);
@@ -1114,7 +1119,12 @@ export default {
                             });
                         }
                     });
-                    this._updatePolygon(info.id);
+                    this._.forEach(this.speakerByTags, (value, key) => {
+                        if (key !== info.id && key !== 'none') {
+                            const _group = this.$store.getters.getGroup(key);
+                            this.updateGroupData(_group);
+                        }
+                    })
                 }
             } else {
                 this._.forEach(this.speakerByTags[info.id], speakerId => {

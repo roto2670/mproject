@@ -19,7 +19,7 @@
         <div class="alarm-play-frame">
             <div v-if="isMicType" class="play-icon-panel">
                 <div class="icon-image mic-icon" @click="handleStartPlay"
-                    :class="{ micStop: isPlaying() }"></div>
+                    :class="{ stopMic: isPlaying() }"></div>
             </div>
             <div v-else class="play-icon-panel">
                 <div class="icon-image play-icon" @click="handleStartPlay"
@@ -495,7 +495,7 @@ export default {
     background-color: rgb(255, 255, 255);
     border-radius: 100%;
 }
-.icon-image.micStop {
+.icon-image.stopMic {
     background-size: 75%;
     background-image: url('../assets/imgs/muted.svg');
     background-color: rgb(255, 255, 255);
