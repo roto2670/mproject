@@ -65,6 +65,7 @@ export default {
             uuid: null,
             soundVolume: 80,
             isPlayed: false,
+            firstChk: true,
             alarmList: [],
             disabled: this.onAir,
             isOnAir: this.onAir
@@ -193,6 +194,7 @@ export default {
                     this.blob = null;
                     this.uuid = null;
                     this.isPlayed = false;
+                    this.firstChk = true;
                     this.services.stopStreamVoice(() => {
                         console.log("Success to stop voice stream");
                     }, (error) => {
@@ -206,16 +208,10 @@ export default {
         },
         streamPosting() {
             if (!!this.context) {
-                this.context.close();
-                this.audioInput.disconnect();
-                this.recorder.disconnect();
                 this.blobToWav();
-                this.context = null;
-                this.recorder = null;
-                this.audioInput = null;
                 this.recordingLength = 0;
-                this.leftchannel =  [],
-                this.rightchannel =  [],
+                this.leftchannel = [],
+                this.rightchannel = [],
                 this.blob = null;
             }
         },
@@ -297,18 +293,23 @@ export default {
                 var bufferSize = 4096;
 
                 this.recorder = this.context.createScriptProcessor(bufferSize, 2, 2);
-
+                this.audioInput.connect(this.recorder);
+                this.recorder.connect(this.context.destination);
                 this.recorder.onaudioprocess = (e) => {
                     this.leftchannel.push(new Float32Array(e.inputBuffer.getChannelData(0)));
                     this.rightchannel.push(new Float32Array(e.inputBuffer.getChannelData(1)));
                     this.recordingLength += bufferSize;
-                    if (this.recordingLength == 204800) {
-                      this.streamPosting();
-                      this._requireAccess();
+                    if (this.recordingLength == 40960) {
+                        if (this.firstChk) {
+                            this.streamPosting();
+                            this.firstChk = false;
+                        } else {
+                            setTimeout(this.streamPosting, 20);
+                        }
                     }
                 };
-                this.audioInput.connect(this.recorder);
-                this.recorder.connect(this.context.destination);
+            }, (error) => {
+                console.log("error : ", error);
             })
         },
         convertoFloat32ToInt16(buffer) {
