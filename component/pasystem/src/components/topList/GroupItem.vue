@@ -2,9 +2,9 @@
     <div v-if="isShowing" class="group-item-panel">
         <div v-if="!isEdit" class="group-item-wrapper">
             <label class="group-item-label">
-                <input type="checkbox" class="group-item-checkbox"
+                <!-- <input type="checkbox" class="group-item-checkbox"
                 v-model="checked"
-                @change="handleSelectedCheckbox">
+                @change="handleSelectedCheckbox"> -->
                 <div class="group-item-text" :title="getItemName">{{ this.item.name }}</div>
             </label>
         </div>
@@ -151,6 +151,7 @@ export default {
     color: rgb(128, 128, 128);
     font-weight: bold;
     cursor: pointer;
+    margin-left: 17px;
 }
 .group-item-checkbox {
     margin: -1px 10px 0 !important;
