@@ -122,15 +122,26 @@ export default {
                 console.log("Failed to remove group data");
             });
         },
-        handleRemoveGroupItem(idList) {
-            this.services.removeGroupData(idList, () => {
-                this.groupCheckList = [];
-                console.log("Succeed to remove group data ", idList);
+        handleReserveRemove(list){
+            const data = {
+                id_list: list
+            };
+            this.services.removeReserveAlarm(data, () => {
+                console.log("Succeed to remove reserve alarm");
+                this._.forEach(list, id => {
+                    this.$store.commit('removeReserveAlarmData', id);
+                    this.reserveAlarmList = this._.without(this.reserveAlarmList, id);
+                });
             }, (error) => {
-                this.groupCheckList = [];
-                console.log("Failed to remove group data");
+                console.error("Failed to remove reserve alarm", error);
             });
-
+            this.isTopPressedType = '';
+        },
+        handleRemoveGroupItem(idList) {
+            this.$emit('select-remove', idList);
+        },
+        groupCheckListInit() {
+            this.groupCheckList = [];
         }
     },
     computed: {
