@@ -31,14 +31,10 @@
             </div>
         </div>
         <div v-else-if="type === 'group_set_up'"
-        class="sound-button-wrapper">
-            <div class="sound-button-panel" :class="{ deactive: !isEmpty }"
+        class="group-button-create-wrapper">
+            <div class="group-button-create-panel" :class="{ deactive: !isEmpty }"
             @click="selectedAddGroup">
-                <div class="sound-button-text">CREATE</div>
-            </div>
-            <div class="sound-button-panel right" :class="{ deactive: isEmpty }"
-            @click="selectedRemove">
-                <div class="sound-button-text">REMOVE</div>
+                <div class="group-create-button-text">CREATE</div>
             </div>
         </div>
     </div>
@@ -269,5 +265,27 @@ export default {
     position: relative;
     width: 100%;
     height: 50px;
+}
+.group-button-create-wrapper {
+    width: 100%;
+    height: 60px;
+}
+.group-button-create-panel {
+    position: relative;
+    display: inline-block;
+    width: 100%;
+    height: 100%;
+    background-color: rgb(85, 185, 250);
+    color: white;
+    cursor: pointer;
+}
+.group-create-button-text {
+    position: absolute;
+    width: 100%;
+    top: 50%;
+    transform: translateY(-50%);
+    text-align: center;
+    font-weight: bold;
+    font-size: 15px;
 }
 </style>
