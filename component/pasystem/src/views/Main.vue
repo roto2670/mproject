@@ -13,7 +13,7 @@
                          isShowingTopList('broadcast') ||
                          isShowingTopList('group_set_up')"
         :checkList="filterList" :type="isTopPressedType"
-        ref="groupWindow""
+        ref="groupWindow"
         @select-checkbox="handleChangedCheckbox"
         @select-button="handleBroadCast"
         @select-remove="handleGroupRemove"></GroupList>
@@ -957,13 +957,12 @@ export default {
             const beforeTagData = this._.first(speakerData.tags),
                   updateTagData = this._.first(data.tags);
             this._.extend(speakerData, data);
-            this.$store.commit('addSpeaker', speakerData);
+            console.log("11### hihi ", speakerData);
             if (!!data.custom) {
                 if (this._.has(data.custom, 'map_location')) {
                     if (!!marker) {
                         marker.setCoordinates(data.custom.map_location);
                         this.markers[data.id] = marker;
-                        this._updatePolygon(speakerData.tag);
                     } else {
                         this._drawSpeaker(speakerData);
                     }
