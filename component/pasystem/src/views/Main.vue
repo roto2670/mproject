@@ -13,8 +13,10 @@
                          isShowingTopList('broadcast') ||
                          isShowingTopList('group_set_up')"
         :checkList="filterList" :type="isTopPressedType"
+        ref="groupWindow""
         @select-checkbox="handleChangedCheckbox"
-        @select-button="handleBroadCast"></GroupList>
+        @select-button="handleBroadCast"
+        @select-remove="handleGroupRemove"></GroupList>
         <SoundList v-if="isShowingTopList('sound_set_up')" :list="alarmList"
         @select-add="handleSoundAdd" @select-remove="handleSoundRemove"></SoundList>
         <ReserveList v-if="isShowingTopList('scheduled_broadcast')" :list="reserveAlarmList"
@@ -693,19 +695,103 @@ export default {
                 console.warn('Failed to add alarm data');
             });
         },
-        handleSoundRemove(list) {
-            const data = {
-                id_list: list
-            };
-            this.services.removeAlarmData(data, () => {
-                console.log("Succeed to remove alarm data");
-                this._.forEach(list, id => {
-                    this.$store.commit('removeAlarmData', id);
-                    this.alarmList = this._.without(this.alarmList, id);
+        handleGroupRemove(list) {
+            var resIdList = [];
+            const reserveList = this.reserveAlarmList,
+                  reserveRemove = this.handleReserveRemove,
+                  checkListInit = this.$refs.groupWindow.groupCheckListInit,
+                  removeGroup = this.services.removeGroupData;
+            this._.forEach(reserveList, reserveID => {
+                var reserveData = this.$store.getters.getReserveAlarmData(reserveID);
+                this._.forEach(reserveData.group_id_list, group_id => {
+                    if (list.id_list[0] == group_id) {
+                        resIdList.push(reserveID);
+                    }
                 });
-            }, (error) => {
-                console.log("Failed to remove alarm data ", error);
             });
+            if (resIdList.length == 0) {
+                this.services.removeGroupData(list, () => {
+                    checkListInit();
+                    console.log("Succeed to remove group data ", list);
+                }, (error) => {
+                    checkListInit();
+                    console.error("Failed to remove group data", error);
+                });
+            } else {
+                this.sweetbox.fire({
+                    title: 'This group data is already scheduled.',
+                    text: "The group data you are trying to delete is linked to the reservation broadcasting. Are you sure you want to delete all linked reservations and group data?",
+                    type: 'warning',
+                    showCancelButton: true,
+                    confirmButtonColor: '#3085d6',
+                    cancelButtonColor: '#d33',
+                    confirmButtonText: 'Yes, delete it!',
+                    cancelButtonText: 'No, cancel!',
+                    confirmButtonClass: 'btn btn-success',
+                    cancelButtonClass: 'btn btn-danger',
+                    buttonsStyling: true
+                }).then(function(isConfirm) {
+                    if (isConfirm.value === true) {
+                        reserveRemove(resIdList);
+                        removeGroup(list, () => {
+                            checkListInit();
+                            console.log("Succeed to remove group data ", list);
+                        }, (error) => {
+                            checkListInit();
+                            console.error("Failed to remove group data", error);
+                        });
+                    }
+                });
+            }
+        },
+        handleSoundRemove(list) {
+            var resIdList = [];
+            const reserveList = this.reserveAlarmList,
+                  fileDel = this.services.removeAlarmData,
+                  reserveRemove = this.handleReserveRemove,
+                  fileDelData = {
+                    id_list: list
+                  };
+            this._.forEach(reserveList, reserveID => {
+                var reserveData = this.$store.getters.getReserveAlarmData(reserveID);
+                if (list[0] == reserveData.alarm_id) {
+                    resIdList.push(reserveID);
+                }
+            });
+            if (resIdList.length == 0) {
+                this.services.removeAlarmData(fileDelData, () => {
+                    console.log("Succeed to remove alarm data");
+                    this._.forEach(list, id => {
+                        this.$store.commit('removeAlarmData', id);
+                        this.alarmList = this._.without(this.alarmList, id);
+                    });
+                }, (error) => {
+                    console.error("Failed to remove alarm data ", error);
+                });
+            } else {
+                this.sweetbox.fire({
+                    title: 'This alarm file is already scheduled.',
+                    text: "The alarm file you are trying to delete is linked to the reservation broadcasting. Are you sure you want to delete all linked reservations and alarm file?",
+                    type: 'warning',
+                    showCancelButton: true,
+                    confirmButtonColor: '#3085d6',
+                    cancelButtonColor: '#d33',
+                    confirmButtonText: 'Yes, delete it!',
+                    cancelButtonText: 'No, cancel!',
+                    confirmButtonClass: 'btn btn-success',
+                    cancelButtonClass: 'btn btn-danger',
+                    buttonsStyling: true
+                }).then(function(isConfirm) {
+                    if (isConfirm.value === true) {
+                        reserveRemove(resIdList);
+                        fileDel(fileDelData, (resp) => {
+                            console.log("Succeed to remove alarm data");
+                        }, (error) => {
+                            console.error("Failed to remove alarm data ", error);
+                        });
+                    }
+                });
+            }
         },
         handleReserveWindowButton(data) {
             let repeat = data.repeat;
