@@ -190,6 +190,9 @@ export class SocketClient {
                 case window.CONSTANTS.EVENT_TYPE.UPDATE_PLAY_LIST:
                     this._subscribeHandlers.updatePlayList(data);
                 break;
+                case window.CONSTANTS.EVENT_TYPE.FILE_NONE:
+                    this._subscribeHandlers.fileNone(data);
+                break;
             }
         }
     }
