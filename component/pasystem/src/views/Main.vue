@@ -412,15 +412,17 @@ export default {
             }
         },
         _updatePolygon(tag) {
-            const polygon = this.polygons[tag],
-                  groupList = this.speakerByTags[tag];
-            if (!!polygon) {
-                const locationList = this._sortLocationList(groupList);
-                polygon.setCoordinates(locationList);
-                this._drawPolygonTitle(locationList, tag);
-            } else {
-                if (groupList.length > 0) {
-                    this._drawPolygon(groupList, tag);
+            if (tag !== undefined && tag !== null && tag !== 'none') {
+                const polygon = this.polygons[tag],
+                    groupList = this.speakerByTags[tag];
+                if (!!polygon) {
+                    const locationList = this._sortLocationList(groupList);
+                    polygon.setCoordinates(locationList);
+                    this._drawPolygonTitle(locationList, tag);
+                } else {
+                    if (groupList.length > 0) {
+                        this._drawPolygon(groupList, tag);
+                    }
                 }
             }
         },
@@ -957,7 +959,6 @@ export default {
             const beforeTagData = this._.first(speakerData.tags),
                   updateTagData = this._.first(data.tags);
             this._.extend(speakerData, data);
-            console.log("11### hihi ", speakerData);
             if (!!data.custom) {
                 if (this._.has(data.custom, 'map_location')) {
                     if (!!marker) {
@@ -1030,9 +1031,11 @@ export default {
                     });
                 } else if (data.kind === 'update') {
                     const group = this.$store.getters.getGroup(item.id);
-                    group.name = item.name;
-                    this.$store.commit('updateGroup', group);
-                    this._updatePolygon(item.id);
+                    if (group !== undefined) {
+                        group.name = item.name;
+                        this.$store.commit('updateGroup', group);
+                        this._updatePolygon(item.id);
+                    }
                 }
             });
         },
