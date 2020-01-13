@@ -5,6 +5,7 @@
         <input class="file-input" type="file" ref="file" @change="handleFileUpload()"/>
         <Top :selectedType="isTopPressedType" @select-top-button="handleTopButton"></Top>
         <List :groupList="groupList" :alarmList="playList" :reserveList="reserveAlarmList"
+        ref="leftList"
         @select-group-check="_handleGroupListCheckbox"
         @select-button="handleBroadCastLeftMenu"
         @select-reserve-item="handleReserveItemInfoWindow"
@@ -198,6 +199,9 @@ export default {
                     this.$store.commit('updateNowPlaying', window.CONSTANTS.PLAY_STATUS.READY_FOR_STREAM)
                     this.onAir = false;
                 } else {
+                    if(data.cast_type === window.CONSTANTS.CAST_TYPE.RESERVE) {
+                       this.$refs.leftList.setReserveItemStream(true);
+                    }
                     this.$store.commit('updateStreamingStatus', true)
                     this.$store.commit('updateNowPlaying', window.CONSTANTS.PLAY_STATUS.OTHER_STREAM)
                     this.onAir = true;
@@ -1092,6 +1096,9 @@ export default {
                   nowStatus = this.$store.getters.getNowPlaying;
             this.$store.commit('updateStreamingStatus', isStatus)
             this.onAir = isStatus;
+            if ("castType" in data.v) {
+                this.$refs.leftList.setReserveItemStream(isStatus);
+            }
             if (!isStatus) {
                 this.$store.commit('updateNowPlaying', 0)
                 this._handleGroupListReady(groupIdList);

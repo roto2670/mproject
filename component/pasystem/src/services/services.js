@@ -362,6 +362,25 @@ export const createReserveAlarm = (data, successCallback, failCallback) => {
     });
 }
 
+export const stopReserveAlarm = (data, successCallback, failCallback) => {
+    axios({
+        url: `${ window.CONSTANTS.URL.PA }/pa/reserve/stop`,
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        data: data
+    }).then(response => {
+        if(response.data) {
+            successCallback(response.data);
+        } else {
+            failCallback();
+        }
+    }).catch(error => {
+        failCallback(error);
+    });
+}
+
 export const removeReserveAlarm = (data, successCallback, failCallback) => {
     axios({
         url: `${ window.CONSTANTS.URL.PA }/pa/reserve/delete`,

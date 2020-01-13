@@ -35,6 +35,9 @@
             <div class="list-reserve-container">
               <div class="list-top-frame">
                   <div class="list-text">Alarm</div>
+                  <div v-if="isReserveStreamed" class="left-group-frame-help-button">
+                      <div class="icon-image stopIcon" @click="handleReserveStop"></div>
+                  </div>
               </div>
               <div class="list-reserve-frame">
                   <ReserveItem v-for="reserveId in reserveList" :key="reserveId" :id="reserveId"
@@ -82,10 +85,19 @@ export default {
             checkedGroupList: [],
             selectedSoundId: '',
             disabledMic : false,
+            reserveItemStream : false,
             disabledSound : true
         }
     },
+    computed: {
+      isReserveStreamed() {
+          return this.reserveItemStream;
+      }
+    },
     methods: {
+      setReserveItemStream(data) {
+          this.reserveItemStream = data;
+      },
       isDisabledMic() {
           return this.disabledMic;
       },
@@ -134,6 +146,14 @@ export default {
               }
           }
       },
+      handleReserveStop() {
+          const data = {};
+          this.services.stopReserveAlarm(data, (resData) => {
+                console.log("Succeed to stop reserve alarm");
+          }, (error) => {
+                console.error("Failed to stop reserve alarm", error);
+          });
+      },
       handleHelpButton() {
           let content = `
           <div class="help-container">
@@ -157,7 +177,6 @@ export default {
       }
     },
     created() {
-        console.log("Create list view ", this.groupList);
         EventBus.$on('g-close-infowindow', (v) => {
             this.selectedSoundId = '';
             this.checkedGroupList = [];
@@ -294,6 +313,10 @@ export default {
     background-image: url('../assets/imgs/question.svg');
     background-position: center center;
     background-repeat: no-repeat;
+}
+.icon-image.stopIcon {
+    background-size: 102%;
+    background-image: url('../assets/imgs/icon-stop.png');
 }
 .list-reserve-frame {
     position: relative;
