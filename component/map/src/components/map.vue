@@ -1653,34 +1653,55 @@
                 }
             },
             choiceFilter() {
-                this.sweetbox.fire({
-                    titleText: 'Choose the item to filter',
-                    html: `<button id="filterItemGadget" class="filterGadgetIcon"></button>
-                    <div class="infoFilterGadget">Equipment</div>
-                    <button id="filterItemHub" class="filterHubIcon"></button>
-                    <div class="infoFilterHub">Beacon Scanner</div>
-                    <button id="filterItemIpcam" class="filterIpcamIcon"></button>
-                    <div class="infoFilterIpcam">IPCam</div>
-                    <button id="filterItemSpeaker" class="filterSpeakerIcon"></button>
-                    <div class="infoFilterSpeaker">Speaker</div>
-                    <button id="filterItemRouter" class="filterRouterIcon"></button>
-                    <div class="infoFilterRouter">Router</div>
-                    <button id="filterItemMoi" class="filterMoiIcon"></button>
-                    <div class="infoFilterMoi">MOI</div>`,
-                    showCancelButton: false,
-                    showConfirmButton: true,
-                    confirmButtonColor: '#3085d6',
-                    showCloseButton: true,
-                    width: 650
-                })
+                if (this.isShowingByStage(window.CONSTANTS.USER_STAGE.SK_ADMIN)) {
+                    this.sweetbox.fire({
+                        titleText: 'Choose the item to filter',
+                        html: `<button id="filterItemGadget" class="filterGadgetIcon"></button>
+                        <div class="infoFilterGadget">Equipment</div>
+                        <button id="filterItemHub" class="filterHubIcon"></button>
+                        <div class="infoFilterHub">Beacon Scanner</div>
+                        <button id="filterItemIpcam" class="filterIpcamIcon"></button>
+                        <div class="infoFilterIpcam">IPCam</div>
+                        <button id="filterItemSpeaker" class="filterSpeakerIcon"></button>
+                        <div class="infoFilterSpeaker">Speaker</div>
+                        <button id="filterItemRouter" class="filterRouterIcon"></button>
+                        <div class="infoFilterRouter">Router</div>
+                        <button id="filterItemMoi" class="filterMoiIcon"></button>
+                        <div class="infoFilterMoi">MOI</div>`,
+                        showCancelButton: false,
+                        showConfirmButton: true,
+                        confirmButtonColor: '#3085d6',
+                        showCloseButton: true,
+                        width: 650
+                    })
+                } else {
+                    this.sweetbox.fire({
+                        titleText: 'Choose the item to filter',
+                        html: `<button id="filterItemGadget" class="filterGadgetIcon"></button>
+                        <div class="infoFilterGadget">Equipment</div>
+                        <button id="filterItemHub" class="filterHubIcon"></button>
+                        <div class="infoFilterHub">Beacon Scanner</div>
+                        <button id="filterItemIpcam" class="filterIpcamIcon"></button>
+                        <div class="infoFilterIpcam">IPCam</div>
+                        <button id="filterItemMoi" class="filterMoiIcon"></button>
+                        <div class="infoFilterMoi">MOI</div>`,
+                        showCancelButton: false,
+                        showConfirmButton: true,
+                        confirmButtonColor: '#3085d6',
+                        showCloseButton: true,
+                        width: 650
+                    })
+                }
                 if (this.checkedMoiFilter) {
                    document.getElementsByClassName('filterMoiIcon')[0].classList.add('moiFilter');
                 }
-                if (this.checkSpeakerFilter) {
-                    document.getElementsByClassName('filterSpeakerIcon')[0].classList.add('speakerFilter');
-                }
-                if (this.checkRouterFilter) {
-                    document.getElementsByClassName('filterRouterIcon')[0].classList.add('routerFilter');
+                if (this.isShowingByStage(window.CONSTANTS.USER_STAGE.SK_ADMIN)) {
+                    if (this.checkSpeakerFilter) {
+                        document.getElementsByClassName('filterSpeakerIcon')[0].classList.add('speakerFilter');
+                    }
+                    if (this.checkRouterFilter) {
+                        document.getElementsByClassName('filterRouterIcon')[0].classList.add('routerFilter');
+                    }
                 }
                 document.getElementsByClassName('filterHubIcon')[0].onclick = () => {
                     this.filterItems(1);
@@ -1692,27 +1713,29 @@
                 document.getElementsByClassName('filterIpcamIcon')[0].onclick = () => {
                     this.filterItems(2);
                 };
-                document.getElementsByClassName('filterSpeakerIcon')[0].onclick = () => {
-                    // this.filterItems(3);                                     //TODO: layer에 따른 filter를 가능하게 함
-                    this.checkSpeakerFilter = !this.checkSpeakerFilter;         //TODO: 8줄 삭제
-                    if (this.checkSpeakerFilter) {
-                        this.noGroupSpeakerkLayer.hide();
-                        document.getElementsByClassName('filterSpeakerIcon')[0].classList.add('speakerFilter');
-                    } else {
-                        this.noGroupSpeakerkLayer.show();
-                        document.getElementsByClassName('filterSpeakerIcon')[0].classList.remove('speakerFilter');
+                if (this.isShowingByStage(window.CONSTANTS.USER_STAGE.SK_ADMIN)) {
+                    document.getElementsByClassName('filterSpeakerIcon')[0].onclick = () => {
+                        // this.filterItems(3);                                     //TODO: layer에 따른 filter를 가능하게 함
+                        this.checkSpeakerFilter = !this.checkSpeakerFilter;         //TODO: 8줄 삭제
+                        if (this.checkSpeakerFilter) {
+                            this.noGroupSpeakerkLayer.hide();
+                            document.getElementsByClassName('filterSpeakerIcon')[0].classList.add('speakerFilter');
+                        } else {
+                            this.noGroupSpeakerkLayer.show();
+                            document.getElementsByClassName('filterSpeakerIcon')[0].classList.remove('speakerFilter');
+                        }
                     }
-                },
-                document.getElementsByClassName('filterRouterIcon')[0].onclick = () => {
-                    this.checkRouterFilter = !this.checkRouterFilter;
-                    if (this.checkRouterFilter) {
-                        this.routerLayer.hide();
-                        document.getElementsByClassName('filterRouterIcon')[0].classList.add('routerFilter');
-                    } else {
-                        this.routerLayer.show();
-                        document.getElementsByClassName('filterRouterIcon')[0].classList.remove('routerFilter');
+                    document.getElementsByClassName('filterRouterIcon')[0].onclick = () => {
+                        this.checkRouterFilter = !this.checkRouterFilter;
+                        if (this.checkRouterFilter) {
+                            this.routerLayer.hide();
+                            document.getElementsByClassName('filterRouterIcon')[0].classList.add('routerFilter');
+                        } else {
+                            this.routerLayer.show();
+                            document.getElementsByClassName('filterRouterIcon')[0].classList.remove('routerFilter');
+                        }
                     }
-                },
+                }
                 document.getElementsByClassName('filterMoiIcon')[0].onclick = () => {
                     this.checkedMoiFilter = !this.checkedMoiFilter;
                     if (this.checkedMoiFilter) {
