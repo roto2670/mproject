@@ -1,5 +1,9 @@
 window.CONSTANTS = {
     IS_DEV: false,
+    CAST_TYPE: {
+        //TODO: If necessary, add and use the type.
+        RESERVE: '4'
+    },
     URL: {
         CONSOLE: '',
         BASE_IMG: 'static/imgs/',
