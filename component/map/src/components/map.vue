@@ -358,76 +358,78 @@
                     this.drawIpCams(ipcams, true);
                 });
 
-                this.services.getGroupData(groups => { //TODO: group에 따른 speaker layer을 생성할 수 있게 함
-                    console.log("Sucess to get Groups", groups);
-                    this._.forEach(groups, group => {
-                        // this.addGroupLayer(group.id);
-                        this.$store.commit('addGroup', group);
-                    })
+                if (this.isShowingByStage(window.CONSTANTS.USER_STAGE.SK_ADMIN)) {
+                    this.services.getGroupData(groups => { //TODO: group에 따른 speaker layer을 생성할 수 있게 함
+                        console.log("Sucess to get Groups", groups);
+                        this._.forEach(groups, group => {
+                            // this.addGroupLayer(group.id);
+                            this.$store.commit('addGroup', group);
+                        })
 
-                    // this.services.getSpeakers(speakers => {
-                    //     console.log("Sucesss to get Speakers", speakers);
-                    //     this._.forEach(speakers, speaker => {
-                    //         this.$store.commit('addSpeaker', speaker);
-                    //     })
-                    //     this.drawSpeakers(speakers);
-                    // });
-                    this.services.getPaStatus(info => {
-                        if (Object.keys(info).length == 0) {
-                            this.onAir = false;
-                            this.$store.commit('updateStreamingStatus', false);
+                        // this.services.getSpeakers(speakers => {
+                        //     console.log("Sucesss to get Speakers", speakers);
+                        //     this._.forEach(speakers, speaker => {
+                        //         this.$store.commit('addSpeaker', speaker);
+                        //     })
+                        //     this.drawSpeakers(speakers);
+                        // });
+                        this.services.getPaStatus(info => {
+                            if (Object.keys(info).length == 0) {
+                                this.onAir = false;
+                                this.$store.commit('updateStreamingStatus', false);
+                                this.$store.commit('updateNowPlaying', window.CONSTANTS.PLAY_STATUS.READY_FOR_STREAM)
+                            } else {
+                                this.onAir = true;
+                                this.$store.commit('updateStreamingStatus', true);
+                                this.$store.commit('updateNowPlaying', window.CONSTANTS.PLAY_STATUS.OTHER_STREAM)
+                            }
+                        }, (error) => {
+                            console.log("Failed to get pa status.", error);
+                        });
+                    }, (error) => {
+                        console.log("Failed to get Groups", error);
+                    });
+
+                    this.services.getSpeakers(speakers => {
+                        console.log("Sucesss to get Speakers", speakers);
+                        this._.forEach(speakers, speaker => {
+                            this.$store.commit('addSpeaker', speaker);
+                        })
+                        this.drawSpeakers(speakers, true);
+                    });
+
+                    this.services.getRouters(routers => {
+                        console.log("Sucesss to get Routers", routers);
+                        this._.forEach(routers, router => {
+                            this.$store.commit('addRouter', router);
+                        })
+                        this.drawRouters(routers, true);
+                    });
+
+                    this.services.getAlarmList(alarms => {
+                        console.log("Sucess to get Alarms", alarms);
+                        this._.forEach(alarms, (alarm) => {
+                            this.$store.commit('addAlarms', alarm);
+                        })
+                    }, (error) => {
+                        console.log("Failed to get Alarms", error);
+                    });
+
+                    this.services.getStreamStatus(data => {
+                        if (Object.keys(data).length == 0) {
+                            this.$store.commit('updateStreamingStatus', false)
                             this.$store.commit('updateNowPlaying', window.CONSTANTS.PLAY_STATUS.READY_FOR_STREAM)
+                            this.onAir = false;
                         } else {
-                            this.onAir = true;
-                            this.$store.commit('updateStreamingStatus', true);
+                            this.$store.commit('updateStreamingStatus', true)
                             this.$store.commit('updateNowPlaying', window.CONSTANTS.PLAY_STATUS.OTHER_STREAM)
+                            this.onAir = true;
+                            EventBus.$emit("g-streaming-status", {"status": true});
                         }
                     }, (error) => {
-                        console.log("Failed to get pa status.", error);
+                        console.log("Failed to get stream data");
                     });
-                }, (error) => {
-                    console.log("Failed to get Groups", error);
-                });
-
-                this.services.getSpeakers(speakers => {
-                    console.log("Sucesss to get Speakers", speakers);
-                    this._.forEach(speakers, speaker => {
-                        this.$store.commit('addSpeaker', speaker);
-                    })
-                    this.drawSpeakers(speakers, true);
-                });
-
-                this.services.getRouters(routers => {
-                    console.log("Sucesss to get Routers", routers);
-                    this._.forEach(routers, router => {
-                        this.$store.commit('addRouter', router);
-                    })
-                    this.drawRouters(routers, true);
-                });
-
-                this.services.getAlarmList(alarms => {
-                    console.log("Sucess to get Alarms", alarms);
-                    this._.forEach(alarms, (alarm) => {
-                        this.$store.commit('addAlarms', alarm);
-                    })
-                }, (error) => {
-                    console.log("Failed to get Alarms", error);
-                });
-
-                this.services.getStreamStatus(data => {
-                    if (Object.keys(data).length == 0) {
-                        this.$store.commit('updateStreamingStatus', false)
-                        this.$store.commit('updateNowPlaying', window.CONSTANTS.PLAY_STATUS.READY_FOR_STREAM)
-                        this.onAir = false;
-                    } else {
-                        this.$store.commit('updateStreamingStatus', true)
-                        this.$store.commit('updateNowPlaying', window.CONSTANTS.PLAY_STATUS.OTHER_STREAM)
-                        this.onAir = true;
-                        EventBus.$emit("g-streaming-status", {"status": true});
-                    }
-                }, (error) => {
-                    console.log("Failed to get stream data");
-                });
+                }
             },
             addGroupLayer(id) {
                 if (!this._.has(this.speakerLayer, id)) {
@@ -2482,11 +2484,17 @@
                 } else if (this.isBeacon(data.kind)) {
                     this._handleAddGadget(data.v);
                 } else if (this.isSpeaker(data.kind)) {
-                    this._handleAddSpeaker(data.v);
+                    if (this.isShowingByStage(window.CONSTANTS.USER_STAGE.SK_ADMIN)) {
+                        this._handleAddSpeaker(data.v);
+                    }
                 } else if (this.isRouter(data.kind)) {
-                    this._handleAddRouter(data.v);
+                    if (this.isShowingByStage(window.CONSTANTS.USER_STAGE.SK_ADMIN)) {
+                        this._handleAddRouter(data.v);
+                    }
                 } else {
-                    this._handleAddAlarm(data.v);
+                    if (this.isShowingByStage(window.CONSTANTS.USER_STAGE.SK_ADMIN)) {
+                        this._handleAddAlarm(data.v);
+                    }
                 }
             },
             _handleAddHub(data) {
@@ -2518,9 +2526,13 @@
                 } else if (this.isBeacon(data.kind)) {
                     this._handleUpdatedBeacon(data.v); //비콘 업데이트
                 } else if (this.isSpeaker(data.kind)) {
-                    this._handleUpdatedSpeaker(data.v); //스피커 업데이트
+                    if (this.isShowingByStage(window.CONSTANTS.USER_STAGE.SK_ADMIN)) {
+                        this._handleUpdatedSpeaker(data.v); //스피커 업데이트
+                    }
                 } else if (this.isRouter(data.kind)) {
-                    this._handleUpdatedRouter(data.v); //스피커 업데이트
+                    if (this.isShowingByStage(window.CONSTANTS.USER_STAGE.SK_ADMIN)) {
+                        this._handleUpdatedRouter(data.v); //스피커 업데이트
+                    }
                 }
             },
             _handleUpdatedHub(data) {
@@ -2855,11 +2867,17 @@
                 } else if (this.isBeacon(data.kind)) {
                     this._handleGadgetRemoved(data.v);
                 } else if (this.isSpeaker(data.kind)) {
-                    this._handleSpeakerRemoved(data.v);
+                    if (this.isShowingByStage(window.CONSTANTS.USER_STAGE.SK_ADMIN)) {
+                        this._handleSpeakerRemoved(data.v);
+                    }
                 } else if (this.isRouter(data.kind)) {
-                    this._handleRouterRemoved(data.v);
+                    if (this.isShowingByStage(window.CONSTANTS.USER_STAGE.SK_ADMIN)) {
+                        this._handleRouterRemoved(data.v);
+                    }
                 } else {
-                    this._handleAlarmRemoved(data.v);
+                    if (this.isShowingByStage(window.CONSTANTS.USER_STAGE.SK_ADMIN)) {
+                        this._handleAlarmRemoved(data.v);
+                    }
                 }
             },
             _handleHubRemoved(data) {
@@ -2964,11 +2982,15 @@
                         this._handleIpcamOnline(data.v);
                     break;
                     case window.CONSTANTS.PRODUCT_KIND.SPEAKER:
-                        this._handleSpeakerOnline(data.v);
+                        if (this.isShowingByStage(window.CONSTANTS.USER_STAGE.SK_ADMIN)) {
+                            this._handleSpeakerOnline(data.v);
+                        }
                     break;
-                    // case window.CONSTANTS.PRODUCT_KIND.ROUTER:
-                    //     this._handleRouterOnline(data.v);
-                    // break;
+                    case window.CONSTANTS.PRODUCT_KIND.ROUTER:
+                        if (this.isShowingByStage(window.CONSTANTS.USER_STAGE.SK_ADMIN)) {
+                            this._handleRouterOnline(data.v);
+                        }
+                    break;
                 }
             },
             _handleOffline(data) {
@@ -2980,11 +3002,15 @@
                         this._handleIpcamOffline(data.v);
                     break;
                     case window.CONSTANTS.PRODUCT_KIND.SPEAKER:
-                        this._handleSpeakerOffline(data.v);
+                        if (this.isShowingByStage(window.CONSTANTS.USER_STAGE.SK_ADMIN)) {
+                            this._handleSpeakerOffline(data.v);
+                        }
                     break;
-                    // case window.CONSTANTS.PRODUCT_KIND.ROUTER:
-                    //     this._handleRouterOffline(data.v);
-                    // break;
+                    case window.CONSTANTS.PRODUCT_KIND.ROUTER:
+                        if (this.isShowingByStage(window.CONSTANTS.USER_STAGE.SK_ADMIN)) {
+                            this._handleRouterOffline(data.v);
+                        }
+                    break;
                 }
             },
             _handleHubOnline(data) {
@@ -3088,14 +3114,11 @@
                 }
             },
             _handleUpdateAlarmList(data) {
-                const list = data.v;
-                if (data.kind === 'add') {
-
-                } else if (data.kind === 'remove') {
-
-                } else if (data.kind === 'update') {
-
-                }
+                // const list = data.v;
+                // if (data.kind === 'add') {
+                // } else if (data.kind === 'remove') {
+                // } else if (data.kind === 'update') {
+                // }
             },
             _handleUpdateGroupList(data) {
                 const list = data.v;
@@ -3170,19 +3193,29 @@
                         }
                     },
                     reopenStream: (data) => {
-                        this._handleReopenStream(data.v);
+                        if (this.isShowingByStage(window.CONSTANTS.USER_STAGE.SK_ADMIN)) {
+                            this._handleReopenStream(data.v);
+                        }
                     },
                     updateAlarmList: (data) => {
-                        this._handleUpdateAlarmList(data);
+                        if (this.isShowingByStage(window.CONSTANTS.USER_STAGE.SK_ADMIN)) {
+                            this._handleUpdateAlarmList(data);
+                        }
                     },
                     updateGroupList: (data) => {
-                        this._handleUpdateGroupList(data);
+                        if (this.isShowingByStage(window.CONSTANTS.USER_STAGE.SK_ADMIN)) {
+                            this._handleUpdateGroupList(data);
+                        }
                     },
                     updateStreamingStatus: (data) => {
-                        this._handleStreamingStatus(data);
+                        if (this.isShowingByStage(window.CONSTANTS.USER_STAGE.SK_ADMIN)) {
+                            this._handleStreamingStatus(data);
+                        }
                     },
                     failedList: (data) => {
-                        this._handleFailedList(data);
+                        if (this.isShowingByStage(window.CONSTANTS.USER_STAGE.SK_ADMIN)) {
+                            this._handleFailedList(data);
+                        }
                     }
                 });
             }
