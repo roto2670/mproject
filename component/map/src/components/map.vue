@@ -243,7 +243,7 @@
                         drawMethod = this.drawRouter;
                     }
                     if (!!drawMethod) {
-                        drawMethod(id, coordinate, false);
+                        drawMethod(id, coordinate, false, true);
                     }
                 });
             },
@@ -342,9 +342,10 @@
                     this.services.getHubs((hubList) => {
                         console.log("Success to get Hubs", hubList);
                         this._.forEach(hubList, (hub) => {
+                            hub.custom.lock = true;
                             this.$store.commit('addHub', hub);
                             if (!this._.isEmpty(hub.custom) && !this._.isEmpty(hub.custom.map_location)) {
-                                this.drawHub(hub.id, hub.custom.map_location, true);
+                                this.drawHub(hub.id, hub.custom.map_location, true, true);
                             }
                         });
                         this.loadDetectedGadgets();
@@ -353,9 +354,10 @@
                 this.services.getIpcams((ipcams) => {
                     console.log("Success to get Ipcams", ipcams);
                     this._.forEach(ipcams, ipcam => {
+                        ipcam.custom.lock = true;
                         this.$store.commit('addIpcam', ipcam);
                     });
-                    this.drawIpCams(ipcams, true);
+                    this.drawIpCams(ipcams, true, true);
                 });
 
                 if (this.isShowingByStage(window.CONSTANTS.USER_STAGE.SK_ADMIN)) {
@@ -393,17 +395,19 @@
                     this.services.getSpeakers(speakers => {
                         console.log("Sucesss to get Speakers", speakers);
                         this._.forEach(speakers, speaker => {
+                            speaker.custom.lock = true;
                             this.$store.commit('addSpeaker', speaker);
                         })
-                        this.drawSpeakers(speakers, true);
+                        this.drawSpeakers(speakers, true, true);
                     });
 
                     this.services.getRouters(routers => {
                         console.log("Sucesss to get Routers", routers);
                         this._.forEach(routers, router => {
+                            router.custom.lock = true;
                             this.$store.commit('addRouter', router);
                         })
-                        this.drawRouters(routers, true);
+                        this.drawRouters(routers, true, true);
                     });
 
                     this.services.getAlarmList(alarms => {
@@ -439,10 +443,14 @@
             handleInfoWindowClose() {
                 this.speakerInfoWindowItems = {};
             },
-            drawHub(hubId, coordinate, isUpdatedData) {
+            drawHub(hubId, coordinate, isUpdatedData, initData) {
                 let marker = null,
                     hubData = this.$store.getters.getHub(hubId),
                     draggable = null;
+
+                if (initData) {
+                    hubData.custom.lock = true;
+                }
 
                 if (this._.has(this.markerMap.hubs, hubId)) {
                     if (!(this.markerMap.hubs[hubId]._coordinates.x === coordinate.x) && !(this.markerMap.hubs[hubId]._coordinates.y === coordinate.y)) {
@@ -1056,20 +1064,23 @@
                     });
                 }
             },
-            drawIpCams(camList, isUpdatedData) {
+            drawIpCams(camList, isUpdatedData, initData) {
                 this._.forEach(camList, (ipcam) => {
                     if (!this._.isEmpty(ipcam.custom) && !this._.isEmpty(ipcam.custom.map_location)) {
-                        this.drawIpcam(ipcam.id, ipcam.custom.map_location, isUpdatedData);
+                        this.drawIpcam(ipcam.id, ipcam.custom.map_location, isUpdatedData, initData);
                     }
                 });
             },
-            drawIpcam(ipcamId, coordinate, isUpdatedData) {
+            drawIpcam(ipcamId, coordinate, isUpdatedData, initData) {
                 // console.debug('Try draw ipcam, id: ', ipcamId);
                 let marker = null,
                     draggable = null,
                     customLayer = null;;
                 var ipcamData = this.$store.getters.getIpCam(ipcamId);
                 // this.setBaseZoomLv();
+                if (initData) {
+                    ipcamData.custom.lock = true;
+                }
 
                 if (this._.has(this.markerMap.cams, ipcamId)) {
                     if (!(this.markerMap.cams[ipcamId]._coordinates.x === coordinate.x) && !(this.markerMap.cams[ipcamId]._coordinates.y === coordinate.y)) {
@@ -1150,6 +1161,7 @@
                                 x: coordinate.x,
                                 y: coordinate.y
                             }
+                            ipcamData.lock = true;
                             if (!this._.has(ipcamData.custom, 'is_visible_moi')) {
                                 ipcamData.custom.is_visible_moi = false;
                             }
@@ -1165,16 +1177,17 @@
                     }
                 }
             },
-            drawSpeakers(speakerList, isUpdatedData) {
+            drawSpeakers(speakerList, isUpdatedData, initData) {
                 this._.forEach(speakerList, (speaker) => {
                     if (!this._.isEmpty(speaker.custom) && !this._.isEmpty(speaker.custom.map_location)) {
-                        this.drawSpeaker(speaker.id, speaker.custom.map_location, isUpdatedData);
+                        this.drawSpeaker(speaker.id, speaker.custom.map_location, isUpdatedData, initData);
                     }
                 });
             },
-            drawSpeaker(speakerId, coordinate, isUpdatedData) {
+            drawSpeaker(speakerId, coordinate, isUpdatedData, initData) {
                 // console.debug('Try draw ipcam, id: ', ipcamId);
                 let marker = null,
+                    draggable = null,
                     speakerData = this.$store.getters.getSpeaker(speakerId),
                     groupData = this.$store.getters.getGroupList;
                 //TODO
@@ -1182,6 +1195,9 @@
                 let fileUrl = `${ window.CONSTANTS.URL.BASE_IMG }speaker.svg`; // if changed, declare const
                 if (!speakerData.status) {
                     fileUrl = `${ window.CONSTANTS.URL.BASE_IMG }speaker-offline.png`;
+                }
+                if (initData) {
+                    speakerData.custom.lock = true;
                 }
 
                 if (this._.has(this.markerMap.speakers, speakerId)) {
@@ -1192,6 +1208,7 @@
                         this.markerMap.speakers[speakerId] = marker;
                     }
                 } else {
+                    draggable = this.isShowingByStage(window.CONSTANTS.USER_STAGE.SK_ADMIN) && !speakerData.custom.lock;
                     marker = new maptalks.Marker(
                         [coordinate.x, coordinate.y], {
                             'symbol': {
@@ -1199,7 +1216,7 @@
                                 markerWidth: this.markerWidth,
                                 markerHeight: this.markerHeight
                             },
-                            draggable: this.isShowingByStage(window.CONSTANTS.USER_STAGE.SK_ADMIN)
+                            draggable: draggable
                         }
                     )
                     let tagData = this._.first(speakerData.tags),
@@ -1473,16 +1490,17 @@
                     }
                 }
             },
-            drawRouters(routerList, isUpdatedData) {
+            drawRouters(routerList, isUpdatedData, initData) {
                 this._.forEach(routerList, (router) => {
                     if (!this._.isEmpty(router.custom) && !this._.isEmpty(router.custom.map_location)) {
-                        this.drawRouter(router.id, router.custom.map_location, isUpdatedData);
+                        this.drawRouter(router.id, router.custom.map_location, isUpdatedData, initData);
                     }
                 });
             },
-            drawRouter(routerId, coordinate, isUpdatedData) {
+            drawRouter(routerId, coordinate, isUpdatedData, initData) {
                 console.debug('Try draw router, id: ', routerId);
                 let marker = null,
+                    draggable = null,
                     routerData = this.$store.getters.getRouter(routerId);
                 let fileUrl = `${ window.CONSTANTS.URL.BASE_IMG }router.svg`; // if changed, declare const
                 // TODO: offline
@@ -1490,6 +1508,9 @@
                 //     fileUrl = `${ window.CONSTANTS.URL.BASE_IMG }speaker-offline.png`;
                 // }
 
+                if (initData) {
+                    routerData.custom.lock = true;
+                }
                 if (this._.has(this.markerMap.routers, routerId)) {
                     if (!(this.markerMap.routers[routerId]._coordinates.x === coordinate.x) && !(this.markerMap.routers[routerId]._coordinates.y === coordinate.y)) {
                         marker = this.markerMap.routers[routerId];
@@ -1498,6 +1519,7 @@
                         this.markerMap.routers[routerId] = marker;
                     }
                 } else {
+                    draggable = this.isShowingByStage(window.CONSTANTS.USER_STAGE.SK_ADMIN) && !routerData.custom.lock;
                     marker = new maptalks.Marker(
                         [coordinate.x, coordinate.y], {
                             'symbol': {
@@ -1505,7 +1527,7 @@
                                 markerWidth: this.markerWidth,
                                 markerHeight: this.markerHeight
                             },
-                            draggable: this.isShowingByStage(window.CONSTANTS.USER_STAGE.SK_ADMIN)
+                            draggable: draggable
                         }
                     )
                     let tagData = this._.first(routerData.tags),
