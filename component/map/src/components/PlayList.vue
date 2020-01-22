@@ -77,6 +77,7 @@ export default {
             soundVolume: 80,
             isPlayed: false,
             firstChk: true,
+            nowPlaying: null,
             disabled: this.onAir,
             isOnAir: this.onAir
         }
@@ -87,11 +88,15 @@ export default {
         },
         handleTabItem(item) {
             if (!this.disabled) {
-                this.selectedTabItem = item;
-                if (item === 'record') {
-                    this.selectedItem = 'record';
+                if (!!!this.nowPlaying) {
+                    this.selectedTabItem = item;
+                    if (item === 'record') {
+                        this.selectedItem = 'record';
+                    } else {
+                        this.selectedItem = null;
+                    }
                 } else {
-                    this.selectedItem = null;
+                    this.sweetbox.fire("You're broadcasting now. To change the broadcast mode, complete or stop the current broadcast before changing it.")
                 }
             }
         },
@@ -162,11 +167,13 @@ export default {
                                 this.$emit('select-speaker', data);
                                 this.$store.commit('updateNowPlaying', window.CONSTANTS.PLAY_STATUS.MY_STREAM);
                                 this._requireAccess();
+                                this.nowPlaying = this.selectedItem;
                             }
                         });
                     }
                 } else {
                     this.handlePauseRecord();
+                    this.nowPlaying = null;
                 }
             } else if (!!this.selectedItem) {
                 console.log("Success to send Record", this.selectedItem);
@@ -177,6 +184,7 @@ export default {
                 if (isStatus && nowStatus == window.CONSTANTS.PLAY_STATUS.MY_STREAM) {
                     this.$emit('select-speaker', data);
                     this.handlePauseRecord();
+                    this.nowPlaying = null;
                 } else if (isStatus && nowStatus == window.CONSTANTS.PLAY_STATUS.OTHER_STREAM) {
                     this.sweetbox.fire("Another user is broadcasting first. Please try again later.")
                     this.uuid = null;
@@ -184,6 +192,7 @@ export default {
                 } else {
                     this.$emit('select-speaker', data);
                     this.$store.commit('updateNowPlaying', window.CONSTANTS.PLAY_STATUS.MY_STREAM);
+                    this.nowPlaying = this.selectedItem;
                     this.isPlayed = true;
                     setTimeout(this.handleIsPlayed, 5000);
                 }
@@ -385,6 +394,10 @@ export default {
                     this.disabled = true;
                 } else {
                     this.disabled = false;
+                }
+            } else {
+                if (!v.status) {
+                    this.nowPlaying = null;
                 }
             }
             this.isOnAir = v.status;
