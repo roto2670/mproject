@@ -1096,6 +1096,7 @@ export default {
                   nowStatus = this.$store.getters.getNowPlaying;
             this.$store.commit('updateStreamingStatus', isStatus)
             this.onAir = isStatus;
+            EventBus.$emit("g-streaming-status", data.v);
             if ("castType" in data.v) {
                 this.$refs.leftList.setReserveItemStream(isStatus);
             }
@@ -1108,7 +1109,6 @@ export default {
                     this.$store.commit('updateNowPlaying', 2)
                 }
             }
-            EventBus.$emit("g-streaming-status", data.v);
         },
         _handleOnline(data) {
             switch(data.kind) {
