@@ -782,8 +782,14 @@
                         yPosition = Math.random() - 1;
                     //customLocation.push(coordinate.x + number, coordinate.y - 3 * (1 / 10));
                     // customLocation.push(coordinate.x + xPosition, coordinate.y + (yPosition * (0.4)));
-                    beacon.custom.map_location.x = coordinate.x + xPosition;
-                    beacon.custom.map_location.y = coordinate.y + (yPosition * (0.4));
+                    try {
+                        beacon.custom.map_location.x = coordinate.x + xPosition;
+                        beacon.custom.map_location.y = coordinate.y + (yPosition * (0.4));
+                    } catch(e) {
+                        beacon.custom.map_location = {};
+                        beacon.custom.map_location.x = coordinate.x + xPosition;
+                        beacon.custom.map_location.y = coordinate.y + (yPosition * (0.4));
+                    }
                     this.$store.commit('updateGadgetData', beacon);
                     customLocation.push(beacon.custom.map_location.x, beacon.custom.map_location.y);
                 } else {
@@ -1503,10 +1509,9 @@
                     draggable = null,
                     routerData = this.$store.getters.getRouter(routerId);
                 let fileUrl = `${ window.CONSTANTS.URL.BASE_IMG }router.svg`; // if changed, declare const
-                // TODO: offline
-                // if (!speakerData.status) {
-                //     fileUrl = `${ window.CONSTANTS.URL.BASE_IMG }speaker-offline.png`;
-                // }
+                if (!routerData.status) {
+                    fileUrl = `${ window.CONSTANTS.URL.BASE_IMG }router-offline.png`;
+                }
 
                 if (initData) {
                     routerData.custom.lock = true;
@@ -3097,6 +3102,17 @@
                     });
                 }
             },
+            _handleRouterOnline(data) {
+                let routerMarker = this.markerMap.routers[data.id],
+                    routerData = this._.clone(this.$store.getters.getRouter(data.id));
+                routerData.status = 1;
+                this.$store.commit('updateRouterData', routerData);
+                if (!!routerMarker) {
+                    routerMarker.updateSymbol({
+                        markerFile: `${ window.CONSTANTS.URL.BASE_IMG }router.svg`
+                    });
+                }
+            },
             _handleHubOffline(data) {
                 let hubMarker = this.markerMap.hubs[data.id],
                     hubData = this._.cloneDeep(this.$store.getters.getHub(data.id));
@@ -3131,6 +3147,17 @@
                 if (!!speakerMarker) {
                     speakerMarker.updateSymbol({
                         markerFile: `${ window.CONSTANTS.URL.BASE_IMG }speaker-offline.png`
+                    });
+                }
+            },
+            _handleRouterOffline(data) {
+                let routerMarker = this.markerMap.routers[data.id],
+                    routerData = this._.clone(this.$store.getters.getRouter(data.id));
+                routerData.status = 0;
+                this.$store.commit('updateRouterData', routerData);
+                if (!!routerMarker) {
+                    routerMarker.updateSymbol({
+                        markerFile: `${ window.CONSTANTS.URL.BASE_IMG }router-offline.png`
                     });
                 }
             },
