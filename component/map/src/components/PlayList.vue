@@ -76,7 +76,6 @@ export default {
             uuid: null,
             soundVolume: 80,
             isPlayed: false,
-            firstChk: true,
             nowPlaying: null,
             disabled: this.onAir,
             isOnAir: this.onAir
@@ -232,7 +231,6 @@ export default {
                 this.blob = null;
                 this.uuid = null;
                 this.isPlayed = false;
-                this.firstChk = true;
                 this.services.stopStreamVoice(() => {
                     console.log("Success to stop voice stream");
                 }, (error) => {
@@ -334,12 +332,7 @@ export default {
                     this.rightchannel.push(new Float32Array(e.inputBuffer.getChannelData(1)));
                     this.recordingLength += bufferSize;
                     if (this.recordingLength == 40960) {
-                        if (this.firstChk) {
-                            this.streamPosting();
-                            this.firstChk = false;
-                        } else {
-                            setTimeout(this.streamPosting, 20);
-                        }
+                        this.streamPosting();
                     }
                 };
             }, (error) => {
