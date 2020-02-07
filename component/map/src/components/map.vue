@@ -1504,7 +1504,7 @@
                 });
             },
             drawRouter(routerId, coordinate, isUpdatedData, initData) {
-                console.debug('Try draw router, id: ', routerId);
+                //console.debug('Try draw router, id: ', routerId);
                 let marker = null,
                     draggable = null,
                     routerData = this.$store.getters.getRouter(routerId);
