@@ -163,10 +163,14 @@ export default {
                             if (permissionState === window.CONSTANTS.MICROPHONE_ACCESS_STATE.DENIED) {
                                 console.log("Denied microphone access");
                             } else {
-                                this.$emit('select-speaker', data);
-                                this.$store.commit('updateNowPlaying', window.CONSTANTS.PLAY_STATUS.MY_STREAM);
-                                this._requireAccess();
-                                this.nowPlaying = this.selectedItem;
+                                if (!!!this.isOnAir) {
+                                    this.$emit('select-speaker', data);
+                                    this.$store.commit('updateNowPlaying', window.CONSTANTS.PLAY_STATUS.MY_STREAM);
+                                    this._requireAccess();
+                                    this.nowPlaying = this.selectedItem;
+                                } else {
+                                    this.sweetbox.fire("The streaming stop is currently in progress. Wait a second, please.")
+                                }
                             }
                         });
                     }
