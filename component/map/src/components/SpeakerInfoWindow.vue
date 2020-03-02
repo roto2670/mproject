@@ -44,6 +44,7 @@
 </template>
 <script>
 import PlayList from '@/components/PlayList';
+import { EventBus } from "@/main";
 const fileNotExist = "1";
 export default {
     name: 'SpeakerInfoWindow',
@@ -187,6 +188,11 @@ export default {
             this.handleGroupList();
         }
         this.playList = this.$store.getters.getAlarms;
+        EventBus.$on('g-streaming-status', (v) => {
+            if (!v.status) {
+                this.nowPlaying = null;
+            }
+        })
     }
 }
 </script>

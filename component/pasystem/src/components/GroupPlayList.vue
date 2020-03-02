@@ -65,7 +65,6 @@ export default {
             uuid: null,
             soundVolume: 80,
             isPlayed: false,
-            firstChk: true,
             alarmList: [],
             disabled: this.onAir,
             isOnAir: this.onAir
@@ -133,9 +132,14 @@ export default {
                         if (permissionState === window.CONSTANTS.MICROPHONE_ACCESS_STATE.DENIED) {
                             console.log("Denied microphone access");
                         } else {
-                            this.$emit('select-speaker', data);
-                            this.$store.commit('updateNowPlaying', 1);
-                            this._requireAccess();
+                            if (!!!this.isOnAir) {
+                                this.$emit('select-speaker', data);
+                                this.$store.commit('updateNowPlaying', window.CONSTANTS.PLAY_STATUS.MY_STREAM);
+                                this._requireAccess();
+                                this.nowPlaying = this.selectedItem;
+                            } else {
+                                this.sweetbox.fire("The streaming stop is currently in progress. Wait a second, please.")
+                            }
                         }
                     });
                 } else {
@@ -187,14 +191,12 @@ export default {
                     this.context = null;
                     this.recorder = null;
                     this.audioInput = null;
-                    this.selectedItem = null;
                     this.recordingLength = 0;
                     this.leftchannel =  [],
                     this.rightchannel =  [],
                     this.blob = null;
                     this.uuid = null;
                     this.isPlayed = false;
-                    this.firstChk = true;
                     this.services.stopStreamVoice(() => {
                         console.log("Success to stop voice stream");
                     }, (error) => {
@@ -300,12 +302,7 @@ export default {
                     this.rightchannel.push(new Float32Array(e.inputBuffer.getChannelData(1)));
                     this.recordingLength += bufferSize;
                     if (this.recordingLength == 40960) {
-                        if (this.firstChk) {
-                            this.streamPosting();
-                            this.firstChk = false;
-                        } else {
-                            setTimeout(this.streamPosting, 20);
-                        }
+                        this.streamPosting();
                     }
                 };
             }, (error) => {

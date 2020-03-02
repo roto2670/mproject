@@ -219,6 +219,11 @@ export default {
             EventBus.$emit('g-open-infowindow', []);
         }
         this.playList = this.$store.getters.getAlarmList;
+        EventBus.$on('g-streaming-status', (v) => {
+            if (!v.status) {
+                this.nowPlaying = null;
+            }
+        })
     },
     destroyed() {
         EventBus.$emit('g-close-infowindow', true);
