@@ -213,3 +213,41 @@ export const removeProgress = (data, successCallback, failCallback) => {
         failCallback(error);
     });
 }
+
+export const updateProgress = (data, successCallback, failCallback) => {
+    axios({
+        url: `${ window.CONSTANTS.URL.CONSOLE }/workprog/progress/update`,
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        data: data
+    }).then(response => {
+        if(response.data) {
+            successCallback(response.data);
+        } else {
+            failCallback(error);
+        }
+    }).catch(error => {
+        failCallback(error);
+    });
+}
+
+export const addWork = (data, successCallback, failCallback) => {
+    axios({
+        url: `${ window.CONSTANTS.URL.CONSOLE }/workprog/work/add`,
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        data: data
+    }).then(response => {
+        if(response.data) {
+            successCallback(response.data);
+        } else {
+            failCallback(error);
+        }
+    }).catch(error => {
+        failCallback(error);
+    });
+}

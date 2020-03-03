@@ -6,7 +6,10 @@
       <div class="progress-editor-body-container">
         <div @click="handleAddWorkButton">ADD work</div>
         <div>type</div>
-        <div>name</div>
+        <div>name
+          <input id=progressName type="text" class="ga-name-input"
+              maxlength="30" @change="handleChangeProgressName" />
+        </div>
         <div>length</div>
         <div>direction</div>
       </div>
@@ -28,27 +31,30 @@ export default {
     components: {
     },
     props: {
-        type: {
-            type: Number,
-            default: 0
-        },
         id: {
-          type: Number
+          type: String
         }
     },
     data() {
         return {
+          progressName: ''
         }
     },
     methods: {
       handleOkButton() {
-          this.$emit('select-ok-button', {});
+          const data = {};
+          data._id = this.id;
+          data.name = this.progressName;
+          this.$emit('select-ok-button', data);
       },
       handleCancelButton() {
           this.$emit('select-cancel-button', {});
       },
       handleAddWorkButton() {
           this.$emit('select-add-work-button', this.id);
+      },
+      handleChangeProgressName(e) {
+          this.progressName = e.target.value;
       },
     },
     computed: {

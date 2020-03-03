@@ -13,13 +13,13 @@ export default new Vuex.Store({
             return state.tunnel[id];
         },
         getTunnelList: (state) => {
-			return _.values(state.tunnel);
+			      return _.values(state.tunnel);
         },
         getProgress: (state) => (id) => {
             return state.progress[id];
         },
         getProgressList: (state) => {
-			return _.values(state.progress);
+			      return _.values(state.progress);
         },
     },
     mutations: {
@@ -72,6 +72,14 @@ export default new Vuex.Store({
                 state.progress[payload.id] = payload;
             }
         },
+        addWorkList(state, payload) {
+            _.forEach(payload, progress => {
+                state.progress[progress.id] = progress;
+            });
+        },
+        addWork(state, payload) {
+            state.progress[payload.id] = payload;
+        }
     },
     actions: {
 

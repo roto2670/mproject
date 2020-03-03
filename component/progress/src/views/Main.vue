@@ -13,10 +13,13 @@
         <AddProgress :type="getCurrentType()"
             @select-ok-button="handleAddProgressOkButton"
             @select-cancel-button="handleAddProgressCancelButton"></AddProgress>
-        <!-- <ProgressInfo v-if="isTunnelInfoType()" :type="currentTunnelType" :id="currentTunnelId"
+        <ProgressInfo v-if="isProgressInfoType()" :type="currentProgressType" :id="currentProgressId"
             @select-ok-button="handleProgressInfoOkButton"
             @select-cancel-button="handleProgressInfoCancelButton"
-            @select-add-progress-button="handleAddProgress"></ProgressInfo> -->
+            @select-add-work-button="handleAddWork"></ProgressInfo>
+        <WorkInfo v-if="isWorkInfo()" :progressId="currentProgressId"
+            @select-cancel-button="handleWorkInfoCancelButton"
+            @select-ok-button="handleWorkInfoOkButton"></WorkInfo>
         <div :id="id" class="map-container">
         </div>
     </div>
@@ -28,6 +31,7 @@ import AddTunnel from '@/components/AddTunnel';
 import AddProgress from '@/components/AddProgress';
 import TunnelInfo from '@/components/TunnelInfo';
 import ProgressInfo from '@/components/ProgressInfo';
+import WorkInfo from '@/components/WorkInfo';
 export default {
     name: 'Main',
     components: {
@@ -35,7 +39,8 @@ export default {
         AddTunnel,
         AddProgress,
         TunnelInfo,
-        ProgressInfo
+        ProgressInfo,
+        WorkInfo
     },
     data() {
         return {
@@ -53,6 +58,7 @@ export default {
             addWindowItem: null,
             contextMenuItem: null,
             windowItem: null,
+            workInfoWindow: false,
             markerPosition: null,
             checkInterval: null,
             isWebsoketConnected: false,
@@ -66,6 +72,8 @@ export default {
             currentType: null,
             currentTunnelId: null,
             currentTunnelType: null,
+            currentProgressId: null,
+            currentProgressType: null,
             currentMarker: null,
             //
             progressLayer: null,
@@ -250,6 +258,18 @@ export default {
         clearCurrentType() {
             this.currentType = null;
         },
+        isProgressInfoType() {
+            return this.addType == null && this.currentProgressType != null;
+        },
+        isWorkInfo() {
+            return this.workInfoWindow;
+        },
+        setAddType(typ) {
+            this.addType = typ;
+        },
+        clearAddType() {
+            this.addType = null;
+        },
         setCurrentMarker(marker) {
             this.currentMarker = marker;
         },
@@ -273,6 +293,20 @@ export default {
             this.clearCurrentMarker();
             this.clearCurrentTunnelId();
             this.clearTunnelType();
+            this.clearCurrentProgressId();
+            this.clearProgressType();
+        },
+        setCurrentProgressId(id) {
+            this.currentProgressId = id;
+        },
+        setProgressType(typ) {
+            this.currentProgressType = typ;
+        },
+        clearCurrentProgressId() {
+            this.currentProgressId = null;
+        },
+        clearProgressType() {
+            this.currentProgressType = null;
         },
         initContextMenu() {
             this.contextMenuOption = {
@@ -355,6 +389,35 @@ export default {
             this.tunnelLayers[this.currentTunnelType].removeGeometry([this.currentMarker])
             this.clearAll();
         },
+        _handleProgressClickEvent(marker) {
+            marker.on('click', (e) => {
+                if (this.currentMarker !== null) {
+                    this.currentMarker.updateSymbol({
+                            markerLineColor: '#000000',
+                            markerLineWidth: 0,
+                            markerFill: this.colorMap[this.currentMarker.markerType],
+                            markerOpacity: 0.6
+                    });
+                    this.clearCurrentProgressId();
+                    this.clearCurrentMarker();
+                    this.clearProgressType();
+                }
+                let _marker = this.progressMarkers[marker.getId()];
+                if (_marker != null) {
+                    _marker.updateSymbol({
+                            markerLineColor: '#000000',
+                            markerLineWidth: 1,
+                            markerFill: this.colorMap['selected'],
+                            markerOpacity: 1
+                    });
+                    this.closeMenu();
+                    this.setCurrentProgressId(_marker.getId());
+                    this.setCurrentMarker(_marker);
+                    this.setProgressType(_marker.type);
+                    e.domEvent.stopPropagation();
+                }
+            });
+        },
         _handleTunnelClickEvent(marker) {
             marker.on('click', (e) => {
                 if (this.currentMarker !== null) {
@@ -377,6 +440,7 @@ export default {
                     this.closeMenu();
                     this.setCurrentTunnelId(_marker.getId());
                     this.setCurrentMarker(_marker);
+                    console.log("************* _martker : ", _marker)
                     this.setTunnelType(_marker.markerType);
                     if (e.target.markerType == window.CONSTANTS.TUNNEL_TYPE.CAVERN) {
                         this.setCurrentType(window.CONSTANTS.TYPE.SELECT_CAVERN);
@@ -555,11 +619,34 @@ export default {
         handleAddProgressCancelButton() {
             this.clearAll();
         },
-        handleProgressInfoOkButton() {
+        handleWorkInfoCancelButton() {
+            this.workInfoWindow = false;
+            this.clearAll();
+        },
+        handleWorkInfoOkButton(workData) {
+            workData.id = this.getUUID();
+            workData.work_state = null;
+            workData.equipments = null;
+            this.services.addWork(workData, (resData) => {
+                console.log("success to add work");
+            }, (error) => {
+                console.log("fail to add work : ", error)
+            });
+        },
+        handleProgressInfoOkButton(data) {
+            this.services.updateProgress(data, (resData) => {
+                console.log("success to update progress")
+                this.clearAll();
+            }, (error) => {
+                console.log("fail to update progress : ", error)
+            });
+            this.clearAll();
         },
         handleProgressInfoCancelButton() {
+            this.clearAll();
         },
-        handleAddWork(progressId, progressType) {
+        handleAddWork(progressId) {
+            this.workInfoWindow = true;
         },
         drawProgressList() {
             this._.forEach(this.mockData, (progress) => {
@@ -640,6 +727,7 @@ export default {
                     textMaxHeight: {stops: [[4, 10], [5, 10 * 2], [6, 10 * 4], [7, 10 * 8]]}
                 }
             });
+            this._handleProgressClickEvent(marker2)
             this.progressLayer.addGeometry(marker2);
         },
         _drawProgress(progress) {
@@ -679,10 +767,12 @@ export default {
                     textMaxHeight: {stops: [[4, progressHeight], [5, progressHeight * 2], [6, progressHeight * 4], [7, progressHeight * 8]]}
                 }
             });
+            this.progressMarkers[progress.id] = marker1;
             this.setContextMenu(marker1);
             this.setProgressInfoWindow(marker1);
             this.$store.commit('addProgress', progress);
             this.progressLayer.addGeometry(marker1);
+            this._handleProgressClickEvent(marker1)
         },
         drawWorkList() {
 
@@ -1096,6 +1186,9 @@ export default {
                 },
                 updateProgressList: (data) => {
                     this._handleUpdateProgressList(data);
+                },
+                updateWorkList: (data) => {
+                    this._handleUpdateWorkList(data);
                 }
             });
         },
@@ -1137,7 +1230,20 @@ export default {
                     _marker.remove();
                     this.$store.commit('removeProgress', item.id);
                 } else if (data.kind === 'update') {
-                    console.log("update progress part")
+                    let progress = this.$store.getters.getProgress(item.id);
+                    this.$store.commit('updateProgress', item);
+                }
+            });
+        },
+        _handleUpdateWorkList(data) {
+            const list = data.v;
+            this._.forEach(list, item => {
+                if (data.kind === 'add') {
+                    this.$store.commit('addWork', item);
+                } else if (data.kind === 'remove') {
+                    console.log("work remove");
+                } else if (data.kind === 'update') {
+                    console.log("work update");
                 }
             });
         }

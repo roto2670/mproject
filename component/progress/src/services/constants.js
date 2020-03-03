@@ -16,7 +16,8 @@ window.CONSTANTS = {
         UPDATED: 'update',
         REMOVED: 'remove',
         UPDATE_TUNNEL_LIST: 'update_tunnel_list',
-        UPDATE_PROG_LIST: 'update_prog_list'
+        UPDATE_PROG_LIST: 'update_prog_list',
+        UPDATE_WORK_LIST: 'update_work_list'
     },
     REQUEST_TYPE: {
         SUBSCRIBE: "subscribe",
@@ -68,6 +69,14 @@ window.CONSTANTS = {
         LEFT: 1,
         UP: 2,
         DOWN: 3,
+    },
+    WORK_KIND: {
+        EXAMPLE_KIND_0 : 0,
+        EXAMPLE_KIND_1 : 1,
+        EXAMPLE_KIND_2 : 2,
+        EXAMPLE_KIND_3 : 3,
+        EXAMPLE_KIND_4 : 4,
+        EXAMPLE_KIND_5 : 5,
     }
 };
 if (window.CONSTANTS.IS_DEV) {
