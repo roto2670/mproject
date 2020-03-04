@@ -28,11 +28,19 @@ window.CONSTANTS = {
         REMOVE: 'remove'
     },
     TUNNEL_DEFAULT_SIZE: {
-        CAVERN: {
+        CAVERN_ROW: {
             WIDTH: 140,
             HEIGHT: 18
         },
-        WATER_CURTAIN: {
+        CAVERN_COLUMN: {
+            WIDTH: 8,
+            HEIGHT: 36
+        },
+        WATER_CURTAIN_ROW: {
+            WIDTH: 140,
+            HEIGHT: 6
+        },
+        WATER_CURTAIN_COLUMN: {
             WIDTH: 140,
             HEIGHT: 6
         },

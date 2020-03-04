@@ -2,6 +2,7 @@
     <div id="main" class="main-container">
         <Top :selectedType="isTopPressedType" @select-top-button="handleTopButton"></Top>
         <AddTunnel :type="getCurrentType()"
+            @change-tunnel-direction="handleAddTunnelDirection"
             @select-ok-button="handleAddTunnelOkButton"
             @select-cancel-button="handleAddTunnelCancelButton"></AddTunnel>
         <TunnelInfo :type="getCurrentType()" :id="currentTunnelId"
@@ -90,6 +91,10 @@ export default {
                 {'id': 162, 'x_loc': 65.5, 'y_loc': 45.12, 'width': 150, 'height': 6, 'status': 'b',   // 워터갤러리 height
                  'name': 'progress10', 'current': '815m'},
                 {'id': 163, 'x_loc': 61.0, 'y_loc': 42.38, 'width': 60, 'height': 10, 'status': 'a',
+                 'name': 'progress10', 'current': '815m'},
+                // {'id': 1700, 'x_loc': 64.4, 'y_loc': 54.2, 'width': 8, 'height': 92, 'status': 'a',  // 캐번 height
+                //  'name': 'progress10', 'current': '815m'},
+                {'id': 1700, 'x_loc': 64.4, 'y_loc': 55.6, 'width': 8, 'height': 36, 'status': 'a',  // 캐번 height
                  'name': 'progress10', 'current': '815m'},
                 // {'id': 161, 'x': 65.5, 'y': 51.24317965522793, 'width': 150, 'height': 18, 'status': 'c',  // 캐번 height
                 //  'name': 'progress10', 'current': '815m'},
@@ -300,6 +305,33 @@ export default {
                 }
             });
         },
+        handleAddTunnelDirection(value) {
+            let width = 0,
+                height = 0;
+            if (value === 0 || value === 1) {
+                // row
+                if (this.currentTunnelType === window.CONSTANTS.TUNNEL_TYPE.CAVERN) {
+                    width = window.CONSTANTS.TUNNEL_DEFAULT_SIZE.CAVERN_ROW.WIDTH;
+                    height = window.CONSTANTS.TUNNEL_DEFAULT_SIZE.CAVERN_ROW.HEIGHT;
+                } else {
+                    width = window.CONSTANTS.TUNNEL_DEFAULT_SIZE.WATER_CURTAIN_ROW.WIDTH;
+                    height = window.CONSTANTS.TUNNEL_DEFAULT_SIZE.WATER_CURTAIN_ROW.HEIGHT;
+                }
+            } else {
+                // column
+                if (this.currentTunnelType === window.CONSTANTS.TUNNEL_TYPE.CAVERN) {
+                    width = window.CONSTANTS.TUNNEL_DEFAULT_SIZE.CAVERN_COLUMN.WIDTH;
+                    height = window.CONSTANTS.TUNNEL_DEFAULT_SIZE.CAVERN_COLUMN.HEIGHT;
+                } else {
+                    width = window.CONSTANTS.TUNNEL_DEFAULT_SIZE.WATER_CURTAIN_COLUMN.WIDTH;
+                    height = window.CONSTANTS.TUNNEL_DEFAULT_SIZE.WATER_CURTAIN_COLUMN.HEIGHT;
+                }
+            }
+            this.currentMarker.defaultWidth = width;
+            this.currentMarker.defaultHeight = height;
+            this.currentMarker.setWidth({stops: [[4, width], [5, width * 2], [6, width * 4], [7, width * 8]]});
+            this.currentMarker.setHeight({stops: [[4, height], [5, height * 2], [6, height * 4], [7, height * 8]]});
+        },
         handleAddTunnelOkButton(value) {
             const data = {}
             data.id = this.currentMarker.getId();
@@ -310,6 +342,7 @@ export default {
             data.height = this.currentMarker.defaultHeight;
             data.width = this.currentMarker.defaultWidth;
             data.prog_dir = value.tunnelDirection;
+            console.log("### data : ", data);
             this.currentMarker.remove();
             this.services.addTunnel(data, (resData) => {
                 console.log("success to add tunnel");
@@ -357,8 +390,8 @@ export default {
         handleAddCavern(xPosition, yPosition) {
             this.setCurrentType(window.CONSTANTS.TYPE.ADD_TUNNEL);
             this.setTunnelType(window.CONSTANTS.TUNNEL_TYPE.CAVERN);
-            var width = window.CONSTANTS.TUNNEL_DEFAULT_SIZE.CAVERN.WIDTH,
-                height = window.CONSTANTS.TUNNEL_DEFAULT_SIZE.CAVERN.HEIGHT,
+            var width = window.CONSTANTS.TUNNEL_DEFAULT_SIZE.CAVERN_ROW.WIDTH,
+                height = window.CONSTANTS.TUNNEL_DEFAULT_SIZE.CAVERN_ROW.HEIGHT,
                 marker = new maptalks.TextBox("", [xPosition, yPosition],
                                               {stops: [[4, width], [5, width * 2], [6, width * 4], [7, width * 8]]},
                                               {stops: [[4, height], [5, height * 2], [6, height * 4], [7, height * 8]]}, {
@@ -390,8 +423,8 @@ export default {
         handleAddWaterCurtain(xPosition, yPosition) {
             this.setCurrentType(window.CONSTANTS.TYPE.ADD_TUNNEL);
             this.setTunnelType(window.CONSTANTS.TUNNEL_TYPE.WATER_CURTAIN);
-            var width = window.CONSTANTS.TUNNEL_DEFAULT_SIZE.WATER_CURTAIN.WIDTH,
-                height = window.CONSTANTS.TUNNEL_DEFAULT_SIZE.WATER_CURTAIN.HEIGHT,
+            var width = window.CONSTANTS.TUNNEL_DEFAULT_SIZE.WATER_CURTAIN_ROW.WIDTH,
+                height = window.CONSTANTS.TUNNEL_DEFAULT_SIZE.WATER_CURTAIN_ROW.HEIGHT,
                 marker = new maptalks.TextBox("", [xPosition, yPosition],
                                               {stops: [[4, width], [5, width * 2], [6, width * 4], [7, width * 8]]},
                                               {stops: [[4, height], [5, height * 2], [6, height * 4], [7, height * 8]]}, {
@@ -442,7 +475,7 @@ export default {
             this.currentMarker.updateSymbol({
                 markerLineWidth: 0,
                 markerFill: this.colorMap[this.currentTunnelType],
-                markerFillOpacity: 0.6
+                markerFillOpacity: 0.6,
             });
             this.clearAll();
         },
@@ -474,9 +507,9 @@ export default {
                     progressWidth = tunnelMarker.defaultWidth,
                     progressHeight = tunnelMarker.defaultHeight;
             } else if (tunnelData.prog_dir == window.CONSTANTS.PROG_DIR.UP) {
-
+                // TODO:
             } else if (tunnelData.prog_dir == window.CONSTANTS.PROG_DIR.DOWN) {
-
+                // TODO:
             }
 
             var marker1 = new maptalks.TextBox("", [x1 - ((10 / 2) / 11.25), yPosition],
@@ -569,6 +602,7 @@ export default {
             // console.log("### progress width : " + (progress.width));
             // console.log("### progress width cal : " + ((progress.width / 2) / 11.25));
             // console.log("### progress width ret : " + (progress.x_loc - ((progress.width / 2) / 11.25)));
+
             var x1 = (progress.x_loc + ((progress.width / 2) / 11.25));
             var marker1 = new maptalks.TextBox("", [x1 - ((10 / 2) / 11.25), progress.y_loc],
                                               {stops: [[4, 10], [5, 10 * 2], [6, 10 * 4], [7, 10 * 8]]},

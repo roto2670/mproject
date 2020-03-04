@@ -9,7 +9,7 @@
         <div class="tunnel-info-body-container">
           <div class="tunnel-info-body-content-container">
             <div class="tunnel-info-body-content-title">Type</div>
-            <input type="text" class="tunnel-info-body-content-message"
+            <input type="text" class="tunnel-info-body-content-message" :value="getItemType"
                 disabled>
           </div>
           <div class="tunnel-info-body-button-container">
@@ -94,6 +94,13 @@ export default {
         getItemName() {
             return `${ this.tunnelInfo.name }`;
         },
+        getItemType() {
+            if (this.tunnelInfo.typ === window.CONSTANTS.TUNNEL_TYPE.CAVERN) {
+                return "CAVERN";
+            } else {
+                return "WATER CURTAIN";
+            }
+        }
     },
     created() {
     }

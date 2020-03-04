@@ -81,6 +81,7 @@ export default {
       },
       handleChangeDirection(e) {
           this.tunnelDirection = e.target.selectedIndex;
+          this.$emit('change-tunnel-direction', this.tunnelDirection);
       }
     },
     computed: {
