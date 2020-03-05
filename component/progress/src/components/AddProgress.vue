@@ -1,5 +1,5 @@
 <template>
-    <div id="progressEditor" class="progress-editor-container">
+    <div v-if="isType()" id="progressEditor" class="progress-editor-container">
       <div class="progress-editor-title-container">
         add progress
       </div>
@@ -27,12 +27,19 @@ export default {
     components: {
     },
     props: {
+        type: {
+            type: Number,
+            default: -1
+        },
     },
     data() {
         return {
         }
     },
     methods: {
+      isType() {
+          return this.type == window.CONSTANTS.TYPE.ADD_PROGRESS;
+      },
       handleOkButton() {
           this.$emit('select-ok-button', {});
       },

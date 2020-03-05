@@ -1,15 +1,16 @@
 <template>
     <div id="main" class="main-container">
         <Top :selectedType="isTopPressedType" @select-top-button="handleTopButton"></Top>
-        <AddTunnel v-if="isTunnelAddType()" :type="addType"
+        <AddTunnel :type="getCurrentType()"
+            @change-tunnel-direction="handleAddTunnelDirection"
             @select-ok-button="handleAddTunnelOkButton"
             @select-cancel-button="handleAddTunnelCancelButton"></AddTunnel>
-        <TunnelInfo v-if="isTunnelInfoType()" :type="currentTunnelType" :id="currentTunnelId"
+        <TunnelInfo :type="getCurrentType()" :id="currentTunnelId"
             @select-ok-button="handleTunnelInfoOkButton"
             @select-cancel-button="handleTunnelInfoCancelButton"
             @select-add-progress-button="handleAddProgress"
             @select-remove-tunnel-button="handleRemoveTunnel"></TunnelInfo>
-        <AddProgress v-if="isProgressAddType()"
+        <AddProgress :type="getCurrentType()"
             @select-ok-button="handleAddProgressOkButton"
             @select-cancel-button="handleAddProgressCancelButton"></AddProgress>
         <!-- <ProgressInfo v-if="isTunnelInfoType()" :type="currentTunnelType" :id="currentTunnelId"
@@ -62,7 +63,7 @@ export default {
             progIDList: [],
             workIDList: [],
             //
-            addType: null,
+            currentType: null,
             currentTunnelId: null,
             currentTunnelType: null,
             currentMarker: null,
@@ -90,6 +91,10 @@ export default {
                 {'id': 162, 'x_loc': 65.5, 'y_loc': 45.12, 'width': 150, 'height': 6, 'status': 'b',   // 워터갤러리 height
                  'name': 'progress10', 'current': '815m'},
                 {'id': 163, 'x_loc': 61.0, 'y_loc': 42.38, 'width': 60, 'height': 10, 'status': 'a',
+                 'name': 'progress10', 'current': '815m'},
+                // {'id': 1700, 'x_loc': 64.4, 'y_loc': 54.2, 'width': 8, 'height': 92, 'status': 'a',  // 캐번 height
+                //  'name': 'progress10', 'current': '815m'},
+                {'id': 1700, 'x_loc': 64.4, 'y_loc': 55.6, 'width': 8, 'height': 36, 'status': 'a',  // 캐번 height
                  'name': 'progress10', 'current': '815m'},
                 // {'id': 161, 'x': 65.5, 'y': 51.24317965522793, 'width': 150, 'height': 18, 'status': 'c',  // 캐번 height
                 //  'name': 'progress10', 'current': '815m'},
@@ -169,6 +174,12 @@ export default {
                 });
             }
         },
+        getUUID() {
+          return 'xxxxxxxxxxxx4xxxyxxxxxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+            var r = Math.random() * 16 | 0, v = c == 'x' ? r : (r & 3 | 8);
+            return v.toString(16);
+          });
+        },
         _getTunnelList() {
              this.services.getTunnels(tunnels => {
                  console.log("Success to get tunnels", tunnels);
@@ -197,7 +208,6 @@ export default {
                   yPosition = tunnel.y_loc,
                   width = tunnel.width,
                   height = tunnel.height;
-            //console.log("### tunnel) : ", tunnel);
             var marker = new maptalks.TextBox("", [xPosition, yPosition],
                                               {stops: [[4, width], [5, width * 2], [6, width * 4], [7, width * 8]]},
                                               {stops: [[4, height], [5, height * 2], [6, height * 4], [7, height * 8]]}, {
@@ -231,20 +241,14 @@ export default {
             this.tunnelLayers[window.CONSTANTS.TUNNEL_TYPE.CAVERN].removeGeometry([_marker])
             this._drawTunnel(tunnel);
         },
-        isTunnelAddType() {
-            return this.addType == window.CONSTANTS.ADD_TYPE.TUNNEL;
+        setCurrentType(typ) {
+            this.currentType = typ;
         },
-        isProgressAddType() {
-            return this.addType == window.CONSTANTS.ADD_TYPE.PROGRESS;
+        getCurrentType() {
+            return this.currentType;
         },
-        isTunnelInfoType() {
-            return this.addType == null && this.currentTunnelType != null;
-        },
-        setAddType(typ) {
-            this.addType = typ;
-        },
-        clearAddType() {
-            this.addType = null;
+        clearCurrentType() {
+            this.currentType = null;
         },
         setCurrentMarker(marker) {
             this.currentMarker = marker;
@@ -263,6 +267,12 @@ export default {
         },
         clearTunnelType() {
             this.currentTunnelType = null;
+        },
+        clearAll() {
+            this.clearCurrentType();
+            this.clearCurrentMarker();
+            this.clearCurrentTunnelId();
+            this.clearTunnelType();
         },
         initContextMenu() {
             this.contextMenuOption = {
@@ -291,36 +301,59 @@ export default {
 
                 document.getElementById('waterCurtainItem').onclick = () => {
                     this.map.closeMenu();
-                    this.handleAddProgress(e.coordinate.x, e.coordinate.y);
+                    this.handleAddWaterCurtain(e.coordinate.x, e.coordinate.y);
                 }
             });
         },
-        handleAddTunnelOkButton() {
+        handleAddTunnelDirection(value) {
+            let width = 0,
+                height = 0;
+            if (value === 0 || value === 1) {
+                // row
+                if (this.currentTunnelType === window.CONSTANTS.TUNNEL_TYPE.CAVERN) {
+                    width = window.CONSTANTS.TUNNEL_DEFAULT_SIZE.CAVERN_ROW.WIDTH;
+                    height = window.CONSTANTS.TUNNEL_DEFAULT_SIZE.CAVERN_ROW.HEIGHT;
+                } else {
+                    width = window.CONSTANTS.TUNNEL_DEFAULT_SIZE.WATER_CURTAIN_ROW.WIDTH;
+                    height = window.CONSTANTS.TUNNEL_DEFAULT_SIZE.WATER_CURTAIN_ROW.HEIGHT;
+                }
+            } else {
+                // column
+                if (this.currentTunnelType === window.CONSTANTS.TUNNEL_TYPE.CAVERN) {
+                    width = window.CONSTANTS.TUNNEL_DEFAULT_SIZE.CAVERN_COLUMN.WIDTH;
+                    height = window.CONSTANTS.TUNNEL_DEFAULT_SIZE.CAVERN_COLUMN.HEIGHT;
+                } else {
+                    width = window.CONSTANTS.TUNNEL_DEFAULT_SIZE.WATER_CURTAIN_COLUMN.WIDTH;
+                    height = window.CONSTANTS.TUNNEL_DEFAULT_SIZE.WATER_CURTAIN_COLUMN.HEIGHT;
+                }
+            }
+            this.currentMarker.defaultWidth = width;
+            this.currentMarker.defaultHeight = height;
+            this.currentMarker.setWidth({stops: [[4, width], [5, width * 2], [6, width * 4], [7, width * 8]]});
+            this.currentMarker.setHeight({stops: [[4, height], [5, height * 2], [6, height * 4], [7, height * 8]]});
+        },
+        handleAddTunnelOkButton(value) {
             const data = {}
             data.id = this.currentMarker.getId();
-            console.log("#### data.id : ", data.id);
-            data.name = "test_" + data.id;
+            data.name = value.tunnelId;
             data.typ = this.currentTunnelType;
             data.x_loc = this.currentMarker.getCoordinates().x;
             data.y_loc = this.currentMarker.getCoordinates().y;
             data.height = this.currentMarker.defaultHeight;
             data.width = this.currentMarker.defaultWidth;
-            data.prog_dir = 1;
+            data.prog_dir = value.tunnelDirection;
+            console.log("### data : ", data);
             this.currentMarker.remove();
             this.services.addTunnel(data, (resData) => {
-                console.log("success to add tunnel")
-                this.clearCurrentMarker();
-                this.clearAddType();
-                this.clearTunnelType();
+                console.log("success to add tunnel");
+                this.clearAll();
             }, (error) => {
                 console.log("fail to add tunnel : ", error)
             });
         },
         handleAddTunnelCancelButton() {
             this.tunnelLayers[this.currentTunnelType].removeGeometry([this.currentMarker])
-            this.clearAddType();
-            this.clearCurrentMarker();
-            this.clearTunnelType();
+            this.clearAll();
         },
         _handleTunnelClickEvent(marker) {
             marker.on('click', (e) => {
@@ -331,9 +364,7 @@ export default {
                             markerFill: this.colorMap[this.currentMarker.markerType],
                             markerOpacity: 0.6
                     });
-                    this.clearCurrentTunnelId();
-                    this.clearCurrentMarker();
-                    this.clearTunnelType();
+                    this.clearAll();
                 }
                 let _marker = this.tunnelMarkers[e.target.markerType][e.target.getId()];
                 if (_marker != null) {
@@ -347,25 +378,23 @@ export default {
                     this.setCurrentTunnelId(_marker.getId());
                     this.setCurrentMarker(_marker);
                     this.setTunnelType(_marker.markerType);
+                    if (e.target.markerType == window.CONSTANTS.TUNNEL_TYPE.CAVERN) {
+                        this.setCurrentType(window.CONSTANTS.TYPE.SELECT_CAVERN);
+                    } else {
+                        this.setCurrentType(window.CONSTANTS.TYPE.SELECT_WATER_CURTAIN);
+                    }
                     e.domEvent.stopPropagation();
                 }
             });
         },
-        getUUID() {
-          return 'xxxxxxxxxxxx4xxxyxxxxxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
-            var r = Math.random() * 16 | 0, v = c == 'x' ? r : (r & 3 | 8);
-            return v.toString(16);
-          });
-        },
         handleAddCavern(xPosition, yPosition) {
-            this.setAddType(window.CONSTANTS.ADD_TYPE.TUNNEL);
+            this.setCurrentType(window.CONSTANTS.TYPE.ADD_TUNNEL);
             this.setTunnelType(window.CONSTANTS.TUNNEL_TYPE.CAVERN);
-            var width = window.CONSTANTS.TUNNEL_DEFAULT_SIZE.CAVERN.WIDTH,
-                height = window.CONSTANTS.TUNNEL_DEFAULT_SIZE.CAVERN.HEIGHT;
-            var marker = new maptalks.TextBox("", [xPosition, yPosition],
+            var width = window.CONSTANTS.TUNNEL_DEFAULT_SIZE.CAVERN_ROW.WIDTH,
+                height = window.CONSTANTS.TUNNEL_DEFAULT_SIZE.CAVERN_ROW.HEIGHT,
+                marker = new maptalks.TextBox("", [xPosition, yPosition],
                                               {stops: [[4, width], [5, width * 2], [6, width * 4], [7, width * 8]]},
                                               {stops: [[4, height], [5, height * 2], [6, height * 4], [7, height * 8]]}, {
-                //id: Math.floor(Math.random() * (10000 - 1)) + 1,
                 id: this.getUUID(),
                 editable: false,
                 draggable: true,
@@ -391,6 +420,39 @@ export default {
             })
             this.setCurrentMarker(marker);
         },
+        handleAddWaterCurtain(xPosition, yPosition) {
+            this.setCurrentType(window.CONSTANTS.TYPE.ADD_TUNNEL);
+            this.setTunnelType(window.CONSTANTS.TUNNEL_TYPE.WATER_CURTAIN);
+            var width = window.CONSTANTS.TUNNEL_DEFAULT_SIZE.WATER_CURTAIN_ROW.WIDTH,
+                height = window.CONSTANTS.TUNNEL_DEFAULT_SIZE.WATER_CURTAIN_ROW.HEIGHT,
+                marker = new maptalks.TextBox("", [xPosition, yPosition],
+                                              {stops: [[4, width], [5, width * 2], [6, width * 4], [7, width * 8]]},
+                                              {stops: [[4, height], [5, height * 2], [6, height * 4], [7, height * 8]]}, {
+                id: this.getUUID(),
+                editable: false,
+                draggable: true,
+                boxSymbol: {
+                    markerType: 'square',
+                    markerLineColor: '#000000',
+                    markerLineWidth: 1,
+                    markerFill: this.colorMap[window.CONSTANTS.TUNNEL_TYPE.WATER_CURTAIN],
+                    markerFillOpacity: 0.3
+                },
+                symbol: {
+                    textMaxWidth: {stops: [[4, width], [5, width * 2], [6, width * 4], [7, width * 8]]},
+                    textMaxHeight: {stops: [[4, height], [5, height * 2], [6, height * 4], [7, height * 8]]}
+                }
+            });
+            marker.defaultWidth = width;
+            marker.defaultHeight = height;
+            marker.markerType = window.CONSTANTS.TUNNEL_TYPE.WATER_CURTAIN;
+            this.tunnelLayers[window.CONSTANTS.TUNNEL_TYPE.WATER_CURTAIN].addGeometry([marker]);
+            marker.on('dragend', (e) => {
+                e.domEvent.stopPropagation();
+                this.closeMenu();
+            })
+            this.setCurrentMarker(marker);
+        },
         handleUpdateTunnel() {
             if (this.currentMarker != null) {
 
@@ -400,30 +462,29 @@ export default {
             this.currentMarker.updateSymbol({
                 markerLineWidth: 0,
                 markerFill: this.colorMap[this.currentTunnelType],
-                markerOpacity: 0.6
+                markerFillOpacity: 0.6
             });
             this.services.updateTunnel(data, (resData) => {
                 console.log("success to update tunnel")
-                this.clearCurrentMarker();
-                this.clearTunnelType();
-                this.clearCurrentTunnelId();
+                this.clearAll();
             }, (error) => {
                 console.log("fail to update tunnel : ", error)
             });
         },
         handleTunnelInfoCancelButton() {
-            this.clearCurrentMarker();
-            this.clearTunnelType();
-            this.clearCurrentTunnelId();
+            this.currentMarker.updateSymbol({
+                markerLineWidth: 0,
+                markerFill: this.colorMap[this.currentTunnelType],
+                markerFillOpacity: 0.6,
+            });
+            this.clearAll();
         },
         handleRemoveTunnel(tunnelId) {
             let data = {};
             data.id = tunnelId;
             this.services.removeTunnel(data, (resData) => {
                 console.log("success to remove tunnel")
-                this.clearCurrentMarker();
-                this.clearTunnelType();
-                this.clearCurrentTunnelId();
+                this.clearAll();
             }, (error) => {
                 console.log("fail to remove tunnel : ", error)
             });
@@ -446,9 +507,9 @@ export default {
                     progressWidth = tunnelMarker.defaultWidth,
                     progressHeight = tunnelMarker.defaultHeight;
             } else if (tunnelData.prog_dir == window.CONSTANTS.PROG_DIR.UP) {
-
+                // TODO:
             } else if (tunnelData.prog_dir == window.CONSTANTS.PROG_DIR.DOWN) {
-
+                // TODO:
             }
 
             var marker1 = new maptalks.TextBox("", [x1 - ((10 / 2) / 11.25), yPosition],
@@ -489,12 +550,10 @@ export default {
             this.progressMarkers[this.currentMarker.getId()] = this.currentMarker;
             this.setContextMenu(this.currentMarker);
             this.setProgressInfoWindow(this.currentMarker);
-            this.clearAddType();
-            this.clearCurrentMarker();
+            this.clearAll();
         },
         handleAddProgressCancelButton() {
-            this.clearAddType();
-            this.clearCurrentMarker();
+            this.clearAll();
         },
         handleProgressInfoOkButton() {
         },
@@ -543,6 +602,7 @@ export default {
             // console.log("### progress width : " + (progress.width));
             // console.log("### progress width cal : " + ((progress.width / 2) / 11.25));
             // console.log("### progress width ret : " + (progress.x_loc - ((progress.width / 2) / 11.25)));
+
             var x1 = (progress.x_loc + ((progress.width / 2) / 11.25));
             var marker1 = new maptalks.TextBox("", [x1 - ((10 / 2) / 11.25), progress.y_loc],
                                               {stops: [[4, 10], [5, 10 * 2], [6, 10 * 4], [7, 10 * 8]]},

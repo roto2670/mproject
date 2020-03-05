@@ -28,21 +28,31 @@ window.CONSTANTS = {
         REMOVE: 'remove'
     },
     TUNNEL_DEFAULT_SIZE: {
-        CAVERN: {
+        CAVERN_ROW: {
             WIDTH: 140,
             HEIGHT: 18
         },
-        WATER_CURTAIN: {
-            WIDTH: 10,
+        CAVERN_COLUMN: {
+            WIDTH: 8,
+            HEIGHT: 36
+        },
+        WATER_CURTAIN_ROW: {
+            WIDTH: 140,
+            HEIGHT: 6
+        },
+        WATER_CURTAIN_COLUMN: {
+            WIDTH: 140,
             HEIGHT: 6
         },
         MAINLOAD: {
         }
     },
-    ADD_TYPE: {
-        TUNNEL: 0,
-        PROGRESS: 1,
-        WORK: 2
+    TYPE: {
+        ADD_TUNNEL: 0,
+        ADD_PROGRESS: 1,
+        ADD_WORK: 2,
+        SELECT_CAVERN: 11,
+        SELECT_WATER_CURTAIN: 12
     },
     TUNNEL_TYPE: {
         CAVERN: 0,
@@ -57,7 +67,7 @@ window.CONSTANTS = {
         RIGHT: 0,
         LEFT: 1,
         UP: 2,
-        down: 3,
+        DOWN: 3,
     }
 };
 if (window.CONSTANTS.IS_DEV) {
