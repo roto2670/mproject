@@ -7,6 +7,7 @@ export default new Vuex.Store({
     state: {
         tunnel: {},
         progress: {},
+        work: {}
     },
     getters: {
         getTunnel: (state) => (id) => {
@@ -20,6 +21,12 @@ export default new Vuex.Store({
         },
         getProgressList: (state) => {
 			      return _.values(state.progress);
+        },
+        getWork: (state) => (id) => {
+            return state.work[id];
+        },
+        getWorkList: (state) => {
+			      return _.values(state.work);
         },
     },
     mutations: {
@@ -73,13 +80,24 @@ export default new Vuex.Store({
             }
         },
         addWorkList(state, payload) {
-            _.forEach(payload, progress => {
-                state.progress[progress.id] = progress;
+            _.forEach(payload, work => {
+                state.work[work.id] = work;
             });
         },
         addWork(state, payload) {
-            state.progress[payload.id] = payload;
-        }
+            state.work[payload.id] = payload;
+        },
+        removeWork(state, id) {
+            if (_.has(state.work, id)) {
+                delete state.work[id];
+            }
+        },
+        removeWorkList(state) {
+            _.forEach(state.work, (work, id) => {
+                delete state.work[id]
+            })
+            state.work = {};
+        },
     },
     actions: {
 

@@ -19,7 +19,9 @@
             @select-add-work-button="handleAddWork"></ProgressInfo>
         <WorkInfo v-if="isWorkInfo()" :progressId="currentProgressId"
             @select-cancel-button="handleWorkInfoCancelButton"
-            @select-ok-button="handleWorkInfoOkButton"></WorkInfo>
+            @select-ok-button="handleWorkInfoOkButton"
+            @select-handle-work-button="handleWorkStateButton"
+            @select-remove-work-button="handleWorkRemoveButton"></WorkInfo>
         <div :id="id" class="map-container">
         </div>
     </div>
@@ -66,6 +68,10 @@ export default {
             filterList: [],
             isForGroup: false,
             isTopPressedType: '',
+            tunnelIDList: [],
+            progressIDList: [],
+            progIDList: [],
+            workIDList: [],
             //
             currentType: null,
             currentTunnelId: null,
@@ -190,14 +196,13 @@ export default {
         },
         _getTunnelList() {
              this.services.getTunnels(tunnels => {
-                 console.log("Success to get tunnels", tunnels);
-                 let tunnelIdList = []
+                 console.log("Success to get tunnels");
                  this._.forEach(tunnels, tunnel => {
-                    tunnelIdList.push(tunnel.id)
+                    this.tunnelIDList.push(tunnel.id);
                     this._drawTunnel(tunnel);
                     this.$store.commit('addTunnel', tunnel);
                  });
-                 this._getProgressList(tunnelIdList);
+                 this._getProgressList(this.tunnelIDList);
              }, (error) => {
                  console.log("Failed to get tunnel list.", error);
              });
@@ -206,8 +211,19 @@ export default {
              const data = {};
              data.id_list = tunnelIdList;
              this.services.getProgress(data, (resData) => {
-                 console.log("Success to get progress");
-                 this._drawProgressList(resData);
+                 this._drawProgressList(resData)
+                 this._getWorkList();
+             }, (error) => {
+                 console.log("Failed to get progress list.");
+             });
+        },
+        _getWorkList() {
+             const data = {};
+             data.id_list = this.progressIDList;
+             this.services.getWork(data, (resData) => {
+                 this._.forEach(resData, workList => {
+                      this.$store.commit('addWorkList', workList);
+                 });
              }, (error) => {
                  console.log("Failed to get progress list.");
              });
@@ -296,6 +312,7 @@ export default {
             this.clearTunnelType();
             this.clearCurrentProgressId();
             this.clearProgressType();
+            this.workInfoWindow = false;
         },
         setCurrentProgressId(id) {
             this.currentProgressId = id;
@@ -684,13 +701,37 @@ export default {
             this.clearAll();
         },
         handleWorkInfoOkButton(workData) {
-            workData.id = this.getUUID();
-            workData.work_state = null;
+            workData.work_state = 0;
             workData.equipments = null;
-            this.services.addWork(workData, (resData) => {
-                console.log("success to add work");
+            if ("id" in workData) {
+                this.services.updateWork(workData, (resData) => {
+                    console.log("success to update work");
+                }, (error) => {
+                    console.log("fail to update work : ", error);
+                });
+            } else {
+                workData.id = this.getUUID();
+                this.services.addWork(workData, (resData) => {
+                    console.log("success to add work");
+                }, (error) => {
+                    console.log("fail to add work : ", error);
+                });
+            }
+
+            this.clearAll();
+        },
+        handleWorkStateButton(data) {
+            this.services.updateWorkState(data, (resData) => {
+                console.log("success to update work");
             }, (error) => {
-                console.log("fail to add work : ", error)
+                console.log("fail to update work : ", error);
+            });
+        },
+        handleWorkRemoveButton(data) {
+            this.services.removeWork(data, (resData) => {
+                console.log("Success to remove work : ")
+            }, (error) => {
+                console.log("Failed to remove work")
             });
         },
         handleProgressInfoOkButton(data) {
@@ -714,6 +755,7 @@ export default {
                 this._.forEach(progressList, (progressData) => {
                     this.progressIdWithTunnel[progressData.tunnel_id].push(progressData.id);
                     this._drawProgress(progressData);
+                    this.progressIDList.push(progressData.id);
                 });
             });
         },
@@ -1285,7 +1327,7 @@ export default {
                 } else if (data.kind === 'remove') {
                     var _marker = this.progressLayer.getGeometryById(item)
                     _marker.remove();
-                    this.$store.commit('removeProgress', item.id);
+                    this.$store.commit('removeProgress', item);
                 } else if (data.kind === 'update') {
                     let progress = this.$store.getters.getProgress(item.id);
                     this.$store.commit('updateProgress', item);
@@ -1298,9 +1340,9 @@ export default {
                 if (data.kind === 'add') {
                     this.$store.commit('addWork', item);
                 } else if (data.kind === 'remove') {
-                    console.log("work remove");
+                    this.$store.commit('removeWork', item)
                 } else if (data.kind === 'update') {
-                    console.log("work update");
+                    this.$store.commit('addWork', item);
                 }
             });
         }
