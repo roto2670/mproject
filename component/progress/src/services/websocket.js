@@ -163,6 +163,9 @@ export class SocketClient {
                 case window.CONSTANTS.EVENT_TYPE.UPDATE_PROG_LIST:
                     this._subscribeHandlers.updateProgressList(data);
                 break;
+                case window.CONSTANTS.EVENT_TYPE.UPDATE_WORK_LIST:
+                    this._subscribeHandlers.updateWorkList(data);
+                break;
 //                case window.CONSTANTS.EVENT_TYPE.UPDATED:
 //                    this._subscribeHandlers.updated(data);
 //                break;
