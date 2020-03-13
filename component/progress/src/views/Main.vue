@@ -10,7 +10,7 @@
             @select-cancel-button="handleTunnelInfoCancelButton"
             @select-add-progress-button="handleAddProgress"
             @select-remove-tunnel-button="handleRemoveTunnel"></TunnelInfo>
-        <AddProgress :type="getCurrentType()"
+        <AddProgress :type="getCurrentType()" :tunnelId="currentTunnelId"
             @select-ok-button="handleAddProgressOkButton"
             @select-cancel-button="handleAddProgressCancelButton"></AddProgress>
         <ProgressInfo v-if="isProgressInfoType()" :type="currentProgressType" :id="currentProgressId"
@@ -47,12 +47,13 @@ export default {
             id: 'map',
             info: {},
             map: null,
-            tunnelLayers: {},
-            progressLayers: {},
+            tunnelLayers: {},  // {t_type: layer}
+            progressLayers: {},  // {t_type : layer}
             workLayers: {},
             zoomLevel: 0,
-            tunnelMarkers: {},
-            progressMarkers: {},
+            tunnelMarkers: {},    // {t_type: {t_id: t_marker}}
+            progressMarkers: {},  // {p_id: p_marker, ..}
+            progressIdWithTunnel: {},    // {t_id: [p_id, ...]}
             markers: {},
             infoWindowItem: null,
             addWindowItem: null,
@@ -65,9 +66,6 @@ export default {
             filterList: [],
             isForGroup: false,
             isTopPressedType: '',
-            tunnelIDList: [],
-            progIDList: [],
-            workIDList: [],
             //
             currentType: null,
             currentTunnelId: null,
@@ -160,7 +158,9 @@ export default {
                     this._.forEach(window.CONSTANTS.TUNNEL_TYPE, (value, key) => {
                         this.tunnelLayers[value] = new maptalks.VectorLayer(value).addTo(this.map);
                         this.tunnelLayers[value].setZIndex(1);
-                        this.tunnelMarkers[value] = {}
+                        this.tunnelMarkers[value] = {};
+                        this.progressLayers[value] = new maptalks.VectorLayer('p' + value).addTo(this.map);
+                        this.progressLayers[value].setZIndex(2);
                     });
                     this._getTunnelList();
                     this.progressLayer = new maptalks.VectorLayer('vector').addTo(this.map);
@@ -191,22 +191,23 @@ export default {
         _getTunnelList() {
              this.services.getTunnels(tunnels => {
                  console.log("Success to get tunnels", tunnels);
+                 let tunnelIdList = []
                  this._.forEach(tunnels, tunnel => {
-                    this.tunnelIDList.push(tunnel.id)
+                    tunnelIdList.push(tunnel.id)
                     this._drawTunnel(tunnel);
                     this.$store.commit('addTunnel', tunnel);
                  });
-                 this._getProgressList();
+                 this._getProgressList(tunnelIdList);
              }, (error) => {
                  console.log("Failed to get tunnel list.", error);
              });
         },
-        _getProgressList() {
+        _getProgressList(tunnelIdList) {
              const data = {};
-             data.id_list = this.tunnelIDList;
+             data.id_list = tunnelIdList;
              this.services.getProgress(data, (resData) => {
                  console.log("Success to get progress");
-                 this._drawProgressList(resData)
+                 this._drawProgressList(resData);
              }, (error) => {
                  console.log("Failed to get progress list.");
              });
@@ -376,7 +377,6 @@ export default {
             data.height = this.currentMarker.defaultHeight;
             data.width = this.currentMarker.defaultWidth;
             data.prog_dir = value.tunnelDirection;
-            console.log("### data : ", data);
             this.currentMarker.remove();
             this.services.addTunnel(data, (resData) => {
                 console.log("success to add tunnel");
@@ -440,7 +440,6 @@ export default {
                     this.closeMenu();
                     this.setCurrentTunnelId(_marker.getId());
                     this.setCurrentMarker(_marker);
-                    console.log("************* _martker : ", _marker)
                     this.setTunnelType(_marker.markerType);
                     if (e.target.markerType == window.CONSTANTS.TUNNEL_TYPE.CAVERN) {
                         this.setCurrentType(window.CONSTANTS.TYPE.SELECT_CAVERN);
@@ -553,32 +552,55 @@ export default {
                 console.log("fail to remove tunnel : ", error)
             });
         },
-        handleAddProgress(tunnelId, tunnelType) {
-            const tunnelData = this.$store.getters.getTunnel(tunnelId),
-                  data = {};
-
-            // TODO: x, y get change?(tunnel model instead tunnel marker)
-            let tunnelMarker = this.tunnelMarkers[tunnelType][tunnelId],
-                xPosition = tunnelMarker.getCoordinates().x,
-                yPosition = tunnelMarker.getCoordinates().y;
+        _getProgressPosition(tunnelData, count) {
+            let xPosition = tunnelData.x_loc,
+                yPosition = tunnelData.y_loc,
+                _xPosition = 0,
+                _yPosition = 0;
 
             if (tunnelData.prog_dir == window.CONSTANTS.PROG_DIR.RIGHT) {
-                var x1 = (xPosition - ((tunnelMarker.defaultWidth / 2) / 11.25)),
-                    progressWidth = tunnelMarker.defaultWidth,
-                    progressHeight = tunnelMarker.defaultHeight;
+                _xPosition = (xPosition - ((tunnelData.width / 2) / 11.25));
+                _yPosition = yPosition;
+
+                _xPosition += (((10 / 2) / 11.25) * count);
+                if (count > 1) {
+                    _xPosition += (((10 / 2) / 11.25));
+                }
             } else if (tunnelData.prog_dir == window.CONSTANTS.PROG_DIR.LEFT) {
-                var x1 = (xPosition + ((tunnelMarker.defaultWidth / 2) / 11.25)),
-                    progressWidth = tunnelMarker.defaultWidth,
-                    progressHeight = tunnelMarker.defaultHeight;
+                _xPosition = (xPosition + ((tunnelData.width / 2) / 11.25));
+                _yPosition = yPosition;
+
+                _xPosition -= (((10 / 2) / 11.25) * count);
+                if (count > 1) {
+                    _xPosition -= (((10 / 2) / 11.25));
+                }
             } else if (tunnelData.prog_dir == window.CONSTANTS.PROG_DIR.UP) {
                 // TODO:
             } else if (tunnelData.prog_dir == window.CONSTANTS.PROG_DIR.DOWN) {
                 // TODO:
             }
+            return [_xPosition, _yPosition];
+        },
+        handleAddProgress(tunnelId, tunnelType) {
+            this.setCurrentTunnelId(tunnelId);
+            this.setCurrentType(window.CONSTANTS.TYPE.ADD_PROGRESS);
+            const tunnelData = this.$store.getters.getTunnel(tunnelId),
+                  data = {};
+            // TODO:  change progressLayers
+            let count = this.progressIdWithTunnel[tunnelId].length;
+            if (count === 0) {
+                count = 1;
+            } else {
+                count *= 1;
+            }
 
-            var marker1 = new maptalks.TextBox("", [x1 - ((10 / 2) / 11.25), yPosition],
-                                              {stops: [[4, 10], [5, 10 * 2], [6, 10 * 4], [7, 10 * 8]]},
-                                              {stops: [[4, progressHeight], [5, progressHeight * 2], [6, progressHeight * 4], [7, progressHeight * 8]]}, {
+            let position = this._getProgressPosition(tunnelData, count),
+                progressWidth = tunnelData.width,
+                progressHeight = tunnelData.height;
+
+            let _marker = new maptalks.TextBox("", position,
+                                               {stops: [[4, 10], [5, 10 * 2], [6, 10 * 4], [7, 10 * 8]]},
+                                               {stops: [[4, progressHeight], [5, progressHeight * 2], [6, progressHeight * 4], [7, progressHeight * 8]]}, {
                 id: this.getUUID(),
                 editable: false,
                 boxSymbol: {
@@ -593,28 +615,52 @@ export default {
                     textMaxHeight: {stops: [[4, progressHeight], [5, progressHeight * 2], [6, progressHeight * 4], [7, progressHeight * 8]]}
                 }
             });
-
+            this.progressLayers[tunnelType].addGeometry(_marker);
+            this.currentMarker = _marker;
+        },
+        handleAddProgressOkButton(value) {
+            const data = {},
+                  tunnelData = this.$store.getters.getTunnel(value.tunnelId);
             data.id = this.getUUID();
-            data.name = "test_" + data.id;
-            data.tunnel_id = tunnelData.id;
-            data.x_loc = x1
-            data.y_loc = yPosition
-            data.height = progressHeight
-            data.width = ((tunnelMarker.defaultWidth / 2) / 11.25)
+            data.name = value.progressName;
+            data.tunnel_id = value.tunnelId;
+
+            let count = this.progressIdWithTunnel[value.tunnelId].length;
+            // TODO:  ????
+            if (count === 0) {
+                count = 1;
+            } else if (count === 1) {
+                count = 3;
+            } else {
+                count = (count - 1) * 3;
+            }
+
+            let position = this._getProgressPosition(tunnelData, count);
+
+            data.x_loc = position[0];
+            data.y_loc = position[1];
+            // TODO:
+            data.height = tunnelData.height
+            data.width = ((tunnelData.width / 2) / 11.25)
+
+            this.progressIdWithTunnel[value.tunnelId].push(data.id);
             this.services.addProgress(data, (resData) => {
                 console.log("success to add Progress")
+                this.currentMarker.remove();
+                this.currentMarker.updateSymbol({
+                        markerLineWidth: 0,
+                });
+                this.progressMarkers[this.currentMarker.getId()] = this.currentMarker;
+                this.setContextMenu(this.currentMarker);
+                this.setProgressInfoWindow(this.currentMarker);
+                this.clearAll();
             }, (error) => {
+                this.progressIdWithTunnel[value.tunnelId] = this._.without(this.progressIdWithTunnel[value.tunnelId], data.id);
                 console.log("fail to add Progress : ", error)
+                this.clearAll();
             });
-        },
-        handleAddProgressOkButton() {
-            this.currentMarker.updateSymbol({
-                    markerLineWidth: 0,
-            });
-            this.progressMarkers[this.currentMarker.getId()] = this.currentMarker;
-            this.setContextMenu(this.currentMarker);
-            this.setProgressInfoWindow(this.currentMarker);
-            this.clearAll();
+
+
         },
         handleAddProgressCancelButton() {
             this.clearAll();
@@ -648,16 +694,18 @@ export default {
         handleAddWork(progressId) {
             this.workInfoWindow = true;
         },
+        _drawProgressList(progressGetData) {
+            this._.forEach(progressGetData, (progressList, tunnelId) => {
+                this.progressIdWithTunnel[tunnelId] = [];
+                this._.forEach(progressList, (progressData) => {
+                    this.progressIdWithTunnel[progressData.tunnel_id].push(progressData.id);
+                    this._drawProgress(progressData);
+                });
+            });
+        },
         drawProgressList() {
             this._.forEach(this.mockData, (progress) => {
                 this.drawProgress(progress);
-            });
-        },
-        _drawProgressList(progressGetData) {
-            this._.forEach(progressGetData, (progressList) => {
-                this._.forEach(progressList, (progressData) => {
-                    this._drawProgress(progressData);
-                });
             });
         },
         drawProgress(progress) {
@@ -732,27 +780,21 @@ export default {
         },
         _drawProgress(progress) {
             const tunnelData = this.$store.getters.getTunnel(progress.tunnel_id);
-            let tunnelMarker = this.tunnelMarkers[tunnelData.typ][progress.tunnel_id],
-                xPosition = tunnelMarker.getCoordinates().x,
-                yPosition = tunnelMarker.getCoordinates().y;
-
-            if (tunnelData.prog_dir == window.CONSTANTS.PROG_DIR.RIGHT) {
-                var x1 = (xPosition - ((tunnelMarker.defaultWidth / 2) / 11.25)),
-                    progressWidth = tunnelMarker.defaultWidth,
-                    progressHeight = tunnelMarker.defaultHeight;
-            } else if (tunnelData.prog_dir == window.CONSTANTS.PROG_DIR.LEFT) {
-                var x1 = (xPosition + ((tunnelMarker.defaultWidth / 2) / 11.25)),
-                    progressWidth = tunnelMarker.defaultWidth,
-                    progressHeight = tunnelMarker.defaultHeight;
-            } else if (tunnelData.prog_dir == window.CONSTANTS.PROG_DIR.UP) {
-
-            } else if (tunnelData.prog_dir == window.CONSTANTS.PROG_DIR.DOWN) {
-
+            let count = this.progressIdWithTunnel[progress.tunnel_id].indexOf(progress.id);
+            if (count === 0) {
+                count = 1;
+            } else {
+                // TODO::???????
+                count *= 1;
             }
 
-            var marker1 = new maptalks.TextBox("", [x1 - ((10 / 2) / 11.25), yPosition],
-                                              {stops: [[4, 10], [5, 10 * 2], [6, 10 * 4], [7, 10 * 8]]},
-                                              {stops: [[4, progressHeight], [5, progressHeight * 2], [6, progressHeight * 4], [7, progressHeight * 8]]}, {
+            let position = this._getProgressPosition(tunnelData, count),
+                progressWidth = tunnelData.width,
+                progressHeight = tunnelData.height;
+
+            let _marker = new maptalks.TextBox("", position,
+                                               {stops: [[4, 10], [5, 10 * 2], [6, 10 * 4], [7, 10 * 8]]},
+                                               {stops: [[4, progressHeight], [5, progressHeight * 2], [6, progressHeight * 4], [7, progressHeight * 8]]}, {
                 id: progress.id,
                 editable: false,
                 boxSymbol: {
@@ -767,12 +809,13 @@ export default {
                     textMaxHeight: {stops: [[4, progressHeight], [5, progressHeight * 2], [6, progressHeight * 4], [7, progressHeight * 8]]}
                 }
             });
-            this.progressMarkers[progress.id] = marker1;
-            this.setContextMenu(marker1);
-            this.setProgressInfoWindow(marker1);
+            this.progressMarkers[progress.id] = _marker;
+            this.progressIdWithTunnel[tunnelData.id].push(progress.id);
+            this.setContextMenu(_marker);
+            this.setProgressInfoWindow(_marker);
             this.$store.commit('addProgress', progress);
-            this.progressLayer.addGeometry(marker1);
-            this._handleProgressClickEvent(marker1)
+            this._handleProgressClickEvent(_marker)
+            this.progressLayers[tunnelData.typ].addGeometry(_marker);
         },
         drawWorkList() {
 
