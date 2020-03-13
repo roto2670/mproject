@@ -58,7 +58,8 @@ window.CONSTANTS = {
     TUNNEL_TYPE: {
         CAVERN: 0,
         WATER_CURTAIN: 1,
-        MAIN_ROAD: 2
+        MAIN_ROAD: 2,
+        PROGRESS: 3,
     },
     TUNNEL_DIRECTION_TYPE: {
         ROW: 0,
