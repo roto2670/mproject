@@ -586,8 +586,13 @@ export default {
             this.setCurrentType(window.CONSTANTS.TYPE.ADD_PROGRESS);
             const tunnelData = this.$store.getters.getTunnel(tunnelId),
                   data = {};
+            var count = null;
             // TODO:  change progressLayers
-            let count = this.progressIdWithTunnel[tunnelId].length;
+            if (tunnelId in this.progressIdWithTunnel){
+                count = this.progressIdWithTunnel[tunnelId].length;
+            } else {
+                count = 0;
+            }
             if (count === 0) {
                 count = 1;
             } else {
@@ -621,11 +626,19 @@ export default {
         handleAddProgressOkButton(value) {
             const data = {},
                   tunnelData = this.$store.getters.getTunnel(value.tunnelId);
+
             data.id = this.getUUID();
             data.name = value.progressName;
             data.tunnel_id = value.tunnelId;
 
-            let count = this.progressIdWithTunnel[value.tunnelId].length;
+            var count = null;
+            if (value.tunnelId in this.progressIdWithTunnel){
+                count = this.progressIdWithTunnel[value.tunnelId].length;
+            } else {
+                count = 0;
+                this.progressIdWithTunnel[value.tunnelId] = [];
+            }
+
             // TODO:  ????
             if (count === 0) {
                 count = 1;
