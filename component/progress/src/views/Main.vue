@@ -676,6 +676,7 @@ export default {
 
         },
         handleAddProgressCancelButton() {
+            this.currentMarker.remove();
             this.clearAll();
         },
         handleWorkInfoCancelButton() {
