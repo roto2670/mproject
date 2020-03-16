@@ -1,10 +1,10 @@
 <template>
     <div id="progressEditor" class="progress-info-container">
       <div class="progress-editor-title-container">
-        P Info
+        Progress Info
       </div>
       <div class="progress-editor-body-container">
-        <div @click="handleAddWorkButton">ADD work</div>
+        <div @click="handleAddWorkButton">Work Info</div>
         <div>type</div>
         <div>name
           <input id=progressName type="text" class="ga-name-input"

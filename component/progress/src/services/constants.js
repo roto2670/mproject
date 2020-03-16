@@ -77,6 +77,12 @@ window.CONSTANTS = {
         EXAMPLE_KIND_3 : 3,
         EXAMPLE_KIND_4 : 4,
         EXAMPLE_KIND_5 : 5,
+    },
+    WORK_STATE: {
+        READY: 0,
+        START: 1,
+        STOP: 2,
+        FINISH: 3
     }
 };
 if (window.CONSTANTS.IS_DEV) {
