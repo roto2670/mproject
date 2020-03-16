@@ -65,9 +65,13 @@ export default {
     },
     methods: {
       isType() {
-          this.tunnelInfo = this.$store.getters.getTunnel(this.id);
-          return this.type == window.CONSTANTS.TYPE.SELECT_CAVERN ||
-              this.type == window.CONSTANTS.TYPE.SELECT_WATER_CURTAIN;
+          if (this.type == window.CONSTANTS.TYPE.SELECT_CAVERN ||
+              this.type == window.CONSTANTS.TYPE.SELECT_WATER_CURTAIN) {
+             this.tunnelInfo = this.$store.getters.getTunnel(this.id);
+             return true;
+          } else {
+              return false;
+          }
       },
       handleOkButton() {
           const data = {};
@@ -86,7 +90,6 @@ export default {
           this.$emit('select-remove-tunnel-button', this.id);
       },
       handleAddProgressButton() {
-          console.log("### add progress. id, type", this.id, this.tunnelInfo.typ);
           this.$emit('select-add-progress-button', this.id, this.tunnelInfo.typ);
       },
     },

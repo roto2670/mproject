@@ -13,11 +13,17 @@
         <AddProgress :type="getCurrentType()" :tunnelId="currentTunnelId"
             @select-ok-button="handleAddProgressOkButton"
             @select-cancel-button="handleAddProgressCancelButton"></AddProgress>
-        <ProgressInfo v-if="isProgressInfoType()" :type="currentProgressType" :id="currentProgressId"
+        <ProgressInfo :type="getCurrentType()" :id="currentProgressId"
+            :workIdList="getWorkList()"
             @select-ok-button="handleProgressInfoOkButton"
             @select-cancel-button="handleProgressInfoCancelButton"
-            @select-add-work-button="handleAddWork"></ProgressInfo>
-        <WorkInfo v-if="isWorkInfo()" :progressId="currentProgressId"
+            @select-add-work-button="handleAddWork"
+            @select-work-item="handleSelectWorkItem"></ProgressInfo>
+        <AddWork :type="getCurrentType()" :progressId="currentProgressId"
+            @select-cancel-button="handleWorkAddCancelButton"
+            @select-ok-button="handleWorkAddOkButton"></AddWork>
+        <WorkInfo :type="getCurrentType()" :progressId="currentProgressId"
+            :id="currentWorkId"
             @select-cancel-button="handleWorkInfoCancelButton"
             @select-ok-button="handleWorkInfoOkButton"
             @select-handle-work-button="handleWorkStateButton"
@@ -31,6 +37,7 @@ import * as maptalks from 'maptalks';
 import Top from '@/components/Top';
 import AddTunnel from '@/components/AddTunnel';
 import AddProgress from '@/components/AddProgress';
+import AddWork from '@/components/AddWork';
 import TunnelInfo from '@/components/TunnelInfo';
 import ProgressInfo from '@/components/ProgressInfo';
 import WorkInfo from '@/components/WorkInfo';
@@ -40,6 +47,7 @@ export default {
         Top,
         AddTunnel,
         AddProgress,
+        AddWork,
         TunnelInfo,
         ProgressInfo,
         WorkInfo
@@ -55,13 +63,13 @@ export default {
             zoomLevel: 0,
             tunnelMarkers: {},    // {t_type: {t_id: t_marker}}
             progressMarkers: {},  // {p_id: p_marker, ..}
-            progressIdWithTunnel: {},    // {t_id: [p_id, ...]}
+            progressIdWithTunnel: {},    // {t_id: [p_id, ..]}
+            workIdWithProgress: {},    // {p_id: [w_id, ..]}
             markers: {},
             infoWindowItem: null,
             addWindowItem: null,
             contextMenuItem: null,
             windowItem: null,
-            workInfoWindow: false,
             markerPosition: null,
             checkInterval: null,
             isWebsoketConnected: false,
@@ -77,6 +85,7 @@ export default {
             currentTunnelId: null,
             currentTunnelType: null,
             currentProgressId: null,
+            currentWorkId: null,
             currentProgressType: null,
             currentMarker: null,
             //
@@ -174,7 +183,7 @@ export default {
                     this.progressLayer.setZIndex(2);
                     this.workLayer = new maptalks.VectorLayer('vector1').addTo(this.map);
                     this.workLayer.setZIndex(3);
-                    this.drawProgressList();
+                    //this.drawProgressList();
                 });
                 this.map.on('zoomend moveend', (e) => {
                     this.zoomLevel = 50 * (this.map.getZoom() / 11);
@@ -196,38 +205,42 @@ export default {
           });
         },
         _getTunnelList() {
-             this.services.getTunnels(tunnels => {
-                 console.log("Success to get tunnels");
-                 this._.forEach(tunnels, tunnel => {
+            this.services.getTunnels(tunnels => {
+                console.log("Success to get tunnels");
+                this._.forEach(tunnels, tunnel => {
                     this.tunnelIDList.push(tunnel.id);
                     this._drawTunnel(tunnel);
                     this.$store.commit('addTunnel', tunnel);
-                 });
-                 this._getProgressList(this.tunnelIDList);
-             }, (error) => {
-                 console.log("Failed to get tunnel list.", error);
-             });
+                });
+                this._getProgressList(this.tunnelIDList);
+            }, (error) => {
+                console.log("Failed to get tunnel list.", error);
+            });
         },
         _getProgressList(tunnelIdList) {
-             const data = {};
-             data.id_list = tunnelIdList;
-             this.services.getProgress(data, (resData) => {
-                 this._drawProgressList(resData)
-                 this._getWorkList();
-             }, (error) => {
-                 console.log("Failed to get progress list.");
-             });
+            const data = {};
+            data.id_list = tunnelIdList;
+            this.services.getProgress(data, (resData) => {
+                this._drawProgressList(resData);
+                this._getWorkList();
+            }, (error) => {
+                console.log("Failed to get progress list.");
+            });
         },
         _getWorkList() {
-             const data = {};
-             data.id_list = this.progressIDList;
-             this.services.getWork(data, (resData) => {
-                 this._.forEach(resData, workList => {
-                      this.$store.commit('addWorkList', workList);
-                 });
-             }, (error) => {
-                 console.log("Failed to get progress list.");
-             });
+            const data = {};
+            data.id_list = this.progressIDList;
+            this.services.getWork(data, (resData) => {
+                this._.forEach(resData, (workList, progressId) => {
+                    this.workIdWithProgress[progressId] = [];
+                    this.$store.commit('addWorkList', workList);
+                    this._.forEach(workList, work => {
+                        this.workIdWithProgress[work.prog_id].push(work.id);
+                    });
+                });
+            }, (error) => {
+                console.log("Failed to get progress list.");
+            });
         },
         _drawTunnel(tunnel){
             const xPosition = tunnel.x_loc,
@@ -267,6 +280,13 @@ export default {
             this.tunnelLayers[window.CONSTANTS.TUNNEL_TYPE.CAVERN].removeGeometry([_marker])
             this._drawTunnel(tunnel);
         },
+        getWorkList() {
+            let workList = this.workIdWithProgress[this.currentProgressId];
+            if (workList == undefined) {
+                workList = [];
+            }
+            return workList;
+        },
         setCurrentType(typ) {
             this.currentType = typ;
         },
@@ -278,9 +298,6 @@ export default {
         },
         isProgressInfoType() {
             return this.addType == null && this.currentProgressType != null;
-        },
-        isWorkInfo() {
-            return this.workInfoWindow;
         },
         setAddType(typ) {
             this.addType = typ;
@@ -306,15 +323,6 @@ export default {
         clearTunnelType() {
             this.currentTunnelType = null;
         },
-        clearAll() {
-            this.clearCurrentType();
-            this.clearCurrentMarker();
-            this.clearCurrentTunnelId();
-            this.clearTunnelType();
-            this.clearCurrentProgressId();
-            this.clearProgressType();
-            this.workInfoWindow = false;
-        },
         setCurrentProgressId(id) {
             this.currentProgressId = id;
         },
@@ -326,6 +334,21 @@ export default {
         },
         clearProgressType() {
             this.currentProgressType = null;
+        },
+        setCurrentWorkId(workId) {
+            this.currentWorkId = workId;
+        },
+        clearCurrentWorkId() {
+            this.currentWorkId = null;
+        },
+        clearAll() {
+            this.clearCurrentType();
+            this.clearCurrentMarker();
+            this.clearCurrentTunnelId();
+            this.clearTunnelType();
+            this.clearCurrentProgressId();
+            this.clearProgressType();
+            this.clearCurrentWorkId();
         },
         initContextMenu() {
             this.contextMenuOption = {
@@ -442,6 +465,7 @@ export default {
                     this.setCurrentProgressId(_marker.getId());
                     this.setCurrentMarker(_marker);
                     this.setProgressType(_marker.type);
+                    this.setCurrentType(window.CONSTANTS.TYPE.SELECT_PROGRESS);
                     e.domEvent.stopPropagation();
                 }
             });
@@ -695,50 +719,10 @@ export default {
                 this.clearAll();
                 console.log("fail to add Progress : ", error)
             });
-
-
         },
         handleAddProgressCancelButton() {
             this.currentMarker.remove();
             this.clearAll();
-        },
-        handleWorkInfoCancelButton() {
-            this.workInfoWindow = false;
-            this.clearAll();
-        },
-        handleWorkInfoOkButton(workData) {
-            workData.work_state = 0;
-            workData.equipments = null;
-            if ("id" in workData) {
-                this.services.updateWork(workData, (resData) => {
-                    console.log("success to update work");
-                }, (error) => {
-                    console.log("fail to update work : ", error);
-                });
-            } else {
-                workData.id = this.getUUID();
-                this.services.addWork(workData, (resData) => {
-                    console.log("success to add work");
-                }, (error) => {
-                    console.log("fail to add work : ", error);
-                });
-            }
-
-            this.clearAll();
-        },
-        handleWorkStateButton(data) {
-            this.services.updateWorkState(data, (resData) => {
-                console.log("success to update work");
-            }, (error) => {
-                console.log("fail to update work : ", error);
-            });
-        },
-        handleWorkRemoveButton(data) {
-            this.services.removeWork(data, (resData) => {
-                console.log("Success to remove work : ")
-            }, (error) => {
-                console.log("Failed to remove work")
-            });
         },
         handleProgressInfoOkButton(data) {
             this.services.updateProgress(data, (resData) => {
@@ -773,14 +757,12 @@ export default {
             });
             this.clearAll();
         },
-        handleAddWork(progressId) {
-            this.workInfoWindow = true;
-        },
         _drawProgressList(progressGetData) {
             this._.forEach(progressGetData, (progressList, tunnelId) => {
                 this.progressIdWithTunnel[tunnelId] = [];
                 this._.forEach(progressList, (progressData) => {
                     this.progressIdWithTunnel[progressData.tunnel_id].push(progressData.id);
+                    this.workIdWithProgress[progressData.id] = [];
                     this._drawProgress(progressData);
                     this.progressIDList.push(progressData.id);
                 });
@@ -900,6 +882,106 @@ export default {
             this.$store.commit('addProgress', progress);
             this._handleProgressClickEvent(_marker)
             this.progressLayers[tunnelData.typ].addGeometry(_marker);
+        },
+        handleSelectWorkItem(workId) {
+            this.setCurrentWorkId(workId);
+            this.setCurrentType(window.CONSTANTS.TYPE.SELECT_WORK);
+        },
+        handleAddWork(progressId) {
+            this.setCurrentTunnelId(progressId);
+            this.setCurrentType(window.CONSTANTS.TYPE.ADD_WORK);
+        },
+        handleWorkAddCancelButton() {
+            this.currentMarker.updateSymbol({
+                    markerLineColor: '#000000',
+                    // TODO:
+                    markerLineWidth: 1,
+                    markerFill: '#ff0000',
+                    markerOpacity: 1
+            });
+            this.clearAll();
+        },
+        handleWorkAddOkButton(value) {
+            // TODO: time???
+            let data = {};
+            data.work_state = 0;
+            data.equipments = null;
+            data.id = this.getUUID();
+            data.prog_id = value.progressId;
+            data.name = value.workName;
+            data.work_kind = window.CONSTANTS.IDEL_TIME.NONE;
+            data.start_time = 0;
+            data.finish_time = 0;
+            this.workIdWithProgress[value.progressId].push(data.id);
+            this.services.addWork(data, (resData) => {
+                console.log("success to add Work")
+                this.currentMarker.updateSymbol({
+                        markerLineColor: '#000000',
+                        // TODO:
+                        markerLineWidth: 1,
+                        markerFill: '#ff0000',
+                        markerOpacity: 1
+                });
+                this.clearAll();
+            }, (error) => {
+                console.error("Failed to add work.", error);
+                this.currentMarker.updateSymbol({
+                        markerLineColor: '#000000',
+                        // TODO:
+                        markerLineWidth: 1,
+                        markerFill: '#ff0000',
+                        markerOpacity: 1
+                });
+                this.workIdWithProgress[value.progressId] = this._.without(this.workIdWithProgress[value.progressId], value.id);
+                this.clearAll();
+            });
+        },
+        handleWorkInfoCancelButton() {
+            this.currentMarker.updateSymbol({
+                    markerLineColor: '#000000',
+                    // TODO:
+                    markerLineWidth: 1,
+                    markerFill: '#ff0000',
+                    markerOpacity: 1
+            });
+            this.clearAll();
+        },
+        handleWorkInfoOkButton(workData) {
+            this.services.updateWork(workData, (resData) => {
+                console.log("success to update work", workData);
+                this.currentMarker.updateSymbol({
+                        markerLineColor: '#000000',
+                        // TODO:
+                        markerLineWidth: 1,
+                        markerFill: '#ff0000',
+                        markerOpacity: 1
+                });
+                this.clearAll();
+            }, (error) => {
+                console.log("fail to update work : ", error);
+                this.currentMarker.updateSymbol({
+                        markerLineColor: '#000000',
+                        // TODO:
+                        markerLineWidth: 1,
+                        markerFill: '#ff0000',
+                        markerOpacity: 1
+                });
+                this.clearAll();
+            });
+        },
+        handleWorkStateButton(data) {
+            this.services.updateWorkState(data, (resData) => {
+                console.log("success to update work");
+            }, (error) => {
+                console.log("fail to update work : ", error);
+            });
+        },
+        handleWorkRemoveButton(data) {
+            this.services.removeWork(data, (resData) => {
+                console.log("Success to remove work : ")
+            }, (error) => {
+                console.log("Failed to remove work")
+            });
         },
         drawWorkList() {
 
