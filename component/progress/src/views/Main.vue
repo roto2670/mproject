@@ -91,7 +91,8 @@ export default {
             colorMap: {
                 'selected': '#dddddd',
                 '0': '#999999',
-                '1': '#00aabb'
+                '1': '#00aabb',
+                '3': '#ff0000',
             },
             mockData: [
                 {'id': 160, 'x_loc': 69.3, 'y_loc': 54.24, 'width': 1132, 'height': 18, 'status': 'c',  // 캐번 height
@@ -397,6 +398,7 @@ export default {
             this.currentMarker.remove();
             this.services.addTunnel(data, (resData) => {
                 console.log("success to add tunnel");
+                this.progressIdWithTunnel[data.id] = [];
                 this.clearAll();
             }, (error) => {
                 console.log("fail to add tunnel : ", error)
@@ -409,12 +411,21 @@ export default {
         _handleProgressClickEvent(marker) {
             marker.on('click', (e) => {
                 if (this.currentMarker !== null) {
-                    this.currentMarker.updateSymbol({
-                            markerLineColor: '#000000',
-                            markerLineWidth: 0,
-                            markerFill: this.colorMap[this.currentMarker.markerType],
-                            markerOpacity: 0.6
-                    });
+                    if (this.currentMarker.markerType == window.CONSTANTS.TUNNEL_TYPE.PROGRESS) {
+                        this.currentMarker.updateSymbol({
+                                markerLineColor: '#000000',
+                                markerLineWidth: 1,
+                                markerFill: this.colorMap[this.currentMarker.markerType],
+                                markerOpacity: 1
+                        });
+                    } else {
+                        this.currentMarker.updateSymbol({
+                                markerLineColor: '#000000',
+                                markerLineWidth: 0,
+                                markerFill: this.colorMap[this.currentMarker.markerType],
+                                markerOpacity: 0.6
+                        });
+                    }
                     this.clearCurrentProgressId();
                     this.clearCurrentMarker();
                     this.clearProgressType();
@@ -438,12 +449,21 @@ export default {
         _handleTunnelClickEvent(marker) {
             marker.on('click', (e) => {
                 if (this.currentMarker !== null) {
-                    this.currentMarker.updateSymbol({
-                            markerLineColor: '#000000',
-                            markerLineWidth: 0,
-                            markerFill: this.colorMap[this.currentMarker.markerType],
-                            markerOpacity: 0.6
-                    });
+                    if (this.currentMarker.markerType === window.CONSTANTS.TUNNEL_TYPE.PROGRESS) {
+                        this.currentMarker.updateSymbol({
+                                markerLineColor: '#000000',
+                                markerLineWidth: 1,
+                                markerFill: this.colorMap[this.currentMarker.markerType],
+                                markerOpacity: 1
+                        });
+                    } else {
+                        this.currentMarker.updateSymbol({
+                                markerLineColor: '#000000',
+                                markerLineWidth: 0,
+                                markerFill: this.colorMap[this.currentMarker.markerType],
+                                markerOpacity: 0.6
+                        });
+                    }
                     this.clearAll();
                 }
                 let _marker = this.tunnelMarkers[e.target.markerType][e.target.getId()];
@@ -603,13 +623,9 @@ export default {
             this.setCurrentType(window.CONSTANTS.TYPE.ADD_PROGRESS);
             const tunnelData = this.$store.getters.getTunnel(tunnelId),
                   data = {};
-            var count = null;
-            // TODO:  change progressLayers
-            if (tunnelId in this.progressIdWithTunnel){
-                count = this.progressIdWithTunnel[tunnelId].length;
-            } else {
-                count = 0;
-            }
+
+            let count = this.progressIdWithTunnel[tunnelId].length;
+            // TODO:  ????
             if (count === 0) {
                 count = 1;
             } else {
@@ -637,6 +653,9 @@ export default {
                     textMaxHeight: {stops: [[4, progressHeight], [5, progressHeight * 2], [6, progressHeight * 4], [7, progressHeight * 8]]}
                 }
             });
+            _marker.defaultWidth = progressWidth;
+            _marker.defaultHeight = progressHeight;
+            _marker.markerType = window.CONSTANTS.TUNNEL_TYPE.PROGRESS;
             this.progressLayers[tunnelType].addGeometry(_marker);
             this.currentMarker = _marker;
         },
@@ -648,14 +667,7 @@ export default {
             data.name = value.progressName;
             data.tunnel_id = value.tunnelId;
 
-            var count = null;
-            if (value.tunnelId in this.progressIdWithTunnel){
-                count = this.progressIdWithTunnel[value.tunnelId].length;
-            } else {
-                count = 0;
-                this.progressIdWithTunnel[value.tunnelId] = [];
-            }
-
+            let count = this.progressIdWithTunnel[value.tunnelId].length;
             // TODO:  ????
             if (count === 0) {
                 count = 1;
@@ -669,25 +681,19 @@ export default {
 
             data.x_loc = position[0];
             data.y_loc = position[1];
-            // TODO:
-            data.height = tunnelData.height
-            data.width = ((tunnelData.width / 2) / 11.25)
+            data.height = this.currentMarker.defaultWidth;
+            data.width = this.currentMarker.defaultHeight;
 
             this.progressIdWithTunnel[value.tunnelId].push(data.id);
             this.services.addProgress(data, (resData) => {
                 console.log("success to add Progress")
                 this.currentMarker.remove();
-                this.currentMarker.updateSymbol({
-                        markerLineWidth: 0,
-                });
-                this.progressMarkers[this.currentMarker.getId()] = this.currentMarker;
-                this.setContextMenu(this.currentMarker);
-                this.setProgressInfoWindow(this.currentMarker);
                 this.clearAll();
             }, (error) => {
+                this.currentMarker.remove();
                 this.progressIdWithTunnel[value.tunnelId] = this._.without(this.progressIdWithTunnel[value.tunnelId], data.id);
-                console.log("fail to add Progress : ", error)
                 this.clearAll();
+                console.log("fail to add Progress : ", error)
             });
 
 
@@ -737,13 +743,34 @@ export default {
         handleProgressInfoOkButton(data) {
             this.services.updateProgress(data, (resData) => {
                 console.log("success to update progress")
+                this.currentMarker.updateSymbol({
+                        markerLineColor: '#000000',
+                        // TODO:
+                        markerLineWidth: 1,
+                        markerFill: '#ff0000',
+                        markerOpacity: 0.6
+                });
                 this.clearAll();
             }, (error) => {
                 console.log("fail to update progress : ", error)
+                this.currentMarker.updateSymbol({
+                        markerLineColor: '#000000',
+                        // TODO:
+                        markerLineWidth: 1,
+                        markerFill: '#ff0000',
+                        markerOpacity: 0.6
+                });
+                this.clearAll();
             });
-            this.clearAll();
         },
         handleProgressInfoCancelButton() {
+            this.currentMarker.updateSymbol({
+                    markerLineColor: '#000000',
+                    // TODO:
+                    markerLineWidth: 1,
+                    markerFill: '#ff0000',
+                    markerOpacity: 0.6
+            });
             this.clearAll();
         },
         handleAddWork(progressId) {
@@ -865,10 +892,11 @@ export default {
                     textMaxHeight: {stops: [[4, progressHeight], [5, progressHeight * 2], [6, progressHeight * 4], [7, progressHeight * 8]]}
                 }
             });
+            _marker.defaultWidth = progressWidth;
+            _marker.defaultHeight = progressHeight;
+            _marker.markerType = window.CONSTANTS.TUNNEL_TYPE.PROGRESS;
             this.progressMarkers[progress.id] = _marker;
             this.progressIdWithTunnel[tunnelData.id].push(progress.id);
-            this.setContextMenu(_marker);
-            this.setProgressInfoWindow(_marker);
             this.$store.commit('addProgress', progress);
             this._handleProgressClickEvent(_marker)
             this.progressLayers[tunnelData.typ].addGeometry(_marker);
