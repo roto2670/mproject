@@ -90,6 +90,14 @@ export default {
         }
     },
     methods: {
+      getWorkList() {
+        const workList = this.$store.state.work;
+        this._.forEach(workList, (workData) => {
+            if (workData.prog_id == this.progressId) {
+                this.workDataList.push(workData);
+            }
+        });
+      },
       handleOkButton() {
           const data = {};
           if (!!this.selectWorkData) {
@@ -184,12 +192,10 @@ export default {
                 return null;
             }
         },
-        getStartTime() {
+        getFinishTime() {
             if (this.selectWorkData) {
-                if (!!this.selectWorkData.start_time) {
-                    var finishTimeStamp = new Date(this.selectWorkData.finish_time*1000);
-                    var timeArray = finishTimeStamp.toISOString().split(":");
-                    return timeArray[0]+":"+timeArray[1];
+                if (!!this.selectWorkData.finish_datetime) {
+                    return this.selectWorkData.finish_datetime;
                 } else {
                     return null;
                 }
@@ -197,12 +203,10 @@ export default {
                 return null;
             }
         },
-        getFinishTime() {
+        getStartTime() {
             if (this.selectWorkData) {
-                if (!!this.selectWorkData.finish_time) {
-                    var startTimeStamp = new Date(this.selectWorkData.start_time*1000);
-                    var timeArray = startTimeStamp.toISOString().split(":");
-                    return timeArray[0]+":"+timeArray[1];
+                if (!!this.selectWorkData.start_datetime) {
+                    return this.selectWorkData.start_datetime;
                 } else {
                     return null;
                 }
@@ -212,12 +216,7 @@ export default {
         }
     },
     created() {
-        const workList = this.$store.getters.getWorkList;
-        this._.forEach(workList, (workData) => {
-            if (workData.prog_id == this.progressId) {
-                this.workDataList.push(workData);
-            }
-        });
+        this.getWorkList();
     }
 }
 </script>
