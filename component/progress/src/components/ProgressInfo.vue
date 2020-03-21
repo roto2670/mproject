@@ -1,78 +1,99 @@
 <template>
-    <div v-if="isEdit" id="progressInfoEditor" class="progress-info-container">
-    </div>
-    <div v-else id="progressInfoEditor" class="progress-info-container">
-      <div class="progress-info-title-container">
-        Progress Info
-      </div>
-      <div class="progress-info-body-container">
-        <div class="progress-info-body-content-container">
-          <div class="progress-info-body-content-title">Type</div>
-          <input class="progress-info-body-content-message" id="progressType"
-              type="text">
+    <div v-if="isType()">
+        <div v-if="isEdit" id="progressInfoEditor" class="progress-info-container">
         </div>
-        <div class="progress-info-body-content-container">
-          <div class="progress-info-body-content-title">Name</div>
-          <input class="progress-info-body-content-message" id="progressName"
-              type="text" maxlength="30" @change="handleChangeProgressName" >
+        <div v-else id="progressInfoEditor" class="progress-info-container">
+        <div class="progress-info-title-container">
+            Progress Info
         </div>
-        <div class="progress-info-body-content-container">
-          <div class="progress-info-body-content-title">Length</div>
-          <input class="progress-info-body-content-message" id="progressLength"
-              type="text">
-        </div>
-        <div class="progress-info-body-content-container">
-          <div class="progress-info-body-content-title">Direction</div>
-          <input class="progress-info-body-content-message" id="progressDirection"
-              type="text">
-        </div>
+        <div class="progress-info-body-container">
+            <div class="progress-info-body-content-container">
+            <div class="progress-info-body-content-title">Type</div>
+            <input class="progress-info-body-content-message" id="progressType"
+                type="text">
+            </div>
+            <div class="progress-info-body-content-container">
+            <div class="progress-info-body-content-title">Name</div>
+            <input class="progress-info-body-content-message" id="progressName"
+                type="text" maxlength="30" @change="handleChangeProgressName" >
+            </div>
+            <div class="progress-info-body-content-container">
+            <div class="progress-info-body-content-title">Length</div>
+            <input class="progress-info-body-content-message" id="progressLength"
+                type="text">
+            </div>
+            <div class="progress-info-body-content-container">
+            <div class="progress-info-body-content-title">Direction</div>
+            <input class="progress-info-body-content-message" id="progressDirection"
+                type="text">
+            </div>
 
-        <div class="progress-info-body-button-container">
-          <div class="progress-info-body-button-edit"
-              @click="handleEditProgressButton">EDIT</div>
-          <div class="progress-info-body-button-remove"
-              @click="handleRemoveProgressButton">REMOVE</div>
-        </div>
+            <div class="progress-info-body-button-container">
+            <div class="progress-info-body-button-edit"
+                @click="handleEditProgressButton">EDIT</div>
+            <div class="progress-info-body-button-remove"
+                @click="handleRemoveProgressButton">REMOVE</div>
+            </div>
 
-        <div class="progress-info-body-work-container">
-          <div class="progress-info-body-work-list-container">
-          </div>
-          <div class="progress-info-body-work-button-container">
-            <div class="progress-info-body-work-button-add"
-                @click="handleAddWorkButton">ADD WORK</div>
-          </div>
+            <div class="progress-info-body-work-container">
+            <div class="progress-info-body-work-list-container">
+                <WorkListItem v-for="workId in workIdList" :key="workId" :id="workId"
+                    @select-item="handleSelectWorkItem">
+                </WorkListItem>
+            </div>
+            <div class="progress-info-body-work-button-container">
+                <div class="progress-info-body-work-button-add"
+                    @click="handleAddWorkButton">ADD WORK</div>
+            </div>
+            </div>
         </div>
-      </div>
-      <div class="progress-info-button-container">
-        <div class="progress-info-ok-button"
-            @click="handleOkButton">
-          OK
+        <div class="progress-info-button-container">
+            <div class="progress-info-ok-button"
+                @click="handleOkButton">
+            OK
+            </div>
+            <div class="progress-info-cancle-button"
+                @click="handleCancelButton">
+            CANCEL
+            </div>
         </div>
-        <div class="progress-info-cancle-button"
-            @click="handleCancelButton">
-          CANCEL
         </div>
-      </div>
     </div>
 </template>
 <script>
+import WorkListItem from '@/components/WorkListItem';
 export default {
     name: 'ProgressInfo',
     components: {
+        WorkListItem
     },
     props: {
+        type: {
+            type: Number,
+            default: -1
+        },
         id: {
-          type: String
+            type: String
+        },
+        workIdList: {
+            type: Array
         }
     },
     data() {
         return {
-          isEdit: false,
-          progressName: '',
-          progressInfo: null,
+            isEdit: false,
+            progressName: '',
+            progressInfo: null,
         }
     },
     methods: {
+      isType() {
+          if (this.type == window.CONSTANTS.TYPE.SELECT_PROGRESS) {
+              return true;
+          } else {
+              return false;
+          }
+      },
       handleOkButton() {
           const data = {};
           data._id = this.id;
@@ -92,6 +113,9 @@ export default {
       handleChangeProgressName(e) {
           this.progressName = e.target.value;
       },
+      handleSelectWorkItem(workId) {
+          this.$emit("select-work-item", workId);
+      }
     },
     computed: {
     },
@@ -177,6 +201,7 @@ export default {
     border: 1px solid;
     width: 100%;
     height: 5em;
+    overflow: scroll;
 }
 .progress-info-body-work-button-container {
 }
