@@ -82,8 +82,7 @@ export default {
           workName: '',
           startTime: null,
           finishTime: null,
-          workInfo: null,
-          selectWorkData: null
+          workInfo: null
         }
     },
     methods: {
@@ -115,13 +114,14 @@ export default {
             this.startTime = startTime/1000
         },
         handleChangeWorkFinishTime (e) {
+            console.log("ddd : ", e.target.value)
             var finishTime = new Date(e.target.value).getTime();
             this.finishTime = finishTime/1000;
         },
         handleStartWork() {
             const data = {};
-            if (!!this.selectWorkData) {
-                data._id = this.selectWorkData.id;
+            if (!!this.workInfo) {
+                data._id = this.workInfo.id;
                 data.work_state = window.CONSTANTS.WORK_STATE.START;
                 this.$emit('select-handle-work-button', data);
             } else {
@@ -130,8 +130,8 @@ export default {
         },
         handleStopWork() {
             const data = {};
-            if (!!this.selectWorkData) {
-                data._id = this.selectWorkData.id;
+            if (!!this.workInfo) {
+                data._id = this.workInfo.id;
                 data.work_state = window.CONSTANTS.WORK_STATE.STOP;
                 this.$emit('select-handle-work-button', data);
             } else {
@@ -140,8 +140,8 @@ export default {
         },
         handleFinishWork() {
             const data = {};
-            if (!!this.selectWorkData) {
-                data._id = this.selectWorkData.id;
+            if (!!this.workInfo) {
+                data._id = this.workInfo.id;
                 data.work_state = window.CONSTANTS.WORK_STATE.FINISH;
                 this.$emit('select-handle-work-button', data);
             } else {
@@ -150,12 +150,23 @@ export default {
         },
         handleRemoveWork() {
             const data = {};
-            if (!!this.selectWorkData) {
-                data.id = this.selectWorkData.id;
+            if (!!this.workInfo) {
+                data.id = this.workInfo.id;
                 this.$emit('select-remove-work-button', data);
             } else {
                 this.sweetbox.fire("there is no work data for remove")
             }
+        },
+        formatDate(date) {
+            var dateInfo = new Date(date),
+                month = '' + (dateInfo.getMonth() + 1),
+                day = '' + dateInfo.getDate(),
+                year = dateInfo.getFullYear();
+            if (month.length < 2)
+                month = '0' + month;
+            if (day.length < 2)
+                day = '0' + day;
+            return [year, month, day].join('-');
         }
     },
     computed: {
@@ -167,10 +178,18 @@ export default {
             return this.workInfo.work_state;
         },
         getFinishTime() {
-            return this.workInfo.finish_time;
+            var finishTime = new Date(this.workInfo.finish_time*1000),
+                date = this.formatDate(finishTime),
+                time = finishTime.toTimeString().split(" ")[0],
+                ret = date+"T"+time;
+            return ret;
         },
         getStartTime() {
-            return this.workInfo.start_time;
+            var startTime = new Date(this.workInfo.start_time*1000),
+                date = this.formatDate(startTime),
+                time = startTime.toTimeString().split(" ")[0],
+                ret = date+"T"+time;
+            return ret;
         }
     },
     created() {
