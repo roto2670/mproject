@@ -1,32 +1,49 @@
 <template>
     <div id="main" class="main-container">
         <Top :selectedType="isTopPressedType" @select-top-button="handleTopButton"></Top>
+        <AddBasePoint :type="getCurrentType()"
+            @select-ok-button="handleAddBasePointOkButton"
+            @select-cancel-button="handleAddBasePointCancelButton"></AddBasePoint>
+        <BasePointInfo :type="getCurrentType()" :id="currentTunnelId"
+            @select-ok-button="handleBasePointInfoOkButton"
+            @select-cancel-button="handleBasePointInfoCancelButton"
+            @select-close-button="handleBasePointInfoCloseButton"
+            @select-add-cavern-button="handleAddCavern"
+            @select-remove-basepoint-button="handleRemoveBasePoint"></BasePointInfo>
         <AddTunnel :type="getCurrentType()"
-            @change-tunnel-direction="handleAddTunnelDirection"
+            @change-tunnel-direction="handleChangeDirectionCavern"
             @select-ok-button="handleAddTunnelOkButton"
             @select-cancel-button="handleAddTunnelCancelButton"></AddTunnel>
         <TunnelInfo :type="getCurrentType()" :id="currentTunnelId"
             @select-ok-button="handleTunnelInfoOkButton"
-            @select-cancel-button="handleTunnelInfoCancelButton"
-            @select-add-progress-button="handleAddProgress"
+            @select-close-button="handleTunnelInfoCloseButton"
+            @select-add-blast-button="handleAddBlast"
             @select-remove-tunnel-button="handleRemoveTunnel"></TunnelInfo>
-        <AddProgress :type="getCurrentType()" :tunnelId="currentTunnelId"
-            @select-ok-button="handleAddProgressOkButton"
-            @select-cancel-button="handleAddProgressCancelButton"></AddProgress>
-        <ProgressInfo :type="getCurrentType()" :id="currentProgressId"
+        <AddBlast :type="getCurrentType()" :tunnelId="currentTunnelId"
+            @select-ok-button="handleAddBlastOkButton"
+            @select-cancel-button="handleAddBlastCancelButton"></AddBlast>
+        <BlastInfo :type="getCurrentType()" :id="currentBlastId"
             :workIdList="getWorkList()"
-            @select-ok-button="handleProgressInfoOkButton"
-            @select-cancel-button="handleProgressInfoCancelButton"
+            :supportingIdList="getSupportingList()"
+            :idleIdList="getIdleList()"
+            @select-information-button="handleBlastInfoInformationButton"
+            @select-close-button="handleBlastInfoCloseButton"
             @select-add-work-button="handleAddWork"
-            @select-work-item="handleSelectWorkItem"></ProgressInfo>
-        <AddWork :type="getCurrentType()" :progressId="currentProgressId"
+            @select-work-item="handleSelectWorkItem"></BlastInfo>
+        <BlastInformation :type="getCurrentType()" :id="currentBlastId"
+            @select-ok-button="handleBlastInfoOkButton"
+            @select-close-button="handleBlastInfoCloseButton"></BlastInformation>
+        <AddWork :type="getCurrentType()" :blastId="currentBlastId"
             @select-cancel-button="handleWorkAddCancelButton"
             @select-ok-button="handleWorkAddOkButton"></AddWork>
-        <WorkInfo :type="getCurrentType()" :progressId="currentProgressId"
-            :id="currentWorkId"
+        <WorkInfo :type="getCurrentType()" :blastId="currentBlastId"
+            :id="currentWorkId" :pauseList="getPauseList()"
+            :operatorList="getOperatorList()" :equipmentList="getEquipmentList()"
+            :workOperatorList="workOperatorList"
+            :workEquipmentList="workEquipmentList"
             @select-cancel-button="handleWorkInfoCancelButton"
             @select-ok-button="handleWorkInfoOkButton"
-            @select-handle-work-button="handleWorkStateButton"
+            @select-close-button="handleWorkInfoCloseButton"
             @select-remove-work-button="handleWorkRemoveButton"></WorkInfo>
         <div :id="id" class="map-container">
         </div>
@@ -35,21 +52,27 @@
 <script>
 import * as maptalks from 'maptalks';
 import Top from '@/components/Top';
+import AddBasePoint from '@/components/AddBasePoint';
 import AddTunnel from '@/components/AddTunnel';
-import AddProgress from '@/components/AddProgress';
+import AddBlast from '@/components/AddBlast';
 import AddWork from '@/components/AddWork';
+import BasePointInfo from '@/components/BasePointInfo';
 import TunnelInfo from '@/components/TunnelInfo';
-import ProgressInfo from '@/components/ProgressInfo';
+import BlastInfo from '@/components/BlastInfo';
+import BlastInformation from '@/components/BlastInformation';
 import WorkInfo from '@/components/WorkInfo';
 export default {
     name: 'Main',
     components: {
         Top,
+        AddBasePoint,
         AddTunnel,
-        AddProgress,
+        AddBlast,
         AddWork,
+        BasePointInfo,
         TunnelInfo,
-        ProgressInfo,
+        BlastInfo,
+        BlastInformation,
         WorkInfo
     },
     data() {
@@ -57,14 +80,17 @@ export default {
             id: 'map',
             info: {},
             map: null,
+            basePointLayers: {},  // {t_type: layer}
             tunnelLayers: {},  // {t_type: layer}
-            progressLayers: {},  // {t_type : layer}
+            blastLayers: {},  // {t_type : layer}
             workLayers: {},
             zoomLevel: 0,
+            basePointMarkers: {},  // {t_type: {bp_id: bp_marker}}
             tunnelMarkers: {},    // {t_type: {t_id: t_marker}}
-            progressMarkers: {},  // {p_id: p_marker, ..}
-            progressIdWithTunnel: {},    // {t_id: [p_id, ..]}
-            workIdWithProgress: {},    // {p_id: [w_id, ..]}
+            blastMarkers: {},  // {b_id: b_marker, ..}
+            blastIdWithTunnel: {},    // {t_id: [b_id, ..]}
+            workIdWithBlast: {},    // {b_id: {0: [w_id, ..], 1: [w_id, ..], 2: [w_id, ..]}} 0(MainWork), 1(Supporting), 2(IdelTime)
+            pauseIdWithWork: {},  // {w_id: [p_id, ..]}
             markers: {},
             infoWindowItem: null,
             addWindowItem: null,
@@ -77,54 +103,35 @@ export default {
             isForGroup: false,
             isTopPressedType: '',
             tunnelIDList: [],
-            progressIDList: [],
+            blastIDList: [],
             progIDList: [],
             workIDList: [],
+            workOperatorList: [],
+            workEquipmentList: [],
             //
             currentType: null,
             currentTunnelId: null,
             currentTunnelType: null,
-            currentProgressId: null,
+            currentBlastId: null,
             currentWorkId: null,
-            currentProgressType: null,
+            currentBlastType: null,
             currentMarker: null,
             //
-            progressLayer: null,
+            blastLayer: null,
             workLayer: null,
-            workColor: {
-                '0': '#ffffff',
-                'a': '#ff0000',
-                'b': '#00ff00',
-                'c': '#0000ff'
-            },
             colorMap: {
                 'selected': '#dddddd',
-                '0': '#999999',
+                '0': '#a0a0ff',
                 '1': '#00aabb',
                 '3': '#ff0000',
-            },
-            mockData: [
-                {'id': 160, 'x_loc': 69.3, 'y_loc': 54.24, 'width': 1132, 'height': 18, 'status': 'c',  // 캐번 height
-                 'name': 'progress10', 'current': '815m'},
-                {'id': 370, 'x_loc': 69.3, 'y_loc': 39.5, 'width': 1200, 'height': 6, 'status': 'b',   // 워터갤러리 height
-                 'name': 'progress10', 'current': '815m'},
-                {'id': 161, 'x_loc': 65.5, 'y_loc': 51.24, 'width': 150, 'height': 18, 'status': 'c',  // 캐번 height
-                 'name': 'progress10', 'current': '815m'},
-                {'id': 162, 'x_loc': 65.5, 'y_loc': 45.12, 'width': 150, 'height': 6, 'status': 'b',   // 워터갤러리 height
-                 'name': 'progress10', 'current': '815m'},
-                {'id': 163, 'x_loc': 61.0, 'y_loc': 42.38, 'width': 60, 'height': 10, 'status': 'a',
-                 'name': 'progress10', 'current': '815m'},
-                // {'id': 1700, 'x_loc': 64.4, 'y_loc': 54.2, 'width': 8, 'height': 92, 'status': 'a',  // 캐번 height
-                //  'name': 'progress10', 'current': '815m'},
-                {'id': 1700, 'x_loc': 64.4, 'y_loc': 55.6, 'width': 8, 'height': 36, 'status': 'a',  // 캐번 height
-                 'name': 'progress10', 'current': '815m'},
-                // {'id': 161, 'x': 65.5, 'y': 51.24317965522793, 'width': 150, 'height': 18, 'status': 'c',  // 캐번 height
-                //  'name': 'progress10', 'current': '815m'},
-                // {'id': 162, 'x': 65.5, 'y': 45.12317965522793, 'width': 150, 'height': 6, 'status': 'b',   // 워터갤러리 height
-                //  'name': 'progress10', 'current': '815m'},
-                // {'id': 163, 'x': 61.4, 'y': 42.38217965522793, 'width': 60, 'height': 10, 'status': 'a',
-                //  'name': 'progress10', 'current': '815m'},
-            ]
+                '4': '#0000ff',
+                '100': '#00aabb',
+                '101': '#0070c0',
+                '102': '#92d050',
+                '1000': '#00b050',
+                '1001': '#ffcd8c',
+                '1002': '#a05900',
+            }
         }
     },
     methods: {
@@ -175,15 +182,22 @@ export default {
                         this.tunnelLayers[value] = new maptalks.VectorLayer(value).addTo(this.map);
                         this.tunnelLayers[value].setZIndex(1);
                         this.tunnelMarkers[value] = {};
-                        this.progressLayers[value] = new maptalks.VectorLayer('p' + value).addTo(this.map);
-                        this.progressLayers[value].setZIndex(2);
+                        this.blastLayers[value] = new maptalks.VectorLayer('p' + value).addTo(this.map);
+                        this.blastLayers[value].setZIndex(2);
+
+                        this.basePointLayers[value] = new maptalks.VectorLayer('b' + value).addTo(this.map);
+                        this.basePointLayers[value].setZIndex(100);
+                        this.basePointMarkers[value] = {};
                     });
-                    this._getTunnelList();
-                    this.progressLayer = new maptalks.VectorLayer('vector').addTo(this.map);
-                    this.progressLayer.setZIndex(2);
+                    this._getActivityList();
+                    this._getEquipmentList();
+                    this._getOperatorList();
+                    this._getEquipmentInfoList();
+                    this._getBasePointList();
+                    this.blastLayer = new maptalks.VectorLayer('vector').addTo(this.map);
+                    this.blastLayer.setZIndex(2);
                     this.workLayer = new maptalks.VectorLayer('vector1').addTo(this.map);
-                    this.workLayer.setZIndex(3);
-                    //this.drawProgressList();
+                    this.workLayer.setZIndex(101);
                 });
                 this.map.on('zoomend moveend', (e) => {
                     this.zoomLevel = 50 * (this.map.getZoom() / 11);
@@ -198,67 +212,154 @@ export default {
                 });
             }
         },
-        getUUID() {
+        _getUUID() {
           return 'xxxxxxxxxxxx4xxxyxxxxxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
             var r = Math.random() * 16 | 0, v = c == 'x' ? r : (r & 3 | 8);
             return v.toString(16);
           });
         },
+        _getActivityList() {
+            this.services.getActivityList(activityList => {
+                // TODO:
+                console.log("Success to get activity list.", activityList);
+            }, (error) => {
+                console.log("Failed to get activity list.", error);
+            });
+        },
+        _getEquipmentList() {
+            this.services.getEquipmentList(equipmentList => {
+                console.log("Success to get equipment list.", equipmentList);
+                this.$store.commit('addEquipmentList', equipmentList);
+            }, (error) => {
+                console.log("Failed to get equipment list.", error);
+            });
+        },
+        _getOperatorList() {
+            this.services.getOperatorList(operatorList => {
+                console.log("Success to get operator list.", operatorList);
+                this.$store.commit('addOperatorList', operatorList);
+            }, (error) => {
+                console.log("Failed to get operator list.", error);
+            });
+        },
+        _getEquipmentInfoList() {
+            this.services.getEquipmentInfoList(equipmentInfoList => {
+                // TODO:
+                console.log("Success to get equipment info list.", equipmentInfoList);
+            }, (error) => {
+                console.log("Failed to get equipment info list.", error);
+            });
+        },
+        _getBasePointList() {
+            this.services.getBasePointList(basePointList => {
+                console.log("Success to get basepoint list.");
+                this._.forEach(basePointList, basePoint => {
+                    this._drawBasePoint(basePoint);
+                });
+                this._getTunnelList();
+            }, (error) => {
+                console.log("Failed to get basepoint list.", error);
+            });
+        },
         _getTunnelList() {
-            this.services.getTunnels(tunnels => {
+            this.services.getTunnelList(tunnels => {
                 console.log("Success to get tunnels");
                 this._.forEach(tunnels, tunnel => {
                     this.tunnelIDList.push(tunnel.id);
+                    this.blastIdWithTunnel[tunnel.id] = [];
                     this._drawTunnel(tunnel);
-                    this.$store.commit('addTunnel', tunnel);
                 });
-                this._getProgressList(this.tunnelIDList);
+                this._getWorkList();
             }, (error) => {
                 console.log("Failed to get tunnel list.", error);
             });
         },
-        _getProgressList(tunnelIdList) {
-            const data = {};
-            data.id_list = tunnelIdList;
-            this.services.getProgress(data, (resData) => {
-                this._drawProgressList(resData);
-                this._getWorkList();
+        _getWorkList() {
+            this.services.getWorkList(resData => {
+                this._.forEach(resData, (work) => {
+                    if (!(work.blast_id in this.workIdWithBlast)) {
+                        this.workIdWithBlast[work.blast_id] = {
+                            0: [],  // Main Work
+                            1: [],  // Supporting
+                            2: []   // Idel Time
+                        }
+                    }
+
+                    if (work.category == window.CONSTANTS.CATEGORY.MAIN_WORK) {
+                        this.workIdWithBlast[work.blast_id][0].push(work.id)
+                    } else if (work.category == window.CONSTANTS.CATEGORY.SUPPORTING) {
+                        this.workIdWithBlast[work.blast_id][1].push(work.id)
+                    } else {
+                        this.workIdWithBlast[work.blast_id][2].push(work.id)
+                    }
+
+                    this.$store.commit('addWork', work);
+                });
+                this._getPauseList();
+                this._getBlastList();
             }, (error) => {
-                console.log("Failed to get progress list.");
+                console.log("Failed to get work list.", error);
             });
         },
-        _getWorkList() {
-            const data = {};
-            data.id_list = this.progressIDList;
-            this.services.getWork(data, (resData) => {
-                this._.forEach(resData, (workList, progressId) => {
-                    this.workIdWithProgress[progressId] = [];
-                    this.$store.commit('addWorkList', workList);
-                    this._.forEach(workList, work => {
-                        this.workIdWithProgress[work.prog_id].push(work.id);
-                    });
+        _getPauseList() {
+            this.services.getPauseList(resData => {
+                this._.forEach(resData, (pause) => {
+                    if (!(pause.work_id in this.pauseIdWithWork)) {
+                        this.pauseIdWithWork[pause.work_id] = [];
+                    }
+                    this.pauseIdWithWork[pause.work_id].push(pause.id);
+                    this.$store.commit('addPause', pause);
+                });
+            });
+        },
+        _getBlastList() {
+            this.services.getBlastList(blastList => {
+                this._.forEach(blastList, blast => {
+                    if (!(blast.tunnel_id in this.blastIdWithTunnel)) {
+                        this.blastIdWithTunnel[blast.tunnel_id] = [];
+                    }
+                    if (!(blast.id in this.workIdWithBlast)) {
+                        this.workIdWithBlast[blast.id] = {
+                            0: [],  // Main Work
+                            1: [],  // Supporting
+                            2: []   // Idel Time
+                        }
+                    }
+                    this._drawBlast(blast);
+                    this.blastIDList.push(blast.id);
+                });
+                this._getBlastInfoList();
+            }, (error) => {
+                console.log("Failed to get blast list.", error);
+            });
+        },
+        _getBlastInfoList() {
+            this.services.getBlastInfoList(blastInfoList => {
+                this._.forEach(blastInfoList, blastInfo => {
+                    this.$store.commit('addBlastInfo', blastInfo);
                 });
             }, (error) => {
-                console.log("Failed to get progress list.");
+                console.log("Failed to get blast info list.");
             });
         },
-        _drawTunnel(tunnel){
-            const xPosition = tunnel.x_loc,
-                  yPosition = tunnel.y_loc,
-                  width = tunnel.width,
-                  height = tunnel.height;
+        _drawBasePoint(basePoint){
+            const xPosition = basePoint.x_loc,
+                  yPosition = basePoint.y_loc,
+                  width = basePoint.width,
+                  height = basePoint.height,
+                  typ = window.CONSTANTS.TUNNEL_TYPE.BASEPOINT; // TODO:
             var marker = new maptalks.TextBox("", [xPosition, yPosition],
                                               {stops: [[4, width], [5, width * 2], [6, width * 4], [7, width * 8]]},
                                               {stops: [[4, height], [5, height * 2], [6, height * 4], [7, height * 8]]}, {
-                id: tunnel.id,
-                editable: false,
+                id: basePoint.id,
+                editable: true,
                 draggable: false,
                 boxSymbol: {
                     markerType: 'square',
-                    markerLineColor: '#000000',
-                    markerLineWidth: 0,
-                    markerFill: this.colorMap[tunnel.typ],
-                    markerFillOpacity: 0.6
+                    markerLineColor: this.colorMap[typ],
+                    markerLineWidth: 1,
+                    markerFill: this.colorMap[typ],
+                    markerFillOpacity: 1
                 },
                 symbol: {
                     textMaxWidth: {stops: [[4, width], [5, width * 2], [6, width * 4], [7, width * 8]]},
@@ -267,9 +368,44 @@ export default {
             });
             marker.defaultWidth = width;
             marker.defaultHeight = height;
-            marker.markerType = tunnel.typ;
-            this.tunnelLayers[tunnel.typ].addGeometry([marker]);
-            this.tunnelMarkers[tunnel.typ][tunnel.id] = marker;
+            marker.markerType = typ;
+            this.basePointLayers[typ].addGeometry([marker]);
+            this.basePointMarkers[typ][basePoint.id] = marker;
+            this.$store.commit('addBasePoint', basePoint);
+            // TODO:
+            this._handleBasePointClickEvent(marker);
+            // TODO: right click?
+            marker.on('contextmenu', () => {});
+        },
+        _drawTunnel(tunnel){
+            const xPosition = tunnel.x_loc,
+                  yPosition = tunnel.y_loc,
+                  width = tunnel.width,
+                  height = tunnel.height,
+                  typ = tunnel.category; // TODO:
+            var marker = new maptalks.TextBox("", [xPosition, yPosition],
+                                              {stops: [[4, width], [5, width * 2], [6, width * 4], [7, width * 8]]},
+                                              {stops: [[4, height], [5, height * 2], [6, height * 4], [7, height * 8]]}, {
+                id: tunnel.id,
+                editable: false,
+                draggable: false,
+                boxSymbol: {
+                    markerType: 'square',
+                    markerLineColor: this.colorMap[typ],
+                    markerLineWidth: 1,
+                    markerFill: this.colorMap[typ],
+                    markerFillOpacity: 1
+                },
+                symbol: {
+                    textMaxWidth: {stops: [[4, width], [5, width * 2], [6, width * 4], [7, width * 8]]},
+                    textMaxHeight: {stops: [[4, height], [5, height * 2], [6, height * 4], [7, height * 8]]}
+                }
+            });
+            marker.defaultWidth = width;
+            marker.defaultHeight = height;
+            marker.markerType = typ;
+            this.tunnelLayers[typ].addGeometry([marker]);
+            this.tunnelMarkers[typ][tunnel.id] = marker;
             this.$store.commit('addTunnel', tunnel);
             this._handleTunnelClickEvent(marker);
             // TODO: right click?
@@ -281,11 +417,50 @@ export default {
             this._drawTunnel(tunnel);
         },
         getWorkList() {
-            let workList = this.workIdWithProgress[this.currentProgressId];
-            if (workList == undefined) {
-                workList = [];
+            let workList = [];
+            if (this.currentBlastId !== null) {
+                workList = this.workIdWithBlast[this.currentBlastId][0];
+                if (workList == undefined) {
+                    workList = [];
+                }
             }
             return workList;
+        },
+        getSupportingList() {
+            let supportingList = [];
+            if (this.currentBlastId !== null) {
+                supportingList = this.workIdWithBlast[this.currentBlastId][1];
+                if (supportingList == undefined) {
+                    supportingList = [];
+                }
+            }
+            return supportingList;
+        },
+        getIdleList() {
+            let idleList = [];
+            if (this.currentBlastId !== null) {
+                idleList = this.workIdWithBlast[this.currentBlastId][2];
+                if (idleList == undefined) {
+                    idleList = [];
+                }
+            }
+            return idleList;
+        },
+        getPauseList() {
+            let pauseList = [];
+            if (this.currentworkId !== null) {
+                pauseList = this.pauseIdWithWork[this.currentWorkId];
+            }
+            return pauseList;
+
+        },
+        getOperatorList() {
+            let operatorList = this.$store.getters.getOperatorList();
+            return operatorList;
+        },
+        getEquipmentList() {
+            let equipmentList = this.$store.getters.getEquipmentList();
+            return equipmentList;
         },
         setCurrentType(typ) {
             this.currentType = typ;
@@ -296,8 +471,8 @@ export default {
         clearCurrentType() {
             this.currentType = null;
         },
-        isProgressInfoType() {
-            return this.addType == null && this.currentProgressType != null;
+        isBlastInfoType() {
+            return this.addType == null && this.currentBlastType != null;
         },
         setAddType(typ) {
             this.addType = typ;
@@ -323,17 +498,17 @@ export default {
         clearTunnelType() {
             this.currentTunnelType = null;
         },
-        setCurrentProgressId(id) {
-            this.currentProgressId = id;
+        setCurrentBlastId(id) {
+            this.currentBlastId = id;
         },
-        setProgressType(typ) {
-            this.currentProgressType = typ;
+        setBlastType(typ) {
+            this.currentBlastType = typ;
         },
-        clearCurrentProgressId() {
-            this.currentProgressId = null;
+        clearCurrentBlastId() {
+            this.currentBlastId = null;
         },
-        clearProgressType() {
-            this.currentProgressType = null;
+        clearBlastType() {
+            this.currentBlastType = null;
         },
         setCurrentWorkId(workId) {
             this.currentWorkId = workId;
@@ -346,8 +521,8 @@ export default {
             this.clearCurrentMarker();
             this.clearCurrentTunnelId();
             this.clearTunnelType();
-            this.clearCurrentProgressId();
-            this.clearProgressType();
+            this.clearCurrentBlastId();
+            this.clearBlastType();
             this.clearCurrentWorkId();
         },
         initContextMenu() {
@@ -355,8 +530,7 @@ export default {
                 'custom': true,
                 'items': `<div class="custom_menu">
                 <div class="additem">
-                    <div id="cavernItem">ADD CAVERN</div>
-                    <div id="waterCurtainItem">ADD WATER CURTAIN</div>
+                    <div id="cavernItem">ADD BASEPOINT</div>
                 </div>
                           </div>`,
                 dx: -75,
@@ -372,88 +546,82 @@ export default {
 
                 document.getElementById('cavernItem').onclick = () => {
                     this.map.closeMenu();
-                    this.handleAddCavern(e.coordinate.x, e.coordinate.y);
-                }
-
-                document.getElementById('waterCurtainItem').onclick = () => {
-                    this.map.closeMenu();
-                    this.handleAddWaterCurtain(e.coordinate.x, e.coordinate.y);
+                    this.handleAddBasePoint(e.coordinate.x, e.coordinate.y);
                 }
             });
         },
-        handleAddTunnelDirection(value) {
-            let width = 0,
-                height = 0;
-            if (value === 0 || value === 1) {
-                // row
-                if (this.currentTunnelType === window.CONSTANTS.TUNNEL_TYPE.CAVERN) {
-                    width = window.CONSTANTS.TUNNEL_DEFAULT_SIZE.CAVERN_ROW.WIDTH;
-                    height = window.CONSTANTS.TUNNEL_DEFAULT_SIZE.CAVERN_ROW.HEIGHT;
-                } else {
-                    width = window.CONSTANTS.TUNNEL_DEFAULT_SIZE.WATER_CURTAIN_ROW.WIDTH;
-                    height = window.CONSTANTS.TUNNEL_DEFAULT_SIZE.WATER_CURTAIN_ROW.HEIGHT;
-                }
-            } else {
-                // column
-                if (this.currentTunnelType === window.CONSTANTS.TUNNEL_TYPE.CAVERN) {
-                    width = window.CONSTANTS.TUNNEL_DEFAULT_SIZE.CAVERN_COLUMN.WIDTH;
-                    height = window.CONSTANTS.TUNNEL_DEFAULT_SIZE.CAVERN_COLUMN.HEIGHT;
-                } else {
-                    width = window.CONSTANTS.TUNNEL_DEFAULT_SIZE.WATER_CURTAIN_COLUMN.WIDTH;
-                    height = window.CONSTANTS.TUNNEL_DEFAULT_SIZE.WATER_CURTAIN_COLUMN.HEIGHT;
-                }
+        handleClearSelectItem() {
+            if (this.currentMarker !== null) {
+                this.currentMarker.updateSymbol({
+                        markerLineColor: this.colorMap[this.currentMarker.markerType],
+                        markerLineWidth: 1,
+                        markerFill: this.colorMap[this.currentMarker.markerType],
+                        markerFillOpacity: 1
+                });
+                this.clearAll();
             }
-            this.currentMarker.defaultWidth = width;
-            this.currentMarker.defaultHeight = height;
-            this.currentMarker.setWidth({stops: [[4, width], [5, width * 2], [6, width * 4], [7, width * 8]]});
-            this.currentMarker.setHeight({stops: [[4, height], [5, height * 2], [6, height * 4], [7, height * 8]]});
         },
-        handleAddTunnelOkButton(value) {
+        // ***************** //
+        // Handle Base Point //
+        // ***************** //
+        handleAddBasePoint(xPosition, yPosition) {
+            this.setCurrentType(window.CONSTANTS.TYPE.ADD_BASEPOINT);
+            this.setTunnelType(window.CONSTANTS.TUNNEL_TYPE.BASEPOINT);
+            var width = window.CONSTANTS.TUNNEL_DEFAULT_SIZE.BASEPOINT.WIDTH,
+                height = window.CONSTANTS.TUNNEL_DEFAULT_SIZE.BASEPOINT.HEIGHT,
+                marker = new maptalks.TextBox("", [xPosition, yPosition],
+                                              {stops: [[4, width], [5, width * 2], [6, width * 4], [7, width * 8]]},
+                                              {stops: [[4, height], [5, height * 2], [6, height * 4], [7, height * 8]]}, {
+                id: this._getUUID(),
+                editable: false,
+                draggable: true,
+                boxSymbol: {
+                    markerType: 'square',
+                    markerLineColor: '#000000',
+                    markerLineWidth: 1,
+                    markerFill: this.colorMap[window.CONSTANTS.TUNNEL_TYPE.BASEPOINT],
+                    markerFillOpacity: 0.3
+                },
+                symbol: {
+                    textMaxWidth: {stops: [[4, width], [5, width * 2], [6, width * 4], [7, width * 8]]},
+                    textMaxHeight: {stops: [[4, height], [5, height * 2], [6, height * 4], [7, height * 8]]}
+                }
+            });
+            marker.defaultWidth = width;
+            marker.defaultHeight = height;
+            marker.markerType = window.CONSTANTS.TUNNEL_TYPE.BASEPOINT;
+            this.basePointLayers[window.CONSTANTS.TUNNEL_TYPE.BASEPOINT].addGeometry([marker]);
+            marker.on('dragend', (e) => {
+                e.domEvent.stopPropagation();
+                this.closeMenu();
+            })
+            this.setCurrentMarker(marker);
+        },
+        handleAddBasePointOkButton(value) {
             const data = {}
             data.id = this.currentMarker.getId();
-            data.name = value.tunnelId;
-            data.typ = this.currentTunnelType;
+            data.name = value.name;
+            data.width = this.currentMarker.defaultWidth;
+            data.height = this.currentMarker.defaultHeight;
             data.x_loc = this.currentMarker.getCoordinates().x;
             data.y_loc = this.currentMarker.getCoordinates().y;
-            data.height = this.currentMarker.defaultHeight;
-            data.width = this.currentMarker.defaultWidth;
-            data.prog_dir = value.tunnelDirection;
             this.currentMarker.remove();
-            this.services.addTunnel(data, (resData) => {
-                console.log("success to add tunnel");
-                this.progressIdWithTunnel[data.id] = [];
-                this.clearAll();
+            this.services.addBasePoint(data, (resData) => {
+                console.log("Success to add basepoint.");
+                this.handleClearSelectItem();
             }, (error) => {
-                console.log("fail to add tunnel : ", error)
+                console.log("Fail to add basepoint.", error)
+                this.handleClearSelectItem();
             });
         },
-        handleAddTunnelCancelButton() {
+        handleAddBasePointCancelButton() {
             this.tunnelLayers[this.currentTunnelType].removeGeometry([this.currentMarker])
             this.clearAll();
         },
-        _handleProgressClickEvent(marker) {
+        _handleBasePointClickEvent(marker) {
             marker.on('click', (e) => {
-                if (this.currentMarker !== null) {
-                    if (this.currentMarker.markerType == window.CONSTANTS.TUNNEL_TYPE.PROGRESS) {
-                        this.currentMarker.updateSymbol({
-                                markerLineColor: '#000000',
-                                markerLineWidth: 1,
-                                markerFill: this.colorMap[this.currentMarker.markerType],
-                                markerOpacity: 1
-                        });
-                    } else {
-                        this.currentMarker.updateSymbol({
-                                markerLineColor: '#000000',
-                                markerLineWidth: 0,
-                                markerFill: this.colorMap[this.currentMarker.markerType],
-                                markerOpacity: 0.6
-                        });
-                    }
-                    this.clearCurrentProgressId();
-                    this.clearCurrentMarker();
-                    this.clearProgressType();
-                }
-                let _marker = this.progressMarkers[marker.getId()];
+                this.handleClearSelectItem();
+                let _marker = this.basePointMarkers[e.target.markerType][e.target.getId()];
                 if (_marker != null) {
                     _marker.updateSymbol({
                             markerLineColor: '#000000',
@@ -462,34 +630,137 @@ export default {
                             markerOpacity: 1
                     });
                     this.closeMenu();
-                    this.setCurrentProgressId(_marker.getId());
+                    this.setCurrentTunnelId(_marker.getId());
                     this.setCurrentMarker(_marker);
-                    this.setProgressType(_marker.type);
-                    this.setCurrentType(window.CONSTANTS.TYPE.SELECT_PROGRESS);
+                    this.setTunnelType(_marker.markerType);
+                    this.setCurrentType(window.CONSTANTS.TYPE.SELECT_BASEPOINT);
+                    e.domEvent.stopPropagation();
+                }
+            });
+        },
+        handleBasePointInfoOkButton(data) {
+            this.handleClearSelectItem();
+            // TODO: call update api
+        },
+        handleBasePointInfoCancelButton() {
+            this.handleClearSelectItem();
+        },
+        handleBasePointInfoCloseButton() {
+            this.handleClearSelectItem();
+        },
+        handleRemoveBasePoint(basePointId) {
+            let data = {};
+            data.id = basePointId;
+            this.services.removeBasePoint(data, (resData) => {
+                console.log("success to remove basepoint.")
+                this.clearAll();
+            }, (error) => {
+                console.log("fail to remove basepoint : ", error)
+            });
+        },
+        // ************* //
+        // Handle Cavern //
+        // ************* //
+        handleAddCavern(basePointId) {
+            this.setCurrentType(window.CONSTANTS.TYPE.ADD_TUNNEL);
+            this.setTunnelType(window.CONSTANTS.TUNNEL_TYPE.CAVERN);
+            let basePointInfo = this.$store.getters.getBasePoint(basePointId),
+                width = window.CONSTANTS.TUNNEL_DEFAULT_SIZE.CAVERN_ROW.WIDTH,
+                height = window.CONSTANTS.TUNNEL_DEFAULT_SIZE.CAVERN_ROW.HEIGHT,
+                xLocation = basePointInfo.x_loc + 6.5;
+            // First is East  ( value == 0)
+            // if (direction === window.CONSTANTS.DIRECTION.EAST) {
+            //     xLocation += 6.5;
+            // } else {
+            //     xLocation -= 6.5;
+            // }
+            let marker = new maptalks.TextBox("", [xLocation, basePointInfo.y_loc],
+                                              {stops: [[4, width], [5, width * 2], [6, width * 4], [7, width * 8]]},
+                                              {stops: [[4, height], [5, height * 2], [6, height * 4], [7, height * 8]]}, {
+                id: this._getUUID(),
+                editable: false,
+                draggable: true,
+                boxSymbol: {
+                    markerType: 'square',
+                    markerLineColor: '#000000',
+                    markerLineWidth: 1,
+                    markerFill: this.colorMap[window.CONSTANTS.TUNNEL_TYPE.CAVERN],
+                    markerFillOpacity: 1
+                },
+                symbol: {
+                    textMaxWidth: {stops: [[4, width], [5, width * 2], [6, width * 4], [7, width * 8]]},
+                    textMaxHeight: {stops: [[4, height], [5, height * 2], [6, height * 4], [7, height * 8]]}
+                }
+            });
+            marker.defaultWidth = width;
+            marker.defaultHeight = height;
+            marker.markerType = window.CONSTANTS.TUNNEL_TYPE.CAVERN;
+            marker.basepointId = basePointId;
+            this.tunnelLayers[window.CONSTANTS.TUNNEL_TYPE.CAVERN].addGeometry([marker]);
+            this.setCurrentMarker(marker);
+        },
+        handleChangeDirectionCavern(direction) {
+            let basePointInfo = this.$store.getters.getBasePoint(this.currentMarker.basepointId),
+                xLocation = basePointInfo.x_loc;
+            if (direction == window.CONSTANTS.DIRECTION.EAST) {
+                xLocation += 6.5;
+            } else {
+                xLocation -= 6.5;
+            }
+            this.currentMarker.setCoordinates([xLocation, basePointInfo.y_loc]);
+        },
+        handleAddTunnelOkButton(value) {
+            const data = {}
+            data.id = this.currentMarker.getId();
+            data.name = value.tunnelName;
+            data.category = value.category;
+            data.direction = value.tunnelDirection;
+            data.length = value.tunnelLength;
+            data.tunnel_id = value.tunnelId;
+            data.b_accum_length = 0;
+            data.initial_b_time = null;
+            data.x_loc = this.currentMarker.getCoordinates().x;
+            data.y_loc = this.currentMarker.getCoordinates().y;
+            data.width = this.currentMarker.defaultWidth;
+            data.height = this.currentMarker.defaultHeight;
+            data.basepoint_id = this.currentTunnelId;
+            this.currentMarker.remove();
+            this.services.addTunnel(data, (resData) => {
+                console.log("success to add tunnel");
+                this.blastIdWithTunnel[data.id] = [];
+                this.handleClearSelectItem();
+            }, (error) => {
+                console.log("fail to add tunnel : ", error)
+                this.handleClearSelectItem();
+            });
+        },
+        handleAddTunnelCancelButton() {
+            this.currentMarker.remove();
+            this.clearAll();
+        },
+        _handleBlastClickEvent(marker) {
+            marker.on('click', (e) => {
+                this.handleClearSelectItem();
+                let _marker = this.blastMarkers[marker.getId()];
+                if (_marker != null) {
+                    _marker.updateSymbol({
+                            markerLineColor: '#000000',
+                            markerLineWidth: 1,
+                            markerFill: this.colorMap['selected'],
+                            markerOpacity: 1
+                    });
+                    this.closeMenu();
+                    this.setCurrentBlastId(_marker.getId());
+                    this.setCurrentMarker(_marker);
+                    this.setBlastType(_marker.type);
+                    this.setCurrentType(window.CONSTANTS.TYPE.SELECT_BLAST);
                     e.domEvent.stopPropagation();
                 }
             });
         },
         _handleTunnelClickEvent(marker) {
             marker.on('click', (e) => {
-                if (this.currentMarker !== null) {
-                    if (this.currentMarker.markerType === window.CONSTANTS.TUNNEL_TYPE.PROGRESS) {
-                        this.currentMarker.updateSymbol({
-                                markerLineColor: '#000000',
-                                markerLineWidth: 1,
-                                markerFill: this.colorMap[this.currentMarker.markerType],
-                                markerOpacity: 1
-                        });
-                    } else {
-                        this.currentMarker.updateSymbol({
-                                markerLineColor: '#000000',
-                                markerLineWidth: 0,
-                                markerFill: this.colorMap[this.currentMarker.markerType],
-                                markerOpacity: 0.6
-                        });
-                    }
-                    this.clearAll();
-                }
+                this.handleClearSelectItem();
                 let _marker = this.tunnelMarkers[e.target.markerType][e.target.getId()];
                 if (_marker != null) {
                     _marker.updateSymbol({
@@ -502,80 +773,10 @@ export default {
                     this.setCurrentTunnelId(_marker.getId());
                     this.setCurrentMarker(_marker);
                     this.setTunnelType(_marker.markerType);
-                    if (e.target.markerType == window.CONSTANTS.TUNNEL_TYPE.CAVERN) {
-                        this.setCurrentType(window.CONSTANTS.TYPE.SELECT_CAVERN);
-                    } else {
-                        this.setCurrentType(window.CONSTANTS.TYPE.SELECT_WATER_CURTAIN);
-                    }
+                    this.setCurrentType(window.CONSTANTS.TYPE.SELECT_CAVERN);
                     e.domEvent.stopPropagation();
                 }
             });
-        },
-        handleAddCavern(xPosition, yPosition) {
-            this.setCurrentType(window.CONSTANTS.TYPE.ADD_TUNNEL);
-            this.setTunnelType(window.CONSTANTS.TUNNEL_TYPE.CAVERN);
-            var width = window.CONSTANTS.TUNNEL_DEFAULT_SIZE.CAVERN_ROW.WIDTH,
-                height = window.CONSTANTS.TUNNEL_DEFAULT_SIZE.CAVERN_ROW.HEIGHT,
-                marker = new maptalks.TextBox("", [xPosition, yPosition],
-                                              {stops: [[4, width], [5, width * 2], [6, width * 4], [7, width * 8]]},
-                                              {stops: [[4, height], [5, height * 2], [6, height * 4], [7, height * 8]]}, {
-                id: this.getUUID(),
-                editable: false,
-                draggable: true,
-                boxSymbol: {
-                    markerType: 'square',
-                    markerLineColor: '#000000',
-                    markerLineWidth: 1,
-                    markerFill: this.colorMap[window.CONSTANTS.TUNNEL_TYPE.CAVERN],
-                    markerFillOpacity: 0.3
-                },
-                symbol: {
-                    textMaxWidth: {stops: [[4, width], [5, width * 2], [6, width * 4], [7, width * 8]]},
-                    textMaxHeight: {stops: [[4, height], [5, height * 2], [6, height * 4], [7, height * 8]]}
-                }
-            });
-            marker.defaultWidth = width;
-            marker.defaultHeight = height;
-            marker.markerType = window.CONSTANTS.TUNNEL_TYPE.CAVERN;
-            this.tunnelLayers[window.CONSTANTS.TUNNEL_TYPE.CAVERN].addGeometry([marker]);
-            marker.on('dragend', (e) => {
-                e.domEvent.stopPropagation();
-                this.closeMenu();
-            })
-            this.setCurrentMarker(marker);
-        },
-        handleAddWaterCurtain(xPosition, yPosition) {
-            this.setCurrentType(window.CONSTANTS.TYPE.ADD_TUNNEL);
-            this.setTunnelType(window.CONSTANTS.TUNNEL_TYPE.WATER_CURTAIN);
-            var width = window.CONSTANTS.TUNNEL_DEFAULT_SIZE.WATER_CURTAIN_ROW.WIDTH,
-                height = window.CONSTANTS.TUNNEL_DEFAULT_SIZE.WATER_CURTAIN_ROW.HEIGHT,
-                marker = new maptalks.TextBox("", [xPosition, yPosition],
-                                              {stops: [[4, width], [5, width * 2], [6, width * 4], [7, width * 8]]},
-                                              {stops: [[4, height], [5, height * 2], [6, height * 4], [7, height * 8]]}, {
-                id: this.getUUID(),
-                editable: false,
-                draggable: true,
-                boxSymbol: {
-                    markerType: 'square',
-                    markerLineColor: '#000000',
-                    markerLineWidth: 1,
-                    markerFill: this.colorMap[window.CONSTANTS.TUNNEL_TYPE.WATER_CURTAIN],
-                    markerFillOpacity: 0.3
-                },
-                symbol: {
-                    textMaxWidth: {stops: [[4, width], [5, width * 2], [6, width * 4], [7, width * 8]]},
-                    textMaxHeight: {stops: [[4, height], [5, height * 2], [6, height * 4], [7, height * 8]]}
-                }
-            });
-            marker.defaultWidth = width;
-            marker.defaultHeight = height;
-            marker.markerType = window.CONSTANTS.TUNNEL_TYPE.WATER_CURTAIN;
-            this.tunnelLayers[window.CONSTANTS.TUNNEL_TYPE.WATER_CURTAIN].addGeometry([marker]);
-            marker.on('dragend', (e) => {
-                e.domEvent.stopPropagation();
-                this.closeMenu();
-            })
-            this.setCurrentMarker(marker);
         },
         handleUpdateTunnel() {
             if (this.currentMarker != null) {
@@ -583,11 +784,7 @@ export default {
             }
         },
         handleTunnelInfoOkButton(data) {
-            this.currentMarker.updateSymbol({
-                markerLineWidth: 0,
-                markerFill: this.colorMap[this.currentTunnelType],
-                markerFillOpacity: 0.6
-            });
+            this.handleClearSelectItem();
             this.services.updateTunnel(data, (resData) => {
                 console.log("success to update tunnel")
                 this.clearAll();
@@ -595,13 +792,8 @@ export default {
                 console.log("fail to update tunnel : ", error)
             });
         },
-        handleTunnelInfoCancelButton() {
-            this.currentMarker.updateSymbol({
-                markerLineWidth: 0,
-                markerFill: this.colorMap[this.currentTunnelType],
-                markerFillOpacity: 0.6,
-            });
-            this.clearAll();
+        handleTunnelInfoCloseButton() {
+            this.handleClearSelectItem();
         },
         handleRemoveTunnel(tunnelId) {
             let data = {};
@@ -613,13 +805,13 @@ export default {
                 console.log("fail to remove tunnel : ", error)
             });
         },
-        _getProgressPosition(tunnelData, count) {
+        _getBlastPosition(tunnelData, count) {
             let xPosition = tunnelData.x_loc,
                 yPosition = tunnelData.y_loc,
                 _xPosition = 0,
                 _yPosition = 0;
 
-            if (tunnelData.prog_dir == window.CONSTANTS.PROG_DIR.RIGHT) {
+            if (tunnelData.direction == window.CONSTANTS.DIRECTION.EAST) {
                 _xPosition = (xPosition - ((tunnelData.width / 2) / 11.25));
                 _yPosition = yPosition;
 
@@ -627,7 +819,7 @@ export default {
                 if (count > 1) {
                     _xPosition += (((10 / 2) / 11.25));
                 }
-            } else if (tunnelData.prog_dir == window.CONSTANTS.PROG_DIR.LEFT) {
+            } else if (tunnelData.direction == window.CONSTANTS.DIRECTION.WEST) {
                 _xPosition = (xPosition + ((tunnelData.width / 2) / 11.25));
                 _yPosition = yPosition;
 
@@ -635,261 +827,209 @@ export default {
                 if (count > 1) {
                     _xPosition -= (((10 / 2) / 11.25));
                 }
-            } else if (tunnelData.prog_dir == window.CONSTANTS.PROG_DIR.UP) {
-                // TODO:
-            } else if (tunnelData.prog_dir == window.CONSTANTS.PROG_DIR.DOWN) {
-                // TODO:
             }
             return [_xPosition, _yPosition];
         },
-        handleAddProgress(tunnelId, tunnelType) {
+        handleAddBlast(tunnelId, tunnelType) {
+            if (this.blastIdWithTunnel[tunnelId].length > 0) {
+                let latestBlast = this.$store.getters.getBlast(this.blastIdWithTunnel[tunnelId][this.blastIdWithTunnel[tunnelId].length - 1]);
+                if (latestBlast.state === window.CONSTANTS.BLAST_STATE.FINISH) {
+                    this._handleAddBlast(tunnelId, tunnelType);
+                } else {
+                    this.sweetbox.fire("The operation was not finished.");
+                }
+            } else {
+                this._handleAddBlast(tunnelId, tunnelType);
+            }
+        },
+        _handleAddBlast(tunnelId, tunnelType) {
             this.setCurrentTunnelId(tunnelId);
-            this.setCurrentType(window.CONSTANTS.TYPE.ADD_PROGRESS);
+            // this.setCurrentType(window.CONSTANTS.TYPE.ADD_BLAST);
             const tunnelData = this.$store.getters.getTunnel(tunnelId),
                   data = {};
 
-            let count = this.progressIdWithTunnel[tunnelId].length;
-            // TODO:  ????
-            if (count === 0) {
-                count = 1;
-            } else {
-                count *= 1;
-            }
-
-            let position = this._getProgressPosition(tunnelData, count),
-                progressWidth = tunnelData.width,
-                progressHeight = tunnelData.height;
-
-            let _marker = new maptalks.TextBox("", position,
-                                               {stops: [[4, 10], [5, 10 * 2], [6, 10 * 4], [7, 10 * 8]]},
-                                               {stops: [[4, progressHeight], [5, progressHeight * 2], [6, progressHeight * 4], [7, progressHeight * 8]]}, {
-                id: this.getUUID(),
-                editable: false,
-                boxSymbol: {
-                    markerType: 'square',
-                    markerLineColor: '#000000',
-                    markerLineWidth: 1,
-                    markerFill: this.workColor['a'],
-                    markerFillOpacity: 1
-                },
-                symbol: {
-                    textMaxWidth: {stops: [[4, 10], [5, 10 * 2], [6, 10 * 4], [7, 10 * 8]]},
-                    textMaxHeight: {stops: [[4, progressHeight], [5, progressHeight * 2], [6, progressHeight * 4], [7, progressHeight * 8]]}
-                }
-            });
-            _marker.defaultWidth = progressWidth;
-            _marker.defaultHeight = progressHeight;
-            _marker.markerType = window.CONSTANTS.TUNNEL_TYPE.PROGRESS;
-            this.progressLayers[tunnelType].addGeometry(_marker);
-            this.currentMarker = _marker;
-        },
-        handleAddProgressOkButton(value) {
-            const data = {},
-                  tunnelData = this.$store.getters.getTunnel(value.tunnelId);
-
-            data.id = this.getUUID();
-            data.name = value.progressName;
-            data.tunnel_id = value.tunnelId;
-
-            let count = this.progressIdWithTunnel[value.tunnelId].length;
+            let count = this.blastIdWithTunnel[tunnelId].length;
+            console.log("##### count : ", count);
             // TODO:  ????
             if (count === 0) {
                 count = 1;
             } else if (count === 1) {
-                count = 3;
+                count += 1;
             } else {
-                count = (count - 1) * 3;
+                count += 2;
             }
 
-            let position = this._getProgressPosition(tunnelData, count);
-
-            data.x_loc = position[0];
-            data.y_loc = position[1];
-            data.height = this.currentMarker.defaultWidth;
-            data.width = this.currentMarker.defaultHeight;
-
-            this.progressIdWithTunnel[value.tunnelId].push(data.id);
-            this.services.addProgress(data, (resData) => {
-                console.log("success to add Progress")
-                this.currentMarker.remove();
-                this.clearAll();
-            }, (error) => {
-                this.currentMarker.remove();
-                this.progressIdWithTunnel[value.tunnelId] = this._.without(this.progressIdWithTunnel[value.tunnelId], data.id);
-                this.clearAll();
-                console.log("fail to add Progress : ", error)
-            });
-        },
-        handleAddProgressCancelButton() {
-            this.currentMarker.remove();
-            this.clearAll();
-        },
-        handleProgressInfoOkButton(data) {
-            this.services.updateProgress(data, (resData) => {
-                console.log("success to update progress")
-                this.currentMarker.updateSymbol({
-                        markerLineColor: '#000000',
-                        // TODO:
-                        markerLineWidth: 1,
-                        markerFill: '#ff0000',
-                        markerOpacity: 0.6
-                });
-                this.clearAll();
-            }, (error) => {
-                console.log("fail to update progress : ", error)
-                this.currentMarker.updateSymbol({
-                        markerLineColor: '#000000',
-                        // TODO:
-                        markerLineWidth: 1,
-                        markerFill: '#ff0000',
-                        markerOpacity: 0.6
-                });
-                this.clearAll();
-            });
-        },
-        handleProgressInfoCancelButton() {
-            this.currentMarker.updateSymbol({
-                    markerLineColor: '#000000',
-                    // TODO:
-                    markerLineWidth: 1,
-                    markerFill: '#ff0000',
-                    markerOpacity: 0.6
-            });
-            this.clearAll();
-        },
-        _drawProgressList(progressGetData) {
-            this._.forEach(progressGetData, (progressList, tunnelId) => {
-                this.progressIdWithTunnel[tunnelId] = [];
-                this._.forEach(progressList, (progressData) => {
-                    this.progressIdWithTunnel[progressData.tunnel_id].push(progressData.id);
-                    this.workIdWithProgress[progressData.id] = [];
-                    this._drawProgress(progressData);
-                    this.progressIDList.push(progressData.id);
-                });
-            });
-        },
-        drawProgressList() {
-            this._.forEach(this.mockData, (progress) => {
-                this.drawProgress(progress);
-            });
-        },
-        drawProgress(progress) {
-            var marker = new maptalks.TextBox("", [progress.x_loc, progress.y_loc],
-                                              {stops: [[4, progress.width], [5, progress.width * 2], [6, progress.width * 4], [7, progress.width * 8]]},
-                                              {stops: [[4, progress.height], [5, progress.height * 2], [6, progress.height * 4], [7, progress.height * 8]]}, {
-                id: progress.id,
-                editable: false,
-                boxSymbol: {
-                    markerType: 'square',
-                    markerLineColor: '#000000',
-                    markerLineWidth: 1,
-                    markerFill: this.workColor[progress.status],
-                    markerFillOpacity: 1
-                },
-                symbol: {
-                    textMaxWidth: {stops: [[4, progress.width], [5, progress.width * 2], [6, progress.width * 4], [7, progress.width * 8]]},
-                    textMaxHeight: {stops: [[4, progress.height], [5, progress.height * 2], [6, progress.height * 4], [7, progress.height * 8]]}
-                }
-            });
-            this.setContextMenu(marker);
-            this.setProgressInfoWindow(marker);
-            this.progressLayer.addGeometry(marker);
-            this.$store.commit('addProgress', progress);
-            // this.drawWork(progress);
-
-
-            // console.log("### progress x : " + (progress.x));
-            // console.log("### progress width : " + (progress.width));
-            // console.log("### progress width cal : " + ((progress.width / 2) / 11.25));
-            // console.log("### progress width ret : " + (progress.x_loc - ((progress.width / 2) / 11.25)));
-
-            var x1 = (progress.x_loc + ((progress.width / 2) / 11.25));
-            var marker1 = new maptalks.TextBox("", [x1 - ((10 / 2) / 11.25), progress.y_loc],
-                                              {stops: [[4, 10], [5, 10 * 2], [6, 10 * 4], [7, 10 * 8]]},
-                                              {stops: [[4, progress.height], [5, progress.height * 2], [6, progress.height * 4], [7, progress.height * 8]]}, {
-                id: progress.id + 10,
-                editable: false,
-                boxSymbol: {
-                    markerType: 'square',
-                    markerLineColor: '#000000',
-                    markerLineWidth: 0,
-                    markerFill: this.workColor['0'],
-                    markerFillOpacity: 1
-                },
-                symbol: {
-                    textMaxWidth: {stops: [[4, 10], [5, 10 * 2], [6, 10 * 4], [7, 10 * 8]]},
-                    textMaxHeight: {stops: [[4, 10], [5, 10 * 2], [6, 10 * 4], [7, 10 * 8]]}
-                }
-            });
-            this.progressLayer.addGeometry(marker1);
-            var x2 = (progress.x_loc - ((progress.width / 2) / 11.25));
-            var marker2 = new maptalks.TextBox("", [x2 + ((10 / 2) / 11.25), progress.y_loc],
-                                              {stops: [[4, 10], [5, 10 * 2], [6, 10 * 4], [7, 10 * 8]]},
-                                              {stops: [[4, progress.height], [5, progress.height * 2], [6, progress.height * 4], [7, progress.height * 8]]}, {
-                id: progress.id + 100,
-                editable: false,
-                boxSymbol: {
-                    markerType: 'square',
-                    markerLineColor: '#000000',
-                    markerLineWidth: 0,
-                    markerFill: this.workColor['0'],
-                    markerFillOpacity: 1
-                },
-                symbol: {
-                    textMaxWidth: {stops: [[4, 10], [5, 10 * 2], [6, 10 * 4], [7, 10 * 8]]},
-                    textMaxHeight: {stops: [[4, 10], [5, 10 * 2], [6, 10 * 4], [7, 10 * 8]]}
-                }
-            });
-            this._handleProgressClickEvent(marker2)
-            this.progressLayer.addGeometry(marker2);
-        },
-        _drawProgress(progress) {
-            const tunnelData = this.$store.getters.getTunnel(progress.tunnel_id);
-            let count = this.progressIdWithTunnel[progress.tunnel_id].indexOf(progress.id);
-            if (count === 0) {
-                count = 1;
-            } else {
-                // TODO::???????
-                count *= 1;
-            }
-
-            let position = this._getProgressPosition(tunnelData, count),
-                progressWidth = tunnelData.width,
-                progressHeight = tunnelData.height;
+            let position = this._getBlastPosition(tunnelData, count),
+                blastWidth = window.CONSTANTS.TUNNEL_DEFAULT_SIZE.BLAST.WIDTH,
+                blastHeight = tunnelData.height;
 
             let _marker = new maptalks.TextBox("", position,
-                                               {stops: [[4, 10], [5, 10 * 2], [6, 10 * 4], [7, 10 * 8]]},
-                                               {stops: [[4, progressHeight], [5, progressHeight * 2], [6, progressHeight * 4], [7, progressHeight * 8]]}, {
-                id: progress.id,
+                                               {stops: [[4, blastWidth], [5, blastWidth * 2], [6, blastWidth * 4], [7, blastWidth * 8]]},
+                                               {stops: [[4, blastHeight], [5, blastHeight * 2], [6, blastHeight * 4], [7, blastHeight * 8]]}, {
+                id: this._getUUID(),
                 editable: false,
                 boxSymbol: {
                     markerType: 'square',
                     markerLineColor: '#000000',
                     markerLineWidth: 1,
-                    markerFill: this.workColor['a'],
+                    markerFill: this.colorMap['3'],
                     markerFillOpacity: 1
                 },
                 symbol: {
-                    textMaxWidth: {stops: [[4, 10], [5, 10 * 2], [6, 10 * 4], [7, 10 * 8]]},
-                    textMaxHeight: {stops: [[4, progressHeight], [5, progressHeight * 2], [6, progressHeight * 4], [7, progressHeight * 8]]}
+                    textMaxWidth: {stops: [[4, blastWidth], [5, blastWidth * 2], [6, blastWidth * 4], [7, blastWidth * 8]]},
+                    textMaxHeight: {stops: [[4, blastHeight], [5, blastHeight * 2], [6, blastHeight * 4], [7, blastHeight * 8]]}
                 }
             });
-            _marker.defaultWidth = progressWidth;
-            _marker.defaultHeight = progressHeight;
-            _marker.markerType = window.CONSTANTS.TUNNEL_TYPE.PROGRESS;
-            this.progressMarkers[progress.id] = _marker;
-            this.progressIdWithTunnel[tunnelData.id].push(progress.id);
-            this.$store.commit('addProgress', progress);
-            this._handleProgressClickEvent(_marker)
-            this.progressLayers[tunnelData.typ].addGeometry(_marker);
+            _marker.defaultWidth = blastWidth;
+            _marker.defaultHeight = blastHeight;
+            _marker.markerType = window.CONSTANTS.TUNNEL_TYPE.BLAST;
+            this.blastLayers[tunnelType].addGeometry(_marker);
+            this.currentMarker = _marker;
+            let bif = {
+                explosive: 0,
+                detonator: 0,
+                drilling_depth: 0,
+                blasting_date: null,
+                blasting_time: null,
+                start_point: 0,
+                finish_point: 0,
+                blasting_length: 0
+            }
+            this.handleAddBlastOkButton(tunnelId, bif);
+        },
+        handleAddBlastOkButton(tunnelId, value) {
+            const data = {'blast': {},
+                          'info': {}},
+                  tunnelData = this.$store.getters.getTunnel(tunnelId),
+                  blastId = this._getUUID();
+
+            data.blast.id = blastId;
+            data.blast.tunnel_id = tunnelId;
+            data.blast.state = window.CONSTANTS.BLAST_STATE.IN_PROGRESS;
+            data.blast.accum_time = 0;
+            data.blast.m_accum_time = 0;
+            data.blast.s_accum_time = 0;
+            data.blast.i_accum_time = 0;
+            data.blast.x_loc = this.currentMarker.getCoordinates().x;
+            data.blast.y_loc = this.currentMarker.getCoordinates().y;
+            data.blast.width = this.currentMarker.defaultWidth;
+            data.blast.height = this.currentMarker.defaultHeight;
+            data.info = value;
+            data.info.blast_id = blastId;
+            data.info.id = this._getUUID();
+
+            this.blastIdWithTunnel[tunnelId].push(data.id);
+            this.services.addBlast(data, (resData) => {
+                console.log("success to add blast.")
+                this.currentMarker.remove();
+                this.handleClearSelectItem();
+            }, (error) => {
+                this.currentMarker.remove();
+                this.blastIdWithTunnel[tunnelId] = this._.without(this.blastIdWithTunnel[tunnelId], data.id);
+                this.handleClearSelectItem();
+                console.log("fail to add blast. Error : ", error)
+            });
+        },
+        handleAddBlastCancelButton() {
+            this.currentMarker.remove();
+            this.handleClearSelectItem();
+        },
+        handleBlastInfoInformationButton(blastId) {
+            this.setCurrentType(window.CONSTANTS.TYPE.SELECT_BLAST_INFORMATION);
+            //this.handleClearSelectItem();
+        },
+        handleBlastInfoOkButton(data) {
+            this.handleClearSelectItem();
+            this.services.updateBlastInfo(data, (resData) => {
+                console.log("success to update blast info")
+            }, (error) => {
+                console.log("fail to update blast info : ", error)
+            });
+        },
+        handleBlastInfoCloseButton() {
+            this.handleClearSelectItem();
+        },
+        _drawBlast(blast) {
+            const tunnelData = this.$store.getters.getTunnel(blast.tunnel_id),
+                  position = [blast.x_loc, blast.y_loc],
+                  blastWidth = blast.width,
+                  blastHeight = blast.height;
+            let typ = window.CONSTANTS.TUNNEL_TYPE.BLAST;
+            if (blast.state === window.CONSTANTS.BLAST_STATE.FINISH) {
+                if (tunnelData.category == window.CONSTANTS.TUNNEL_CATEGORY.TH) {
+                    typ = window.CONSTANTS.TUNNEL_TYPE.FINISH_TH;
+                } else if (tunnelData.category == window.CONSTANTS.TUNNEL_CATEGORY.B1) {
+                    typ = window.CONSTANTS.TUNNEL_TYPE.FINISH_B1;
+                } else {
+                    typ = window.CONSTANTS.TUNNEL_TYPE.FINISH_B2;
+                }
+            }
+
+            let _marker = new maptalks.TextBox("", position,
+                                               {stops: [[4, blastWidth], [5, blastWidth * 2], [6, blastWidth * 4], [7, blastWidth * 8]]},
+                                               {stops: [[4, blastHeight], [5, blastHeight * 2], [6, blastHeight * 4], [7, blastHeight * 8]]}, {
+                id: blast.id,
+                editable: false,
+                boxSymbol: {
+                    markerType: 'square',
+                    markerLineColor: this.colorMap[typ],
+                    markerLineWidth: 1,
+                    markerFill: this.colorMap[typ],
+                    markerFillOpacity: 1
+                },
+                symbol: {
+                    textMaxWidth: {stops: [[4, blastWidth], [5, blastWidth * 2], [6, blastWidth * 4], [7, blastWidth * 8]]},
+                    textMaxHeight: {stops: [[4, blastHeight], [5, blastHeight * 2], [6, blastHeight * 4], [7, blastHeight * 8]]}
+                }
+            });
+            _marker.defaultWidth = blastWidth;
+            _marker.defaultHeight = blastHeight;
+            _marker.markerType = typ;
+            this.blastMarkers[blast.id] = _marker;
+            this.blastIdWithTunnel[tunnelData.id].push(blast.id);
+            this.$store.commit('addBlast', blast);
+            this._handleBlastClickEvent(_marker)
+            this.blastLayers[window.CONSTANTS.TUNNEL_TYPE.CAVERN].addGeometry(_marker);
+            this.drawWork(blast);
         },
         handleSelectWorkItem(workId) {
-            this.setCurrentWorkId(workId);
-            this.setCurrentType(window.CONSTANTS.TYPE.SELECT_WORK);
+            this.services.getWorkDataByWork({"work_id": workId}, (resData) => {
+                console.log("Success to get work Data list", resData);
+                this.workOperatorIdList = [];
+                this.workEquipmentIdList = [];
+
+                this._.forEach(resData.operator, workOperator => {
+                    this.workOperatorList.push(workOperator);
+                });
+                this._.forEach(resData.equipment, workEquipment => {
+                    this.workEquipmentList.push(workEquipment);
+                });
+                this.setCurrentWorkId(workId);
+                this.setCurrentType(window.CONSTANTS.TYPE.SELECT_WORK);
+            }, (error) => {
+                console.log("Failed to work data list.")
+            });
         },
-        handleAddWork(progressId) {
-            this.setCurrentTunnelId(progressId);
-            this.setCurrentType(window.CONSTANTS.TYPE.ADD_WORK);
+        handleAddWork(blastId) {
+            let workIdList = this.workIdWithBlast[blastId][0],  // 0 is Main Work
+                supportingIdList = this.workIdWithBlast[blastId][1],
+                idelTimeIdList = this.workIdWithBlast[blastId][2],
+                latestWork = null,
+                data = {};
+            if (workIdList.length > 0) {
+                latestWork = this.$store.getters.getWork(workIdList[0]);
+                if (latestWork.state === window.CONSTANTS.WORK_STATE.FINISH) {
+                    if (latestWork.typ === window.CONSTANTS.MAIN_WORK.BLASTING) {
+                        this.sweetbox.fire("Activity cycle is finish. Please add to new activity.");
+                    } else {
+                        this.setCurrentType(window.CONSTANTS.TYPE.ADD_WORK);
+                    }
+                } else {
+                    this.sweetbox.fire("The activity was not finished.")
+                }
+            } else {
+                this.setCurrentType(window.CONSTANTS.TYPE.ADD_WORK);
+            }
         },
         handleWorkAddCancelButton() {
             this.currentMarker.updateSymbol({
@@ -902,39 +1042,34 @@ export default {
             this.clearAll();
         },
         handleWorkAddOkButton(value) {
-            // TODO: time???
             let data = {};
-            data.work_state = 0;
-            data.equipments = null;
-            data.id = this.getUUID();
-            data.prog_id = value.progressId;
-            data.name = value.workName;
-            data.work_kind = window.CONSTANTS.IDEL_TIME.NONE;
-            data.start_time = 0;
-            data.finish_time = 0;
-            this.workIdWithProgress[value.progressId].push(data.id);
+            data.id = this._getUUID();
+            data.category = value.category;
+            data.typ = value.activity;
+            data.state = window.CONSTANTS.WORK_STATE.STOP
+            data.accum_time = 0;
+            data.p_accum_time = 0;
+            data.blast_id = value.blastId;
+            if (this.workIdWithBlast[value.blastId][value.category].length == 0) {
+                this.workIdWithBlast[value.blastId][value.category].push(data.id); // TODO:
+            } else {
+                this.workIdWithBlast[value.blastId][value.category].unshift(data.id); // TODO:
+            }
             this.services.addWork(data, (resData) => {
                 console.log("success to add Work")
-                this.currentMarker.updateSymbol({
-                        markerLineColor: '#000000',
-                        // TODO:
-                        markerLineWidth: 1,
-                        markerFill: '#ff0000',
-                        markerOpacity: 1
-                });
-                this.clearAll();
+                this.setCurrentWorkId(data.id);
+                this.setCurrentType(window.CONSTANTS.TYPE.SELECT_WORK);
+                if (!(data.id in this.pauseIdWithWork)) {
+                    this.pauseIdWithWork[data.id] = [];
+                }
             }, (error) => {
                 console.error("Failed to add work.", error);
-                this.currentMarker.updateSymbol({
-                        markerLineColor: '#000000',
-                        // TODO:
-                        markerLineWidth: 1,
-                        markerFill: '#ff0000',
-                        markerOpacity: 1
-                });
-                this.workIdWithProgress[value.progressId] = this._.without(this.workIdWithProgress[value.progressId], value.id);
+                this.workIdWithBlast[value.blastId][value.category] = this._.without(this.workIdWithBlast[data.blastId][value.category], data.id);
                 this.clearAll();
             });
+        },
+        handleWorkInfoCloseButton() {
+            this.handleClearSelectItem();
         },
         handleWorkInfoCancelButton() {
             this.currentMarker.updateSymbol({
@@ -969,13 +1104,6 @@ export default {
                 this.clearAll();
             });
         },
-        handleWorkStateButton(data) {
-            this.services.updateWorkState(data, (resData) => {
-                console.log("success to update work");
-            }, (error) => {
-                console.log("fail to update work : ", error);
-            });
-        },
         handleWorkRemoveButton(data) {
             this.services.removeWork(data, (resData) => {
                 console.log("Success to remove work : ")
@@ -983,31 +1111,138 @@ export default {
                 console.log("Failed to remove work")
             });
         },
-        drawWorkList() {
+        drawWork(blast) {
+            // TODO:
+            if (blast.state === window.CONSTANTS.BLAST_STATE.IN_PROGRESS) {
+                let tmp = this.workIdWithBlast[blast.id][0],  // 0 is Main Work
+                    tmp1 = this.workIdWithBlast[blast.id][1],  // 1 is Supporting
+                    tmp2 = this.workIdWithBlast[blast.id][2],  // 2 is Idle
+                    latestWork = null,
+                    latestSupporting = null,
+                    latestIdle = null,
+                    latestTmpData = null,
+                    currentCategory = null,
+                    currentTyp = null;
 
-        },
-        drawWork(progress, work) {
-            let fileUrl = `${ window.CONSTANTS.URL.BASE_IMG }icon-pa-round.svg`;  // TODO:
-            if (progress.status === "a") {
-                fileUrl = `${ window.CONSTANTS.URL.BASE_IMG }drill.svg`;  // TODO:
-            } else if (progress.status === "b") {
-                fileUrl = `${ window.CONSTANTS.URL.BASE_IMG }blast.svg`;  // TODO:
-            } else if (progress.status === "c") {
-                fileUrl = `${ window.CONSTANTS.URL.BASE_IMG }concrete.svg`;  // TODO:
-            }
-            let marker = new maptalks.Marker(
-                [progress.x_loc, progress.y_loc], {
-                    id: progress.id,  // TODO:
-                    symbol: {
-                        'markerFile': fileUrl,
-                        'markerWidth': {stops: [[4, 20], [5, 30], [6, 50], [7, 80]]},
-                        'markerHeight': {stops: [[4, 20], [5, 30], [6, 50], [7, 80]]},
-                        'markerDy': {stops:[[4, 10], [5, 20], [6, 30], [7, 40]]}
+                if (tmp.length > 0) {
+                    latestWork = this.$store.getters.getWork(tmp[0]);
+                    if (latestWork.state == window.CONSTANTS.WORK_STATE.IN_PROGRESS ||
+                        latestWork.state == window.CONSTANTS.WORK_STATE.STOP) {
+                        latestTmpData = latestWork;
+                        currentCategory = latestWork.category;
+                        currentTyp = latestWork.typ;
+                    } else {
+                        latestTmpData = latestWork;
+                        currentCategory = latestWork.category;
+                        currentTyp = latestWork.typ;
                     }
                 }
-            )
-            this.workLayer.addGeometry(marker);
-            this.setWorkInfoWindow(marker, progress.status);
+                if (tmp1.length > 0) {
+                    latestSupporting = this.$store.getters.getWork(tmp1[0]);
+                    if (latestSupporting.state == window.CONSTANTS.WORK_STATE.IN_PROGRESS ||
+                        latestSupporting.state == window.CONSTANTS.WORK_STATE.STOP) {
+                        currentCategory = latestSupporting.category;
+                        currentTyp = latestSupporting.typ;
+                    } else {
+                        if (latestTmpData != null) {
+                            if (latestTmpData.last_updated_time < latestSupporting.last_updated_time) {
+                                latestTmpData = latestSupporting;
+                                currentCategory = latestSupporting.category;
+                                currentTyp = latestSupporting.typ;
+                            }
+                        } else {
+                            latestTmpData = latestSupporting;
+                            currentCategory = latestSupporting.category;
+                            currentTyp = latestSupporting.typ;
+                        }
+                    }
+                }
+                if (tmp2.length > 0) {
+                    latestIdle = this.$store.getters.getWork(tmp2[0]);
+                    if (latestIdle.state == window.CONSTANTS.WORK_STATE.IN_PROGRESS ||
+                        latestIdle.state == window.CONSTANTS.WORK_STATE.STOP) {
+                        currentCategory = latestIdle.category;
+                        currentTyp = latestIdle.typ;
+                    } else {
+                        if (latestTmpData != null) {
+                            if (latestTmpData.last_updated_time < latestIdle.last_updated_time) {
+                                latestTmpData = latestIdle;
+                                currentCategory = latestIdle.category;
+                                currentTyp = latestIdle.typ;
+                            }
+                        } else {
+                            latestTmpData = latestIdle;
+                            currentCategory = latestIdle.category;
+                            currentTyp = latestIdle.typ;
+                        }
+                    }
+                }
+                let fileUrl = '';
+                if (currentCategory != null && currentTyp != null) {
+                    if (currentCategory == window.CONSTANTS.CATEGORY.MAIN_WORK) {
+                        fileUrl =`${ window.CONSTANTS.URL.BASE_IMG }${ window.CONSTANTS.URL.MAIN[currentTyp] }`;
+                    } else if (currentCategory == window.CONSTANTS.CATEGORY.SUPPORTING) {
+                        fileUrl =`${ window.CONSTANTS.URL.BASE_IMG }${ window.CONSTANTS.URL.SUPPORTING[currentTyp] }`;
+                    } else {
+                        fileUrl =`${ window.CONSTANTS.URL.BASE_IMG }${ window.CONSTANTS.URL.IDLE[currentTyp] }`;
+                    }
+                }
+
+                if (fileUrl !== '') {
+                    let marker = new maptalks.Marker(
+                        [blast.x_loc, blast.y_loc + 0.4], {
+                            id: blast.id,  // TODO:
+                            symbol: {
+                                'markerFile': fileUrl,
+                                'markerWidth': {stops: [[4, 20], [5, 30], [6, 50], [7, 80]]},
+                                'markerHeight': {stops: [[4, 20], [5, 30], [6, 50], [7, 80]]},
+                                'markerDy': {stops:[[4, 10], [5, 20], [6, 30], [7, 40]]}
+                            }
+                        }
+                    )
+                    this.workLayer.addGeometry(marker);
+                    marker.on('click', (e) => {
+                        this.handleClearSelectItem();
+                        let _blastMarker = this.blastMarkers[blast.id];
+                        if (_blastMarker != null) {
+                            _blastMarker.updateSymbol({
+                                    markerLineColor: '#000000',
+                                    markerLineWidth: 1,
+                                    markerFill: this.colorMap['selected'],
+                                    markerOpacity: 1
+                            });
+                            this.closeMenu();
+                            this.setCurrentBlastId(_blastMarker.getId());
+                            this.setCurrentMarker(_blastMarker);
+                            this.setBlastType(_blastMarker.type);
+                            if (tmp !== undefined && tmp.length > 0) {
+                                // View the Current Work information
+
+                                this.services.getWorkDataByWork({"work_id": tmp[0]}, (resData) => {
+                                    console.log("Success to get work Data list", resData);
+                                    this.workOperatorIdList = [];
+                                    this.workEquipmentIdList = [];
+
+                                    this._.forEach(resData.operator, workOperator => {
+                                        this.workOperatorList.push(workOperator);
+                                    });
+                                    this._.forEach(resData.equipment, workEquipment => {
+                                        this.workEquipmentList.push(workEquipment);
+                                    });
+                                    this.setCurrentWorkId(tmp[0]);
+                                    this.setCurrentType(window.CONSTANTS.TYPE.SELECT_WORK);
+                                }, (error) => {
+                                    console.log("Failed to work data list.")
+                                });
+                            } else {
+                                // View the Blast information
+                                this.setCurrentType(window.CONSTANTS.TYPE.SELECT_BLAST_INFORMATION);
+                            }
+                            e.domEvent.stopPropagation();
+                        }
+                    });
+                }
+            }
         },
         _zoomIn() {
             if (!!this.map) {
@@ -1056,153 +1291,12 @@ export default {
             });
 
         },
-        setProgressInfoWindow(marker) {
-            marker.on('click', (e) => {
-                marker.updateSymbol({
-                    lineColor: '#000000',
-                    lineWidth: 1,
-                    polygonFill: '#929292',
-                    polygonOpacity: 1
-                });
-                console.log("### marker: ", marker);
-                e.domEvent.stopPropagation();
-                this.closeMenu();
-                console.log("#### clieck.", e.target.getId());
-                let info = this.$store.getters.getProgress(marker.getId()),
-                    currentTime = new Date().toDateString(),
-                    name = "a",
-                    current = "b",
-                    currentWork = "Ready";
-                if (info !== undefined) {
-                    console.log("##3 hi");
-                    name = info.name;
-                    current = info.current;
-                    if (info.status === "a") {
-                        currentWork = "Drilling";
-                    } else if (info.status === "b") {
-                        currentWork = "Blasting";
-                    } else if (info.status === "c") {
-                        currentWork = "Concreting";
-                    }
-                }
-                marker.setInfoWindow({ // TODO: vue component
-                    content: `<div class="progress-info">
-                    <div class="progress-info-header">
-                        <div class="progress-info-header-left">${ marker.getId() }</div><div class="progress-info-header-right">Edit</div>
-                    </div>
-                    <div class="progress-info-body">
-                        <div class="progress-info-body-row">
-                            <div class="progress-info-body-row-left">Name</div><div class="progress-info-body-row-right">${ name }</div>
-                        </div>
-                        <div class="progress-info-body-row">
-                            <div class="progress-info-body-row-left">Current</div><div class="progress-info-body-row-right">${ current }</div>
-                        </div>
-                        <div class="progress-info-body-row">
-                            <div class="progress-info-body-row-left">Time</div><div class="progress-info-body-row-right">${ currentTime }</div>
-                        </div>
-                        <div class="progress-info-body-row">
-                            <div class="progress-info-body-row-left">Current Work</div><div class="progress-info-body-row-right">${ currentWork }</div>
-                        </div>
-                    </div>
-                                </div>`,
-                    width: 350,
-                    custom: true,
-                    autoPan: false,
-                    animation: 'fade',
-                    dy: -10
-                });
-                marker.closeInfoWindow();
-                marker.openInfoWindow();
-                this.infoWindowItem = marker;
-            });
-        },
-        setWorkInfoWindow(marker, status) {
-            let title = "Ready";
-            if (status === "a") {
-                title = "Drill";
-            } else if (status === "b") {
-                title = "Blast";
-            } else if (status === "c") {
-                title = "Concrete";
-            }
-            marker.on('click', (e) => {
-                e.domEvent.stopPropagation();
-                this.closeMenu();
-                marker.setInfoWindow({
-                    custom: true,
-                    content: `<div class="add-work-container">
-                    <div class="add-work-header">
-                        <div class="add-work-header-text">${ title }</div>
-                    </div>
-                    <div class="add-work-body">
-                        <div class="add-work-body-row-container">
-                        POINT : AT2-WTH
-                        </div>
-                        <div class="add-work-body-row-container">
-                        EQUIP : JD-01
-                        </div>
-                        <div class="add-work-body-row-container">
-                        Startd : 00:22
-                        </div>
-                        <div class="add-work-body-row-container">
-                        Stop : 01:22
-                        </div>
-                        <div class="add-work-body-row-container">
-                        Total : 01:00
-                        </div>
-                        <div class="add-work-body-button-container">
-                            <div class="add-work-body-start-button">Start</div><div class="add-work-body-stop-button">Stop</div><div class="add-work-body-finish-button">Finish</div>
-                        </div>
-                    </div>
-                            </div>`,
-                    // dx: -75,
-                    animation: 'fade',
-                    autoPan: false,
-                    dy: -10
-                });
-                marker.closeInfoWindow();
-                marker.openInfoWindow();
-                this.infoWindowItem = marker;
-            });
-        },
-        addWork(marker) {
-            var options = {
-                'custom': true,
-                'content': `<div class="add-work-container">
-                <div class="add-work-header">
-                    <div class="add-work-header-text">DRILLING</div>
-                </div>
-                <div class="add-work-body">
-                    <div class="add-work-body-row-container">
-                    POINT : <input type='text'></input>
-                    </div>
-                    <div class="add-work-body-row-container">
-                    EQUIP : <select>
-                                <option value="jd-01">JD-01</option>
-                                <option value="dt-05">DT-05</option>
-                                <option value="sc-01">SC-01</option>
-                            </select>
-                    </div>
-                    <div class="add-work-body-button-container">
-                        <div>OK</div>
-                    </div>
-                </div>
-                          </div>`,
-                dx: -75,
-                animation: 'fade'
-            };
-            var addWorkWindow = new maptalks.ui.InfoWindow(options);
-            addWorkWindow.addTo(this.map).show();
-            this.addWindowItem = addWorkWindow;
-        },
         setContextMenu(marker) {
             marker.on('contextmenu', () => {
                 this.closeInfoWindow();
                 this.closeWindow();
-                this._setContextMenu(marker);
                 document.getElementById('add-button').onclick = () => {
                     this.closeMenu();
-                    this.addWork(marker);
                 }
                 document.getElementById('edit-button').onclick = () => {
                     if (marker.isEdit) {
@@ -1219,47 +1313,15 @@ export default {
                     const data = {};
                     this.closeMenu();
                     data.prog_id = marker._id
-                    this.services.removeProgress(data, (resData) => {
+                    this.services.removeBlast(data, (resData) => {
                         marker.remove();
-                        this.$store.commit('removeProgress', marker._id);
-                        console.log("Success to remove progress")
+                        this.$store.commit('removeBlast', marker._id);
+                        console.log("Success to remove blast")
                     }, (error) => {
-                        console.log("Failed to remove progress")
+                        console.log("Failed to remove blast")
                     });
                 }
             });
-        },
-        _setContextMenu(marker) {
-            let text = "Edit";
-            if (marker.isEdit) {
-               text = "Finish";
-            }
-            marker.setMenu({
-                items: `<div class="context-menu-container ">
-                <div class="context-menu-top-panel"><div class="context-menu-text-wrapper">
-                    <div class="context-menu-type-text">Progress</div>
-                    <div class="context-menu-name-text"></div>
-                </div></div>
-                <div class="context-menu-bottom-panel">
-                    <div id="add-button" class="context-menu-button-frame"><div class="context-menu-button-panel">
-                    <div id="add-button-text" class="context-menu-button-text">Add Work</div>
-                    </div></div>
-                    <div id="edit-button" class="context-menu-button-frame"><div class="context-menu-button-panel">
-                    <div id="move-button-text" class="context-menu-button-text">${text}</div>
-                    </div></div>
-                    <div id="remove-button" class="context-menu-button-frame"><div class="context-menu-button-panel">
-                    <div id="remove-button-text" class="context-menu-button-text">Remove</div>
-                    </div></div>
-                </div>
-                        </div>`,
-                width: 350,
-                custom: true,
-                dx: 10,
-                dy: 10,
-                animation: 'fade',
-            })
-            marker.openMenu();
-            this.contextMenuItem = marker;
         },
         _setContextMenuPosition() {
             if (this.isShowingContextMenu) {
@@ -1275,49 +1337,50 @@ export default {
         _showWindow() {
             var coordinate = this.map.getCenter();
 
-      var options = {
-        //'autoOpenOn' : 'click',  //set to null if not to open window when clicking on map
-        'single' : true,
-        'custom' : true,
-        'autoCloseOn': true,
-        'autoOpenOn': false,
-        'dx' : -3,
-        'dy' : -12,
-        'content'   : '<div class="content">' +
-            '<div class="row">' +
-                '<div class="column">' +
-                    '<div class="pop_title">Jumbo Drill</div>' +
-                    '<div class="sub-row">' +
-                        '<div class="item">' + "JD-01" + '</div>' +
-                        '<div class="item">' + "JD-02" + '</div>' +
-                        '<div class="item">' + "JD-03" + '</div>' +
-                    '</div>' +
-                '</div>' +
-                '<div class="column">' +
-                    '<div class="pop_title">LOADER</div>' +
-                    '<div class="sub-row">' +
-                        '<div class="item">' + "WL-01" + '</div>' +
-                        '<div class="item">' + "WL-02" + '</div>' +
-                        '<div class="item">' + "WL-03" + '</div>' +
-                    '</div>' +
-                '</div>' +
-                '<div class="column">' +
-                    '<div class="pop_title">Shortcrete</div>' +
-                    '<div class="sub-row">' +
-                        '<div class="item">' + "SC-01" + '</div>' +
-                        '<div class="item">' + "SC-02" + '</div>' +
-                        '<div class="item">' + "SC-03" + '</div>' +
-                    '</div>' +
-                '</div>' +
-            '</div>' +
-          '</div>'
-            };
+            var options = {
+                    //'autoOpenOn' : 'click',  //set to null if not to open window when clicking on map
+                    'single' : true,
+                    'custom' : true,
+                    'autoCloseOn': true,
+                    'autoOpenOn': false,
+                    'dx' : -3,
+                    'dy' : -12,
+                    'content'   : '<div class="content">' +
+                        '<div class="row">' +
+                            '<div class="column">' +
+                                '<div class="pop_title">Jumbo Drill</div>' +
+                                '<div class="sub-row">' +
+                                    '<div class="item">' + "JD-01" + '</div>' +
+                                    '<div class="item">' + "JD-02" + '</div>' +
+                                    '<div class="item">' + "JD-03" + '</div>' +
+                                '</div>' +
+                            '</div>' +
+                            '<div class="column">' +
+                                '<div class="pop_title">LOADER</div>' +
+                                '<div class="sub-row">' +
+                                    '<div class="item">' + "WL-01" + '</div>' +
+                                    '<div class="item">' + "WL-02" + '</div>' +
+                                    '<div class="item">' + "WL-03" + '</div>' +
+                                '</div>' +
+                            '</div>' +
+                            '<div class="column">' +
+                                '<div class="pop_title">Shortcrete</div>' +
+                                '<div class="sub-row">' +
+                                    '<div class="item">' + "SC-01" + '</div>' +
+                                    '<div class="item">' + "SC-02" + '</div>' +
+                                    '<div class="item">' + "SC-03" + '</div>' +
+                                '</div>' +
+                            '</div>' +
+                        '</div>' +
+                    '</div>'
+                };
             var infoWindow = new maptalks.ui.InfoWindow(options);
             console.log(coordinate)
             infoWindow.addTo(this.map).show({x: coordinate.x + 20, y: coordinate.y + 10});
             this.windowItem = infoWindow;
         },
         _handleFilterGroup(item, checked) {
+            // TODO: filter function
             if (checked) {
                 // this.paLayers[item].show();
                 // this.polygonLayers[item].show();
@@ -1390,14 +1453,57 @@ export default {
         },
         subscribe() {
             this.services.subscribe(this.info.internal, {
+                updateBasePointList: (data) => {
+                    this._handleUpdateBasePointList(data);
+                },
                 updateTunnelList: (data) => {
                     this._handleUpdateTunnelList(data);
                 },
-                updateProgressList: (data) => {
-                    this._handleUpdateProgressList(data);
+                updateBlastList: (data) => {
+                    this._handleUpdateBlastList(data);
+                },
+                updateBlastInfoList: (data) => {
+                    this._handleUpdateBlastInfoList(data);
                 },
                 updateWorkList: (data) => {
                     this._handleUpdateWorkList(data);
+                },
+                updateWorkHistoryList: (data) => {
+                    this._handleUpdateWorkHistoryList(data);
+                },
+                updatePauseHistoryList: (data) => {
+                    this._handleUpdatePauseHistoryList(data);
+                },
+                updateWorkOperatorList: (data) => {
+                    this._handleUpdateWorkOperatorList(data);
+                },
+                updateWorkEquipmentList: (data) => {
+                    this._handleUpdateWorkEquipmentList(data);
+                },
+            });
+        },
+        _handleUpdateBasePointList(data) {
+            const list = data.v;
+            this._.forEach(list, item => {
+                if (data.kind === 'add') {
+                    let basePoint = this.$store.getters.getBasePoint(item.id);
+                    if (basePoint === null || basePoint === undefined) {
+                        this._drawBasePoint(item);
+                    }
+                    this.$store.commit('addBasePoint', item);
+                } else if (data.kind === 'remove') {
+                    let basePoint = this.$store.getters.getBasePoint(item),
+                        typ = window.CONSTANTS.TUNNEL_TYPE.BASEPOINT;
+                    if (basePoint !== null || basePoint !== undefined) {
+                        let basePointMarker = this.basePointMarkers[typ][item];
+                        basePointMarker.remove();
+                        delete this.basePointMarkers[typ][item];
+                        this.$store.commit('removeBasePoint', item);
+                    }
+                } else if (data.kind === 'update') {
+                    let basePoint = this.$store.getters.getBasePoint(item.id);
+                    // this._fixDrawTunnel(item);
+                    // this.$store.commit('updateTunnel', item);
                 }
             });
         },
@@ -1411,51 +1517,130 @@ export default {
                     }
                     this.$store.commit('addTunnel', item);
                 } else if (data.kind === 'remove') {
-                    let tunnel = this.$store.getters.getTunnel(item);
+                    let tunnel = this.$store.getters.getTunnel(item),
+                        typ = window.CONSTANTS.TUNNEL_TYPE.CAVERN;
                     if (tunnel !== null || tunnel !== undefined) {
-                        let tunnelMarker = this.tunnelMarkers[tunnel.typ][item];
+                        let tunnelMarker = this.tunnelMarkers[typ][item];
                         tunnelMarker.remove();
-                        delete this.tunnelMarkers[tunnel.typ][item];
+                        delete this.tunnelMarkers[typ][item];
                         this.$store.commit('removeTunnel', item);
                     }
                 } else if (data.kind === 'update') {
                     let tunnel = this.$store.getters.getTunnel(item.id);
-                    this._fixDrawTunnel(item);
+                    // this._fixDrawTunnel(item);
                     this.$store.commit('updateTunnel', item);
                 }
             });
         },
-        _handleUpdateProgressList(data){
+        _handleUpdateBlastList(data){
             const list = data.v;
             this._.forEach(list, item => {
                 if (data.kind === 'add') {
-                    let progress = this.$store.getters.getProgress(item.id);
-                    if (progress === null || progress === undefined) {
-                        this._drawProgress(item);
+                    let blast = this.$store.getters.getBlast(item.id);
+                    if (blast === null || blast === undefined) {
+                        this.workIdWithBlast[item.id] = {
+                            0: [],  // Main Work
+                            1: [],  // Supporting
+                            2: []   // Idel Time
+                        }
+                        this._drawBlast(item);
                     }
-                    this.$store.commit('addProgress', item);
+                    this.$store.commit('addBlast', item);
                 } else if (data.kind === 'remove') {
-                    var _marker = this.progressLayer.getGeometryById(item)
+                    var _marker = this.blastLayer.getGeometryById(item)
                     _marker.remove();
-                    this.$store.commit('removeProgress', item);
+                    this.$store.commit('removeBlast', item);
                 } else if (data.kind === 'update') {
-                    let progress = this.$store.getters.getProgress(item.id);
-                    this.$store.commit('updateProgress', item);
+                    this.$store.commit('updateBlast', item);
+                }
+            });
+        },
+        _handleUpdateBlastInfoList(data){
+            const list = data.v;
+            // TODO:
+            this._.forEach(list, item => {
+                if (data.kind === 'add') {
+                    this.$store.commit('addBlast', item);
+                } else if (data.kind === 'remove') {
+                    this.$store.commit('removeBlast', item);
+                } else if (data.kind === 'update') {
+                    this.$store.commit('updateBlast', item);
                 }
             });
         },
         _handleUpdateWorkList(data) {
             const list = data.v;
             this._.forEach(list, item => {
+                // TODO:
                 if (data.kind === 'add') {
                     this.$store.commit('addWork', item);
+                    if (!(item.id in this.pauseIdWithWork)) {
+                        this.pauseIdWithWork[item.id] = [];
+                    }
                 } else if (data.kind === 'remove') {
                     this.$store.commit('removeWork', item)
+                    if (item.id in this.pauseIdWithWork) {
+                        delete this.pauseIdWithWork[item];
+                    }
                 } else if (data.kind === 'update') {
-                    this.$store.commit('addWork', item);
+                    this.$store.commit('updateWork', item);
+                    if (item.state == 1) {
+                        let blast = this.$store.getters.getBlast(item.blast_id);
+                        var _marker = this.workLayer.getGeometryById(blast.id);
+                        this.workLayer.removeGeometry([_marker]);
+                        this.drawWork(blast);
+                    }
                 }
             });
-        }
+        },
+        _handleUpdateWorkHistoryList(data) {
+            const list = data.v;
+            this._.forEach(list, item => {
+                if (data.kind === 'add') {
+                } else if (data.kind === 'remove') {
+                } else if (data.kind === 'update') {
+                }
+            });
+        },
+        _handleUpdatePauseHistoryList(data) {
+            const list = data.v;
+            this._.forEach(list, item => {
+                if (data.kind === 'add') {
+                    this.$store.commit('addPause', item);
+                    if (item.work_id in this.pauseIdWithWork) {
+                        this.pauseIdWithWork[item.work_id].push(item.id);
+                    }
+                } else if (data.kind === 'remove') {
+                } else if (data.kind === 'update') {
+                }
+            });
+        },
+        _handleUpdateWorkOperatorList(data) {
+            const list = data.v;
+            this._.forEach(list, item => {
+                if (data.kind === 'add') {
+                    this.$store.commit('addOperator', item);
+                    if (this.workOperatorList.indexOf(item.id) < 0) {
+                        this.workOperatorList.push(item);
+                    }
+                } else if (data.kind === 'remove') {
+                } else if (data.kind === 'update') {
+                }
+            });
+        },
+        _handleUpdateWorkEquipmentList(data) {
+            const list = data.v;
+            this._.forEach(list, item => {
+                if (data.kind === 'add') {
+                    this.$store.commit('addEquipment', item);
+                    if (this.workEquipmentList.indexOf(item.id) < 0) {
+                        this.workEquipmentList.push(item);
+                    }
+                } else if (data.kind === 'remove') {
+                } else if (data.kind === 'update') {
+                }
+            });
+        },
     },
     computed: {
         isShowingInfoWindow() {
@@ -1551,229 +1736,6 @@ div {
 
 .custom_menu .additem div+div {
     border-top: 2px solid rgb(138 221 58);
-}
-
-.context-menu-container {
-    width: 180px;
-    height: auto;
-    border-radius: 15px;
-    color: white;
-    overflow: hidden;
-    box-shadow: 10px 10px 25px rgba(40, 40, 40, 0.3);
-}
-
-.context-menu-container {
-    background-color: rgb(40, 160, 200);
-}
-
-.context-menu-top-panel {
-    position: relative;
-    width: 100%;
-    height: 60px;
-}
-
-.context-menu-text-wrapper {
-    position: absolute;
-    width: 100%;
-    bottom: 5px;
-    text-align: center;
-}
-
-.context-menu-type-text {
-    font-size: 1em;
-    font-weight: lighter;
-}
-
-.context-menu-name-text {
-    font-size: 1.2em;
-    font-weight: bold;
-    margin-top: .5em;
-}
-
-.context-menu-bottom-panel {
-    position: relative;
-    width: 100%;
-    height: auto;
-}
-
-.context-menu-button-frame {
-    position: relative;
-    width: 100%;
-    height: 35px;
-}
-
-.context-menu-button-frame {
-    background-color: rgb(60, 175, 200);
-    border-top: thin solid rgb(40, 160, 200);
-}
-
-.context-menu-button-frame:active {
-    background: #248ea5;
-}
-
-.context-menu-button-frame.lock {
-    display: none;
-}
-
-.context-menu-button-panel {
-    position: absolute;
-    width: 100%;
-    top: 50%;
-    transform: translateY(-50%);
-}
-
-.context-menu-button-text {
-    text-align: center;
-    font-size: 0.8em;
-}
-.progress-info {
-    width: 400px;
-    border-radius: 10px;
-    overflow: hidden;
-    box-shadow: 11px 11px 20px #aaaaaa99;
-    background-color: #999999;
-}
-.progress-info-header {
-    width: 400px;
-    height: 40px;
-    color: #ffffff;
-    font-size: x-large;
-    background-color: #09b8e6;
-}
-.progress-info-header-left {
-    text-align: center;
-    vertical-align: middle;
-    background-color: #09b8e6;
-    width: 300px;
-    height: 40px;
-    display: inline-block;
-    padding-top: 8px;
-}
-.progress-info-header-right {
-    text-align: center;
-    vertical-align: middle;
-    background-color: #09b8e6;
-    width: 100px;
-    height: 40px;
-    display: inline-block;
-    padding-top: 8px;
-}
-
-.progress-info-body {
-    width: 400px;
-    height: 100%;
-    background-color: #ffffff;
-}
-.progress-info-body-row {
-    color: #999999;
-    border-top : 1px solid #999999;
-    line-height: 2;
-}
-.progress-info-body-row-left {
-    width: 150px;
-    height: 34px;
-    display: inline-block;
-    padding-left: 8px;
-    border-right: 1px solid #999999;
-}
-.progress-info-body-row-right {
-    width: 250px;
-    height: 34px;
-    display: inline-block;
-    padding-left: 8px;
-}
-
-.add-work-container {
-    width: 300px;
-    background-color: rgb(138 221 58);
-    border-radius: 10px;
-    box-shadow: 11px 11px 20px #aaaaaa99;
-}
-
-.add-work-header {
-    width: 100%;
-    height: 30px;
-    background-color: rgb(138 221 58);
-    border-top-right-radius: 10px;
-    border-top-left-radius: 10px;
-}
-.add-work-header-icon {
-    width: 100px;
-    height: 30px;
-    display: inline-block;
-}
-.add-work-header-text {
-    width: 200px;
-    height: 30px;
-    text-align: right;
-    color: #ffffff;
-    font-size: x-large;
-    display: inline-block;
-    padding-right: 8px;
-}
-.add-work-body {
-    width: 100%;
-    background-color: #ffffff;
-    border-bottom-right-radius: 10px;
-    border-bottom-left-radius: 10px;
-}
-.add-work-body-row-container {
-    color: #999999;
-    padding-left: 6px;
-    line-height: 1.6;
-}
-.add-work-body-work-container {
-    width: 100%;
-    height: 130px;
-}
-.add-work-body-button-container {
-    width: 100%;
-    height: 40px;
-    text-align: center;
-    background: #eeeeee;
-    border-bottom-left-radius: 10px;
-    border-bottom-right-radius: 10px;
-    padding-top: 10px;
-    font-weight: bold;
-
-}
-.add-work-body-button {
-    width: 33%;
-    height: 40px;
-    display: inline-block;
-    text-align: center;
-}
-.add-work-body-start-button {
-    width: 33%;
-    height: 40px;
-    display: inline-block;
-    text-align: center;
-    background: #eeeeee;
-    padding-top: 10px;
-    border-bottom-left-radius: 10px;
-    font-weight: bold;
-}
-.add-work-body-stop-button {
-    width: 34%;
-    height: 40px;
-    border-left: 1px solid #ffffff;
-    border-right: 1px solid #ffffff;
-    display: inline-block;
-    text-align: center;
-    background: #eeeeee;
-    padding-top: 10px;
-    font-weight: bold;
-}
-.add-work-body-finish-button {
-    width: 33%;
-    height: 40px;
-    display: inline-block;
-    text-align: center;
-    padding-top: 10px;
-    background: #eeeeee;
-    padding-top: 10px;
-    border-bottom-right-radius: 10px;
-    font-weight: bold;
 }
 
 .content {
