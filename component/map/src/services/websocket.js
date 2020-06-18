@@ -25,8 +25,8 @@ export class SocketClient {
     }
 
     connect(host, port, connectCallback, disconnectCallback, errorCallback) { //TODO: params url
-        this.socket = new WebSocket(`ws://${ host }:${ port }/ws`);
-        // this.socket = new WebSocket(`ws://192.168.1.171:5555/ws`);
+        //this.socket = new WebSocket(`ws://${ host }:${ port }/ws`);
+        this.socket = new WebSocket(`ws://127.0.0.1:5555/ws`);
         this.socket.onopen = connectCallback;
         this.socket.onerror = errorCallback;
         this.socket.onclose = disconnectCallback;
@@ -182,6 +182,39 @@ export class SocketClient {
                 break;
                 case window.CONSTANTS.EVENT_TYPE.FAILED_LIST:
                     this._subscribeHandlers.failedList(data);
+                break;
+                case window.CONSTANTS.EVENT_TYPE.UPDATE_BASEPOINT_LIST:
+                    this._subscribeHandlers.updateBasePointList(data);
+                break;
+                case window.CONSTANTS.EVENT_TYPE.UPDATE_TUNNEL_LIST:
+                    this._subscribeHandlers.updateTunnelList(data);
+                break;
+                case window.CONSTANTS.EVENT_TYPE.UPDATE_BLAST_LIST:
+                    this._subscribeHandlers.updateBlastList(data);
+                break;
+                case window.CONSTANTS.EVENT_TYPE.UPDATE_BLAST_INFO_LIST:
+                    this._subscribeHandlers.updateBlastInfoList(data);
+                break;
+                case window.CONSTANTS.EVENT_TYPE.UPDATE_WORK_LIST:
+                    this._subscribeHandlers.updateWorkList(data);
+                break;
+                case window.CONSTANTS.EVENT_TYPE.UPDATE_WORK_HISTORY_LIST:
+                    this._subscribeHandlers.updateWorkHistoryList(data);
+                break;
+                case window.CONSTANTS.EVENT_TYPE.UPDATE_PAUSE_HISTORY_LIST:
+                    this._subscribeHandlers.updatePauseHistoryList(data);
+                break;
+                case window.CONSTANTS.EVENT_TYPE.UPDATE_WORK_OPERATOR_LIST:
+                    this._subscribeHandlers.updateWorkOperatorList(data);
+                break;
+                case window.CONSTANTS.EVENT_TYPE.UPDATE_WORK_EQUIPMENT_LIST:
+                    this._subscribeHandlers.updateWorkEquipmentList(data);
+                break;
+                case window.CONSTANTS.EVENT_TYPE.UPDATE_MESSAGE_LIST:
+                    this._subscribeHandlers.updateMessageList(data);
+                break;
+                case window.CONSTANTS.EVENT_TYPE.UPDATE_TEAM_LIST:
+                    this._subscribeHandlers.updateTeamList(data);
                 break;
             }
         }

@@ -1,14 +1,37 @@
 <template>
-<div class="main-container">
-    <div :id="id" v-if="isEmptyUrl">
+    <div class="main-container">
+        <div :id="id" v-if="isEmptyUrl">
+        </div>
+        <OnAir :isOnAir="onAir"></OnAir>
+        <BeaconList v-if="showBeaconList" :isShow="showBeaconList" :showBeaconData="showBeaconData"
+        :typeRange="tagKinds"></BeaconList>
+        <SpeakerInfoWindow ref="infowindow" :item="speakerInfoWindowItems" :isForGroup="false"
+            v-if="isShowingInfoWindow" :onAir="onAir"
+            @select-close="handleInfoWindowClose"></SpeakerInfoWindow>
+        <BasePointInfo :type="getCurrentType()" :id="currentTunnelId"
+            @select-close-button="handleBasePointInfoCloseButton">
+        </BasePointInfo>
+        <TunnelInfo :type="getCurrentType()" :id="currentTunnelId"
+            @select-close-button="handleTunnelInfoCloseButton">
+        </TunnelInfo>
+        <WorkInfo :type="getCurrentType()" :blastId="currentBlastId"
+            :id="currentWorkId" :pauseList="getPauseList()"
+            :operatorList="getOperatorList()" :equipmentList="getEquipmentList()"
+            :workEquipmentList="workEquipmentList"
+            @select-close-button="handleWorkInfoCloseButton">
+        </WorkInfo>
+        <BlastInfo :type="getCurrentType()" :id="currentBlastId"
+            :workIdList="getWorkList()"
+            :supportingIdList="getSupportingList()"
+            :idleIdList="getIdleList()"
+            @select-close-button="handleBlastInfoCloseButton"
+            @select-ok-button="handleBlastInfoOkButton"
+            @select-work-item="handleSelectWorkItem">
+        </BlastInfo>
+        <BlastInformation :type="getCurrentType()" :id="currentBlastId"
+            @select-close-button="handleBlastInfoCloseButton">
+        </BlastInformation>
     </div>
-    <OnAir :isOnAir="onAir"></OnAir>
-    <BeaconList v-if="showBeaconList" :isShow="showBeaconList" :showBeaconData="showBeaconData"
-    :typeRange="tagKinds"></BeaconList>
-    <SpeakerInfoWindow ref="infowindow" :item="speakerInfoWindowItems" :isForGroup="false"
-    v-if="isShowingInfoWindow" :onAir="onAir"
-    @select-close="handleInfoWindowClose"></SpeakerInfoWindow>
-</div>
 </template>
 
 <script>
@@ -21,6 +44,11 @@
     import { EventBus } from "../main";
     import { setTimeout, setInterval } from 'timers';
     import Hls from 'hls.js';
+    import BasePointInfo from '@/components/BasePointInfo';
+    import TunnelInfo from '@/components/TunnelInfo';
+    import BlastInfo from '@/components/BlastInfo';
+    import BlastInformation from '@/components/BlastInformation';
+    import WorkInfo from '@/components/WorkInfo';
     export default {
         name: 'Map',
         props: {
@@ -93,13 +121,60 @@
                 tagKinds : [
                     '1', '2', '3', '14', '15', '18', '8', '19', '12', '17',
                     '4', '5', '6', '7', '100'
-                ]
+                ],
+                //progress sector
+                contextMenuItem: null,
+                tunnelIDList: [],
+                blastIDList: [],
+                progIDList: [],
+                workIDList: [],
+                workEquipmentList: [],
+                currentType: null,
+                currentTunnelId: null,
+                currentTunnelType: null,
+                currentBlastId: null,
+                currentWorkId: null,
+                currentBlastType: null,
+                currentMarker: null,
+                basePointLayers: {},  // {t_type: layer}
+                tunnelLayers: {},  // {t_type: layer}
+                blastLayers: {},  // {t_type : layer},
+                basePointMarkers: {},  // {t_type: {bp_id: bp_marker}}
+                tunnelMarkers: {},    // {t_type: {t_id: t_marker}}
+                blastMarkers: {},  // {b_id: b_marker, ..}
+                blastIdWithTunnel: {},    // {t_id: [b_id, ..]}
+                workIdWithBlast: {},    // {b_id: {0: [w_id, ..], 1: [w_id, ..], 2: [w_id, ..]}} 0(MainWork), 1(Supporting), 2(IdelTime)
+                pauseIdWithWork: {},  // {w_id: [p_id, ..]}
+                blastLayer: null,
+                workLayer: null,
+                colorMap: {
+                    'selected': '#dddddd',
+                    '0': '#a0a0ff',
+                    '1': '#00aabb',
+                    '3': '#00aabb',
+                    '4': '#0000ff',
+                    '100': '#01b050',
+                    '101': '#9f5900',
+                    '102': '#7031a0',
+                    '1000': '#01b050',
+                    '1001': '#9f5900',
+                    '1002': '#7031a0',
+                    'main' : '#ff0a01',
+                    'supporting' : '#0f02ff',
+                    'idle' : '#feff00'
+                },
+                tunnelOpacity: 0.6
             }
         },
         components: {
             SpeakerInfoWindow,
             OnAir,
-            BeaconList
+            BeaconList,
+            WorkInfo,
+            BlastInfo,
+            BlastInformation,
+            BasePointInfo,
+            TunnelInfo
         },
         methods: {
             initloadMap() {
@@ -159,6 +234,29 @@
                         this.camMobileLayer = new maptalks.VectorLayer('vector36').addTo(this.map);
                         this.lostTagCamLayer = new maptalks.VectorLayer('vector37').addTo(this.map);
                         this.routerLayer = new maptalks.VectorLayer('vector39').addTo(this.map);
+                        this._.forEach(window.CONSTANTS.TUNNEL_TYPE, (value, key) => {
+                            this.tunnelLayers[value] = new maptalks.VectorLayer(value).addTo(this.map);
+                            this.tunnelLayers[value].setZIndex(1);
+                            this.tunnelMarkers[value] = {};
+                            this.blastLayers[value] = new maptalks.VectorLayer('p' + value).addTo(this.map);
+                            this.blastLayers[value].setZIndex(1);
+
+                            this.basePointLayers[value] = new maptalks.VectorLayer('b' + value).addTo(this.map);
+                            this.basePointLayers[value].setZIndex(1);
+                            this.basePointMarkers[value] = {};
+                        });
+                        this._getActivityList();
+                        this._getEquipmentList();
+                        this._getOperatorList();
+                        //TODO:
+                        this._getMessageList();
+                        this._getTeamList();
+                        this._getEquipmentInfoList();
+                        this._getBasePointList();
+                        this.blastLayer = new maptalks.VectorLayer('vector40').addTo(this.map);
+                        this.blastLayer.setZIndex(2);
+                        this.workLayer = new maptalks.VectorLayer('vector41').addTo(this.map);
+                        this.workLayer.setZIndex(101);
                         this.initContextMenu();
                         this.map.fitExtent();
                         this.loadItems(this.info);
@@ -169,7 +267,7 @@
                     });
                     this.map.on('click', (e) => {
                         this.speakerInfoWindowItems = {};
-                    })
+                    });
                 });
             },
             setBaseZoomLv() {
@@ -211,6 +309,7 @@
                     };
                     this.map.on('contextmenu', (e) => {
                         this.contextCoordinate = e.coordinate;
+                        this.map.closeMenu();
                         this.map.closeMenu();
                         this.map.setMenu(this.contextMenuOption).openMenu(e.coordinate);
 
@@ -3288,9 +3387,959 @@
                         if (this.isShowingByStage(window.CONSTANTS.USER_STAGE.SK_ADMIN)) {
                             this._handleFailedList(data);
                         }
+                    },
+                    updateBasePointList: (data) => {
+                        this._handleUpdateBasePointList(data);
+                    },
+                    updateTunnelList: (data) => {
+                        this._handleUpdateTunnelList(data);
+                    },
+                    updateBlastList: (data) => {
+                        this._handleUpdateBlastList(data);
+                    },
+                    updateBlastInfoList: (data) => {
+                        this._handleUpdateBlastInfoList(data);
+                    },
+                    updateWorkList: (data) => {
+                        this._handleUpdateWorkList(data);
+                    },
+                    updateWorkHistoryList: (data) => {
+                        this._handleUpdateWorkHistoryList(data);
+                    },
+                    updatePauseHistoryList: (data) => {
+                        this._handleUpdatePauseHistoryList(data);
+                    },
+                    updateWorkOperatorList: (data) => {
+                        this._handleUpdateWorkOperatorList(data);
+                    },
+                    updateWorkEquipmentList: (data) => {
+                        this._handleUpdateWorkEquipmentList(data);
+                    },
+                    updateMessageList: (data) => {
+                        this._handleUpdateMessageList(data);
+                    },
+                    updateTeamList: (data) => {
+                        this._handleUpdateTeamList(data);
+                    },
+                });
+            },
+            _handleUpdateBasePointList(data) {
+                const list = data.v;
+                this._.forEach(list, item => {
+                    if (data.kind === 'add') {
+                        let basePoint = this.$store.getters.getBasePoint(item.id);
+                        if (basePoint === null || basePoint === undefined) {
+                            this._drawBasePoint(item);
+                        }
+                        this.$store.commit('addBasePoint', item);
+                    } else if (data.kind === 'remove') {
+                        let basePoint = this.$store.getters.getBasePoint(item),
+                            typ = window.CONSTANTS.TUNNEL_TYPE.BASEPOINT;
+                        if (basePoint !== null || basePoint !== undefined) {
+                            let basePointMarker = this.basePointMarkers[typ][item];
+                            basePointMarker.remove();
+                            delete this.basePointMarkers[typ][item];
+                            this.$store.commit('removeBasePoint', item);
+                        }
+                    } else if (data.kind === 'update') {
+                        let basePoint = this.$store.getters.getBasePoint(item.id);
+                        // this._fixDrawTunnel(item);
+                        // this.$store.commit('updateTunnel', item);
                     }
                 });
-            }
+            },
+            _handleUpdateTunnelList(data) {
+                const list = data.v;
+                this._.forEach(list, item => {
+                    if (data.kind === 'add') {
+                        let tunnel = this.$store.getters.getTunnel(item.id);
+                        if (tunnel === null || tunnel === undefined) {
+                            this._drawTunnel(item);
+                            this.blastIdWithTunnel[item.id] = [];
+                        }
+                        this.$store.commit('addTunnel', item);
+                    } else if (data.kind === 'remove') {
+                        let tunnel = this.$store.getters.getTunnel(item),
+                            typ = window.CONSTANTS.TUNNEL_TYPE.CAVERN;
+                        if (tunnel !== null || tunnel !== undefined) {
+                            let tunnelMarker = this.tunnelMarkers[typ][item];
+                            tunnelMarker.remove();
+                            delete this.tunnelMarkers[typ][item];
+                            this.$store.commit('removeTunnel', item);
+                        }
+                    } else if (data.kind === 'update') {
+                        let tunnel = this.$store.getters.getTunnel(item.id);
+                        //this._fixDrawTunnel(item);
+                        this.$store.commit('updateTunnel', item);
+                    }
+                });
+            },
+            _handleUpdateBlastList(data){
+                const list = data.v;
+                this._.forEach(list, item => {
+                    if (data.kind === 'add') {
+                        let blast = this.$store.getters.getBlast(item.id);
+                        if (blast === null || blast === undefined) {
+                            this.workIdWithBlast[item.id] = {
+                                0: [],  // Main Work
+                                1: [],  // Supporting
+                                2: []   // Idel Time
+                            }
+                            this._drawBlast(item);
+                        }
+                        this.$store.commit('addBlast', item);
+                    } else if (data.kind === 'remove') {
+                        var _marker = this.blastLayer.getGeometryById(item)
+                        _marker.remove();
+                        this.$store.commit('removeBlast', item);
+                    } else if (data.kind === 'update') {
+                        this.$store.commit('updateBlast', item);
+                    }
+                });
+            },
+            _handleUpdateBlastInfoList(data){
+                const list = data.v;
+                // TODO:
+                this._.forEach(list, item => {
+                    if (data.kind === 'add') {
+                        this.$store.commit('addBlast', item);
+                    } else if (data.kind === 'remove') {
+                        this.$store.commit('removeBlast', item);
+                    } else if (data.kind === 'update') {
+                        this.$store.commit('updateBlast', item);
+                    }
+                });
+            },
+            _handleUpdateWorkList(data) {
+                const list = data.v;
+                this._.forEach(list, item => {
+                    // TODO:
+                    if (data.kind === 'add') {
+                        this.$store.commit('addWork', item);
+                        if (!(item.id in this.pauseIdWithWork)) {
+                            this.pauseIdWithWork[item.id] = [];
+                        }
+                        let blast = this.$store.getters.getBlast(item.blast_id);
+                        let _marker = this.workLayer.getGeometryById(blast.id);
+                        if (_marker != null) {
+                            this.workLayer.removeGeometry([_marker]);
+                        }
+                        let _blastMarker = this.blastLayers[window.CONSTANTS.TUNNEL_TYPE.CAVERN].getGeometryById(blast.id);
+                        if (_blastMarker != null) {
+                            let typ = '';
+                            if (item.category == window.CONSTANTS.CATEGORY.MAIN_WORK) {
+                                typ = "main";
+                            } else if (item.category == window.CONSTANTS.CATEGORY.SUPPORTING) {
+                                typ = "supporting";
+                            } else {
+                                typ = "idle";
+                            }
+                            _blastMarker.updateSymbol({
+                                markerFill: this.colorMap[typ]
+                            });
+                        }
+                        this.drawWork(blast);
+                    } else if (data.kind === 'remove') {
+                        this.$store.commit('removeWork', item)
+                        if (item.id in this.pauseIdWithWork) {
+                            delete this.pauseIdWithWork[item];
+                        }
+                    } else if (data.kind === 'update') {
+                        this.$store.commit('updateWork', item);
+                    }
+                });
+            },
+            _handleUpdateWorkHistoryList(data) {
+                const list = data.v;
+                this._.forEach(list, item => {
+                    if (data.kind === 'add') {
+                    } else if (data.kind === 'remove') {
+                    } else if (data.kind === 'update') {
+                    }
+                });
+            },
+            _handleUpdatePauseHistoryList(data) {
+                const list = data.v;
+                this._.forEach(list, item => {
+                    if (data.kind === 'add') {
+                        this.$store.commit('addPause', item);
+                        if (item.work_id in this.pauseIdWithWork) {
+                            this.pauseIdWithWork[item.work_id].push(item.id);
+                        }
+                    } else if (data.kind === 'remove') {
+                        let pause = this.$store.getters.getPause(item);
+                        this.pauseIdWithWork[pause.work_id] = this._.without(this.pauseIdWithWork[pause.work_id], item);
+                        this.$store.commit('removePause', item);
+                    } else if (data.kind === 'update') {
+                    }
+                });
+            },
+            _handleUpdateWorkEquipmentList(data) {
+                const list = data.v;
+                this._.forEach(list, item => {
+                    if (data.kind === 'add') {
+                        if (this.workEquipmentList.indexOf(item.id) < 0) {
+                            this.workEquipmentList.push(item);
+                        }
+                    } else if (data.kind === 'remove') {
+                        if (this.workEquipmentList.indexOf(item) >= 0) {
+                            this.workEGquipmentList = this._.without(this.workEquipmentList, item);
+                        }
+                    } else if (data.kind === 'update') {
+                    }
+                });
+            },
+             _handleUpdateMessageList(data){
+                const list = data.v;
+                this._.forEach(list, item => {
+                    if (data.kind === 'add') {
+                        this.$store.commit('addMessage', item);
+                    } else if (data.kind === 'remove') {
+                        this.$store.commit('removeMessage', item);
+                    } else if (data.kind === 'update') {
+                        this.$store.commit('updateMessage', item);
+                    }
+                });
+            },
+            _handleUpdateTeamList(data){
+                const list = data.v;
+                this._.forEach(list, item => {
+                    if (data.kind === 'add') {
+                        this.$store.commit('addTeam', item);
+                    } else if (data.kind === 'remove') {
+                        this.$store.commit('removeTeam', item);
+                    } else if (data.kind === 'update') {
+                        this.$store.commit('updateTeam', item);
+                    }
+                });
+            },
+            _drawBasePoint(basePoint){
+                const xPosition = basePoint.x_loc,
+                      yPosition = basePoint.y_loc,
+                      width = basePoint.width,
+                      height = basePoint.height,
+                      typ = window.CONSTANTS.TUNNEL_TYPE.BASEPOINT; // TODO:
+                var marker = new maptalks.TextBox("", [xPosition, yPosition],
+                                                  {stops: [[4, width], [5, width * 2], [6, width * 4], [7, width * 8]]},
+                                                  {stops: [[4, height], [5, height * 2], [6, height * 4], [7, height * 8]]}, {
+                    id: basePoint.id,
+                    editable: true,
+                    draggable: false,
+                    boxSymbol: {
+                        markerType: 'square',
+                        markerLineColor: this.colorMap[typ],
+                        markerLineWidth: 1,
+                        markerFill: this.colorMap[typ],
+                        markerFillOpacity: 1
+                    },
+                    symbol: {
+                        textMaxWidth: {stops: [[4, width], [5, width * 2], [6, width * 4], [7, width * 8]]},
+                        textMaxHeight: {stops: [[4, height], [5, height * 2], [6, height * 4], [7, height * 8]]}
+                    }
+                });
+                marker.defaultWidth = width;
+                marker.defaultHeight = height;
+                marker.markerType = typ;
+                this.basePointLayers[typ].addGeometry([marker]);
+                this.basePointMarkers[typ][basePoint.id] = marker;
+                this.$store.commit('addBasePoint', basePoint);
+                // TODO:
+                this._handleBasePointClickEvent(marker);
+                // TODO: right click?
+                marker.on('contextmenu', () => {});
+            },
+            _handleBasePointClickEvent(marker) {
+                marker.on('click', (e) => {
+                    this.handleClearSelectItem();
+                    let _marker = this.basePointMarkers[e.target.markerType][e.target.getId()];
+                    if (_marker != null) {
+                        _marker.updateSymbol({
+                                markerLineColor: '#000000',
+                                markerLineWidth: 1,
+                                markerFill: this.colorMap['selected'],
+                                markerOpacity: 1
+                        });
+                        this.closeMenu();
+                        this.setCurrentTunnelId(_marker.getId());
+                        this.setCurrentMarker(_marker);
+                        this.setTunnelType(_marker.markerType);
+                        this.setCurrentType(window.CONSTANTS.TYPE.SELECT_BASEPOINT);
+                        e.domEvent.stopPropagation();
+                    }
+                });
+            },
+            _getActivityList() {
+                this.services.getActivityList(activityList => {
+                    // TODO:
+                    console.log("Success to get activity list.", activityList);
+                }, (error) => {
+                    console.log("Failed to get activity list.", error);
+                });
+            },
+            _getEquipmentList() {
+                this.services.getEquipmentList(equipmentList => {
+                    console.log("Success to get equipment list.", equipmentList);
+                    this.$store.commit('addEquipmentList', equipmentList);
+                }, (error) => {
+                    console.log("Failed to get equipment list.", error);
+                });
+            },
+            _getOperatorList() {
+                this.services.getOperatorList(operatorList => {
+                    console.log("Success to get operator list.", operatorList);
+                    this.$store.commit('addOperatorList', operatorList);
+                }, (error) => {
+                    console.log("Failed to get operator list.", error);
+                });
+            },
+            _getMessageList() {
+                this.services.getMessageList(messageList => {
+                    this.$store.commit('addMessageList', messageList);
+                }, (error) => {
+                    console.log("Failed to get message list.", error);
+                });
+            },
+            _getTeamList() {
+                this.services.getTeamList(teamList => {
+                    this.$store.commit('addTeamList', teamList);
+                }, (error) => {
+                    console.log("Failed to get team list.", error);
+                });
+            },
+            _getEquipmentInfoList() {
+                this.services.getEquipmentInfoList(equipmentInfoList => {
+                    // TODO:
+                    console.log("Success to get equipment info list.", equipmentInfoList);
+                }, (error) => {
+                    console.log("Failed to get equipment info list.", error);
+                });
+            },
+            _getBasePointList() {
+                this.services.getBasePointList(basePointList => {
+                    console.log("Success to get basepoint list.");
+                    this._.forEach(basePointList, basePoint => {
+                        this._drawBasePoint(basePoint);
+                    });
+                    this._getTunnelList();
+                }, (error) => {
+                    console.log("Failed to get basepoint list.", error);
+                });
+            },
+            _getTunnelList() {
+                this.services.getTunnelList(tunnels => {
+                    console.log("Success to get tunnels");
+                    this._.forEach(tunnels, tunnel => {
+                        this.tunnelIDList.push(tunnel.id);
+                        this.blastIdWithTunnel[tunnel.id] = [];
+                        this._drawTunnel(tunnel);
+                    });
+                    this._getWorkList();
+                }, (error) => {
+                    console.log("Failed to get tunnel list.", error);
+                });
+            },
+            _getWorkList() {
+                this.services.getWorkList(resData => {
+                    this._.forEach(resData, (work) => {
+                        if (!(work.blast_id in this.workIdWithBlast)) {
+                            this.workIdWithBlast[work.blast_id] = {
+                                0: [],  // Main Work
+                                1: [],  // Supporting
+                                2: []   // Idel Time
+                            }
+                        }
+
+                        if (work.category == window.CONSTANTS.CATEGORY.MAIN_WORK) {
+                            this.workIdWithBlast[work.blast_id][0].push(work.id)
+                        } else if (work.category == window.CONSTANTS.CATEGORY.SUPPORTING) {
+                            this.workIdWithBlast[work.blast_id][1].push(work.id)
+                        } else {
+                            this.workIdWithBlast[work.blast_id][2].push(work.id)
+                        }
+
+                        this.$store.commit('addWork', work);
+                    });
+                    this._getPauseList();
+                    this._getBlastList();
+                }, (error) => {
+                    console.log("Failed to get work list.", error);
+                });
+            },
+            _getPauseList() {
+                this.services.getPauseList(resData => {
+                    this._.forEach(resData, (pause) => {
+                        if (!(pause.work_id in this.pauseIdWithWork)) {
+                            this.pauseIdWithWork[pause.work_id] = [];
+                        }
+                        this.pauseIdWithWork[pause.work_id].push(pause.id);
+                        this.$store.commit('addPause', pause);
+                    });
+                });
+            },
+            _getBlastList() {
+                this.services.getBlastList(blastList => {
+                    this._.forEach(blastList, blast => {
+                        if (!(blast.tunnel_id in this.blastIdWithTunnel)) {
+                            this.blastIdWithTunnel[blast.tunnel_id] = [];
+                        }
+                        if (!(blast.id in this.workIdWithBlast)) {
+                            this.workIdWithBlast[blast.id] = {
+                                0: [],  // Main Work
+                                1: [],  // Supporting
+                                2: []   // Idel Time
+                            }
+                        }
+                        this._drawBlast(blast);
+                        this.blastIDList.push(blast.id);
+                    });
+                    this._getBlastInfoList();
+                }, (error) => {
+                    console.log("Failed to get blast list.", error);
+                });
+            },
+            _getBlastInfoList() {
+                this.services.getBlastInfoList(blastInfoList => {
+                    this._.forEach(blastInfoList, blastInfo => {
+                        this.$store.commit('addBlastInfo', blastInfo);
+                    });
+                }, (error) => {
+                    console.log("Failed to get blast info list.");
+                });
+            },
+            _fixDrawTunnel(tunnel){
+                var _marker = this.tunnelLayers[window.CONSTANTS.TUNNEL_TYPE.CAVERN].getGeometryById(tunnel.id)
+                this.tunnelLayers[window.CONSTANTS.TUNNEL_TYPE.CAVERN].removeGeometry([_marker])
+                this._drawTunnel(tunnel);
+            },
+            _getCfactor(base, tunnel) {
+                let ret = base,
+                    factor = 4;
+                if (tunnel.length >= 1200) {
+                    ret += (factor * 12);
+                } else if (tunnel.length >= 1100) {
+                    ret += (factor * 11);
+                } else if (tunnel.length >= 1000) {
+                    ret += (factor * 10);
+                } else if (tunnel.length >= 900) {
+                    ret += (factor * 9);
+                } else if (tunnel.length >= 800) {
+                    ret += (factor * 8);
+                } else if (tunnel.length >= 700) {
+                    ret += (facotr * 7);
+                } else if (tunnel.length >= 600) {
+                    ret += (factor * 6);
+                } else if (tunnel.length >= 500) {
+                    ret += (factor * 5);
+                } else if (tunnel.length >= 400) {
+                    ret += (factor * 4);
+                } else if (tunnel.length >= 300) {
+                    ret += (factor * 3);
+                } else if (tunnel.length >= 200) {
+                    ret += (factor * 2);
+                } else if (tunnel.length >= 100) {
+                    ret += (factor * 1);
+                }
+                return ret;
+            },
+            _drawTunnel(tunnel){
+                const xPosition = tunnel.x_loc,
+                      yPosition = tunnel.y_loc,
+                      width = tunnel.width,
+                      height = tunnel.height,
+                      typ = tunnel.category; // TODO:
+                let marker = new maptalks.TextBox("", [xPosition, yPosition],
+                                                  {stops: [[4, width], [5, width * 2], [6, width * 4], [7, width * 8]]},
+                                                  {stops: [[4, height], [5, height * 2], [6, height * 4], [7, height * 8]]}, {
+                    id: tunnel.id,
+                    editable: false,
+                    draggable: false,
+                    boxSymbol: {
+                        markerType: 'square',
+                        markerLineColor: this.colorMap[typ],
+                        markerLineWidth: 1,
+                        markerFill: this.colorMap[typ],
+                        markerFillOpacity: this.tunnelOpacity
+                    },
+                    symbol: {
+                        textMaxWidth: {stops: [[4, width], [5, width * 2], [6, width * 4], [7, width * 8]]},
+                        textMaxHeight: {stops: [[4, height], [5, height * 2], [6, height * 4], [7, height * 8]]}
+                    }
+                });
+                marker.defaultWidth = width;
+                marker.defaultHeight = height;
+                marker.markerType = typ;
+                this.tunnelLayers[typ].addGeometry([marker]);
+                this.tunnelMarkers[typ][tunnel.id] = marker;
+                this.$store.commit('addTunnel', tunnel);
+                this._handleTunnelClickEvent(marker);
+                // TODO: right click?
+                marker.on('contextmenu', () => {});
+                let cFactor = 30;   // 100 : 34  , 200 : 38  , 300 : 42
+                cFactor = this._getCfactor(cFactor, tunnel);
+                let arrowPosition = parseFloat(((tunnel.width / 2) * 0.078).toFixed(1)),
+                    arrowPl = "vertex-last",
+                    textDxBase = parseInt(tunnel.width / 2) - cFactor,
+                    textDx = {stops: [[4, textDxBase], [5, textDxBase * 2], [6, textDxBase * 4], [7, textDxBase * 8]]};
+                if (tunnel.direction == window.CONSTANTS.DIRECTION.WEST ||
+                    tunnel.direction == window.CONSTANTS.DIRECTION.EAST_SIDE_WEST ||
+                    tunnel.direction == window.CONSTANTS.DIRECTION.WEST_SIDE_WEST) {
+                    arrowPl = "vertex-first";
+                    textDxBase = -parseInt((tunnel.width / 2) - cFactor),
+                    textDx = {stops: [[4, textDxBase], [5, textDxBase * 2], [6, textDxBase * 4], [7, textDxBase * 8]]};
+                }
+                // TODO: arrowMarker id
+                let _arrowMarker = new maptalks.LineString(
+                    [[xPosition - arrowPosition, yPosition], [xPosition + arrowPosition - 0.5, yPosition]],
+                    {
+                        // arrowStyle: "classic",
+                        arrowStyle: [0.5, 0.5],
+                        arrowPlacement: arrowPl,
+                        symbol: {
+                            'lineColor': this.colorMap[typ],
+                            'lineWidth': {stops: [[4, 8], [5, 16], [6, 32], [7, 64]]},
+                            'lineOpacity': 1,
+                            'textName': tunnel.tunnel_id,
+                            'textPlacement': 'line',
+                            'textSize': {stops: [[4, 10], [5, 20], [6, 40], [7, 80]]},
+                            'textDy': {stops: [[4, 2], [5, 4], [6, 8], [7, 16]]},
+                            'textFill': '#ffffff',
+                            'textWeight': 'bold',
+                            'textDx': textDx
+                        }
+                    }
+                );
+                this.tunnelLayers[typ].addGeometry([_arrowMarker]);
+
+            },
+            _handleTunnelClickEvent(marker) {
+                marker.on('click', (e) => {
+                    this.handleClearSelectItem();
+                    let _marker = this.tunnelMarkers[e.target.markerType][e.target.getId()];
+                    if (_marker != null) {
+                        _marker.updateSymbol({
+                                markerLineColor: '#000000',
+                                markerLineWidth: 1,
+                                markerFill: this.colorMap['selected'],
+                                markerOpacity: 1
+                        });
+                        this.closeMenu();
+                        this.setCurrentTunnelId(_marker.getId());
+                        this.setCurrentMarker(_marker);
+                        this.setTunnelType(_marker.markerType);
+                        this.setCurrentType(window.CONSTANTS.TYPE.SELECT_CAVERN);
+                        e.domEvent.stopPropagation();
+                    }
+                });
+            },
+            _drawBlast(blast, isUpdated) {
+                const tunnelData = this.$store.getters.getTunnel(blast.tunnel_id),
+                      position = [blast.x_loc, blast.y_loc],
+                      blastWidth = blast.width,
+                      blastHeight = blast.height;
+                let typ = window.CONSTANTS.TUNNEL_TYPE.BLAST;
+                if (blast.state === window.CONSTANTS.BLAST_STATE.FINISH) {
+                    if (tunnelData.category == window.CONSTANTS.TUNNEL_CATEGORY.TH) {
+                        typ = window.CONSTANTS.TUNNEL_TYPE.FINISH_TH;
+                    } else if (tunnelData.category == window.CONSTANTS.TUNNEL_CATEGORY.B1) {
+                        typ = window.CONSTANTS.TUNNEL_TYPE.FINISH_B1;
+                    } else {
+                        typ = window.CONSTANTS.TUNNEL_TYPE.FINISH_B2;
+                    }
+                } else {
+                    if (blast.work_list.length > 0) {
+                        if (blast.work_list[0].category == window.CONSTANTS.CATEGORY.MAIN_WORK) {
+                            typ = "main";
+                        } else if (blast.work_list[0].category == window.CONSTANTS.CATEGORY.SUPPORTING) {
+                            typ = "supporting";
+                        } else {
+                            typ = "idle";
+                        }
+                    }
+                }
+
+                let _marker = new maptalks.TextBox("", position,
+                                                   {stops: [[4, blastWidth], [5, blastWidth * 2], [6, blastWidth * 4], [7, blastWidth * 8]]},
+                                                   {stops: [[4, blastHeight], [5, blastHeight * 2], [6, blastHeight * 4], [7, blastHeight * 8]]}, {
+                    id: blast.id,
+                    editable: false,
+                    boxSymbol: {
+                        markerType: 'square',
+                        markerLineColor: this.colorMap[typ],
+                        markerLineWidth: 1,
+                        markerFill: this.colorMap[typ],
+                        markerFillOpacity: 1
+                    },
+                    symbol: {
+                        textMaxWidth: {stops: [[4, blastWidth], [5, blastWidth * 2], [6, blastWidth * 4], [7, blastWidth * 8]]},
+                        textMaxHeight: {stops: [[4, blastHeight], [5, blastHeight * 2], [6, blastHeight * 4], [7, blastHeight * 8]]}
+                    }
+                });
+                _marker.defaultWidth = blastWidth;
+                _marker.defaultHeight = blastHeight;
+                _marker.markerType = typ;
+                this.blastMarkers[blast.id] = _marker;
+                if (this.blastIdWithTunnel[tunnelData.id].indexOf(blast.id) < 0) {
+                    if (isUpdated) {
+                        this.blastIdWithTunnel[tunnelData.id].unshift(blast.id);
+                    } else {
+                        this.blastIdWithTunnel[tunnelData.id].push(blast.id);
+                    }
+                }
+                this.$store.commit('addBlast', blast);
+                this._handleBlastClickEvent(_marker)
+                this.blastLayers[window.CONSTANTS.TUNNEL_TYPE.CAVERN].addGeometry(_marker);
+                this.drawWork(blast);
+            },
+            _handleBlastClickEvent(marker) {
+                marker.on('click', (e) => {
+                    this.handleClearSelectItem();
+                    let _marker = this.blastMarkers[marker.getId()];
+                    if (_marker != null) {
+                        _marker.updateSymbol({
+                                markerLineColor: '#000000',
+                                markerLineWidth: 1,
+                                markerFill: this.colorMap['selected'],
+                                markerOpacity: 1
+                        });
+                        this.closeMenu();
+                        this.setCurrentBlastId(_marker.getId());
+                        this.setCurrentMarker(_marker);
+                        this.setBlastType(_marker.type);
+                        this.setCurrentType(window.CONSTANTS.TYPE.SELECT_BLAST);
+                        e.domEvent.stopPropagation();
+                    }
+                });
+            },
+            drawWork(blast) {
+                // TODO:
+                if (blast.state === window.CONSTANTS.BLAST_STATE.IN_PROGRESS) {
+                   let tmp = this.workIdWithBlast[blast.id][0],  // 0 is Main Work
+                       tmp1 = this.workIdWithBlast[blast.id][1],  // 1 is Supporting
+                       tmp2 = this.workIdWithBlast[blast.id][2],  // 2 is Idle
+                       latestWork = null,
+                       latestSupporting = null,
+                       latestIdle = null,
+                       latestTmpData = null,
+                       currentCategory = null,
+                        currentTyp = null,
+                        currentWorkId = null;
+
+                   if (tmp.length > 0) {
+                       latestWork = this.$store.getters.getWork(tmp[0]);
+                       if (latestWork.state == window.CONSTANTS.WORK_STATE.IN_PROGRESS ||
+                           latestWork.state == window.CONSTANTS.WORK_STATE.STOP) {
+                           latestTmpData = latestWork;
+                           currentCategory = latestWork.category;
+                           currentTyp = latestWork.typ;
+                           currentWorkId = latestWork.id;
+                       } else {
+                           latestTmpData = latestWork;
+                           currentCategory = latestWork.category;
+                           currentTyp = latestWork.typ;
+                           currentWorkId = latestWork.id;
+                       }
+                   }
+                   if (tmp1.length > 0) {
+                       latestSupporting = this.$store.getters.getWork(tmp1[0]);
+                       if (latestSupporting.state == window.CONSTANTS.WORK_STATE.IN_PROGRESS ||
+                           latestSupporting.state == window.CONSTANTS.WORK_STATE.STOP) {
+                           currentCategory = latestSupporting.category;
+                           currentTyp = latestSupporting.typ;
+                           currentWorkId = latestSupporting.id;
+                       } else {
+                           if (latestTmpData != null) {
+                               if (latestTmpData.last_updated_time < latestSupporting.last_updated_time) {
+                                   latestTmpData = latestSupporting;
+                                   currentCategory = latestSupporting.category;
+                                   currentTyp = latestSupporting.typ;
+                                   currentWorkId = latestSupporting.id;
+                               }
+                           } else {
+                               latestTmpData = latestSupporting;
+                               currentCategory = latestSupporting.category;
+                               currentTyp = latestSupporting.typ;
+                               currentWorkId = latestSupporting.id;
+                           }
+                       }
+                   }
+                   if (tmp2.length > 0) {
+                       latestIdle = this.$store.getters.getWork(tmp2[0]);
+                       if (latestIdle.state == window.CONSTANTS.WORK_STATE.IN_PROGRESS ||
+                           latestIdle.state == window.CONSTANTS.WORK_STATE.STOP) {
+                           currentCategory = latestIdle.category;
+                           currentTyp = latestIdle.typ;
+                           currentWorkId = latestIdle.id;
+                       } else {
+                           if (latestTmpData != null) {
+                               if (latestTmpData.last_updated_time < latestIdle.last_updated_time) {
+                                   latestTmpData = latestIdle;
+                                   currentCategory = latestIdle.category;
+                                   currentTyp = latestIdle.typ;
+                                   currentWorkId = latestIdle.id;
+                               }
+                           } else {
+                               latestTmpData = latestIdle;
+                               currentCategory = latestIdle.category;
+                               currentTyp = latestIdle.typ;
+                               currentWorkId = latestIdle.id;
+                           }
+                       }
+                   }
+                   let fileUrl = '';
+                   if (currentCategory != null && currentTyp != null) {
+                       if (currentCategory == window.CONSTANTS.CATEGORY.MAIN_WORK) {
+                           fileUrl =`${ window.CONSTANTS.URL.BASE_IMG }${ window.CONSTANTS.URL.MAIN[currentTyp] }`;
+                       } else if (currentCategory == window.CONSTANTS.CATEGORY.SUPPORTING) {
+                            fileUrl =`${ window.CONSTANTS.URL.BASE_IMG }${ window.CONSTANTS.URL.SUPPORTING[currentTyp] }`;
+                       } else {
+                            fileUrl =`${ window.CONSTANTS.URL.BASE_IMG }${ window.CONSTANTS.URL.IDLE[currentTyp] }`;
+                       }
+                   }
+                   if (fileUrl !== '') {
+                       let marker = new maptalks.Marker(
+                           [blast.x_loc, blast.y_loc + 0.05], {
+                               id: blast.id,  // TODO:
+                               symbol: {
+                                   'markerFile': fileUrl,
+                                   'markerWidth': {stops: [[4, 20], [5, 30], [6, 50], [7, 80]]},
+                                   'markerHeight': {stops: [[4, 20], [5, 30], [6, 50], [7, 80]]},
+                               }
+                           }
+                       )
+                       this.workLayer.addGeometry(marker);
+                       marker.on('click', (e) => {
+                           this.handleClearSelectItem();
+                           let _blastMarker = this.blastMarkers[blast.id];
+                           if (_blastMarker != null) {
+                               _blastMarker.updateSymbol({
+                                       markerLineColor: '#000000',
+                                       markerLineWidth: 1,
+                                       markerFill: this.colorMap['selected'],
+                                       markerOpacity: 1
+                               });
+                               this.closeMenu();
+                               this.setCurrentBlastId(_blastMarker.getId());
+                               this.setCurrentMarker(_blastMarker);
+                               this.setBlastType(_blastMarker.type);
+                               if (currentWorkId != null) {
+                                   // View the Current Work information
+
+                                   this.services.getWorkDataByWork({"work_id": currentWorkId}, (resData) => {
+                                       console.log("Success to get work Data list", resData);
+                                       this.workEquipmentList = [];
+
+                                       this._.forEach(resData.equipment, workEquipment => {
+                                           this.workEquipmentList.push(workEquipment);
+                                       });
+                                       this.setCurrentWorkId(currentWorkId);
+                                       this.setCurrentType(window.CONSTANTS.TYPE.SELECT_WORK);
+                                   }, (error) => {
+                                       console.log("Failed to work data list.")
+                                   });
+                               } else {
+                                   // View the Blast information
+                                   this.setCurrentType(window.CONSTANTS.TYPE.SELECT_BLAST_INFORMATION);
+                               }
+                               e.domEvent.stopPropagation();
+                           }
+                       });
+                   }
+               }
+            },
+            handleClearSelectItem() {
+                if (this.currentMarker !== null) {
+                    if (this.currentMarker.markerType == window.CONSTANTS.TUNNEL_CATEGORY.TH
+                        || this.currentMarker.markerType == window.CONSTANTS.TUNNEL_CATEGORY.B1
+                        || this.currentMarker.markerType == window.CONSTANTS.TUNNEL_CATEGORY.B2) {
+                        this.currentMarker.updateSymbol({
+                                markerLineColor: this.colorMap[this.currentMarker.markerType],
+                                markerLineWidth: 1,
+                                markerFill: this.colorMap[this.currentMarker.markerType],
+                                markerFillOpacity: this.tunnelOpacity
+                        });
+                    } else {
+                        this.currentMarker.updateSymbol({
+                                markerLineColor: this.colorMap[this.currentMarker.markerType],
+                                markerLineWidth: 1,
+                                markerFill: this.colorMap[this.currentMarker.markerType],
+                                markerFillOpacity: 1
+                        });
+                    }
+                    this.clearAll();
+                }
+            },
+            handleWorkInfoCloseButton() {
+                this.handleClearSelectItem();
+            },
+            handleBasePointInfoCloseButton() {
+                this.handleClearSelectItem();
+            },
+            handleBlastInfoInformationButton(blastId) {
+                this.setCurrentType(window.CONSTANTS.TYPE.SELECT_BLAST_INFORMATION);
+                //this.handleClearSelectItem();
+            },
+            handleBlastInfoCloseButton() {
+                this.handleClearSelectItem();
+            },
+            handleSelectWorkItem(workId) {
+                this.services.getWorkDataByWork({"work_id": workId}, (resData) => {
+                    console.log("Success to get work Data list", resData);
+                    this.workEquipmentList = [];
+
+                    this._.forEach(resData.equipment, workEquipment => {
+                        this.workEquipmentList.push(workEquipment);
+                    });
+                    this.setCurrentWorkId(workId);
+                    this.setCurrentType(window.CONSTANTS.TYPE.SELECT_WORK);
+                }, (error) => {
+                    console.log("Failed to work data list.")
+                });
+            },
+            handleBlastInfoOkButton(data) {
+                this.handleClearSelectItem();
+                this.services.updateBlastInfo(data, (resData) => {
+                    console.log("success to update blast info")
+                }, (error) => {
+                    console.log("fail to update blast info: ", error)
+                });
+            },
+            handleTunnelInfoCloseButton() {
+                this.handleClearSelectItem();
+            },
+            closeMenu() {
+                if (this.contextMenuItem !== null) {
+                    this.contextMenuItem.closeMenu();
+                    this.contextMenuItem = null;
+                }
+                this.map.closeMenu();
+            },
+            setBlastContextMenu(marker, tunnel_id) {
+                marker.setMenu({
+                    items: `<div class="context-menu-container scanner">
+                                <div class="context-menu-top-panel">
+                                    <div class="context-menu-text-wrapper">
+                                        <div class="context-menu-name-text">${ tunnel_id }</div>
+                                    </div>
+                                </div>
+                                <div class="context-menu-bottom-panel">
+                                    <div id="detail-button" class="context-menu-button-frame scanner">
+                                        <div class="context-menu-button-panel">
+                                            <div id="detail-button-text" class="context-menu-button-text">DETAIL ON</div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>`,
+                    width: 350,
+                    custom: true,
+                    dy: -150,
+                    dx: -90,
+                    animation: 'fade'
+                }).openMenu();
+                document.getElementById('detail-button').onclick = () => {
+                    console.log("### click")
+                    marker.closeMenu();
+                }
+            },
+            clearAll() {
+                this.clearCurrentType();
+                this.clearCurrentMarker();
+                this.clearCurrentTunnelId();
+                this.clearTunnelType();
+                this.clearCurrentBlastId();
+                this.clearBlastType();
+                this.clearCurrentWorkId();
+            },
+            clearCurrentType() {
+                this.currentType = null;
+            },
+            clearCurrentMarker() {
+                this.currentMarker = null;
+            },
+            clearCurrentTunnelId() {
+                this.currentTunnelId = null;
+            },
+            clearTunnelType() {
+                this.currentTunnelType = null;
+            },
+            clearCurrentBlastId() {
+                this.currentBlastId = null;
+            },
+            clearBlastType() {
+                this.currentBlastType = null;
+            },
+            clearCurrentWorkId() {
+                this.currentWorkId = null;
+            },
+            setCurrentTunnelId(id) {
+                this.currentTunnelId = id;
+            },
+            setTunnelType(typ) {
+                this.currentTunnelType = typ;
+            },
+            setCurrentBlastId(id) {
+                this.currentBlastId = id;
+            },
+            setCurrentMarker(marker) {
+                this.currentMarker = marker;
+            },
+            setBlastType(typ) {
+                this.currentBlastType = typ;
+            },
+            setCurrentType(typ) {
+                this.currentType = typ;
+            },
+            setCurrentWorkId(workId) {
+                this.currentWorkId = workId;
+            },
+            getCurrentType() {
+                return this.currentType;
+            },
+            getSupportingList() {
+                let supportingList = [];
+                if (this.currentBlastId !== null) {
+                    supportingList = this.workIdWithBlast[this.currentBlastId][1];
+                    if (supportingList == undefined) {
+                        supportingList = [];
+                    }
+                }
+                return supportingList;
+            },
+            getIdleList() {
+                let idleList = [];
+                if (this.currentBlastId !== null) {
+                    idleList = this.workIdWithBlast[this.currentBlastId][2];
+                    if (idleList == undefined) {
+                        idleList = [];
+                    }
+                }
+                return idleList;
+            },
+            getPauseList() {
+                let pauseList = [];
+                if (this.currentworkId !== null) {
+                    pauseList = this.pauseIdWithWork[this.currentWorkId];
+                }
+                return pauseList;
+
+            },
+            getOperatorList() {
+                let operatorList = this.$store.getters.getOperatorList();
+                return operatorList;
+            },
+            getEquipmentList() {
+                let equipmentList = this.$store.getters.getEquipmentList();
+                return equipmentList;
+            },
+            getWorkList() {
+                let workList = [];
+                if (this.currentBlastId !== null) {
+                    workList = this.workIdWithBlast[this.currentBlastId][0];
+                    if (workList == undefined) {
+                        workList = [];
+                    }
+                }
+                return workList;
+            },
         },
         computed: {
             isEmptyUrl() {
@@ -5124,4 +6173,67 @@
         text-align: center;
         font-size: 0.8em;
     }
+
+    .context-menu-container {
+        width: 180px;
+        height: auto;
+        border-radius: 15px;
+        color: white;
+        overflow: hidden;
+        box-shadow: 10px 10px 25px rgba(40, 40, 40, 0.3);
+    }
+
+    .context-menu-container.scanner {
+        background-color: rgb(40, 160, 200);
+    }
+
+    .context-menu-top-panel {
+        position: relative;
+        width: 100%;
+        height: 40px;
+    }
+
+    .context-menu-text-wrapper {
+        position: absolute;
+        width: 100%;
+        bottom: 5px;
+        text-align: center;
+    }
+
+    .context-menu-name-text {
+        font-size: 1.2em;
+        font-weight: bold;
+        margin-top: .5em;
+    }
+
+    .context-menu-bottom-panel {
+        position: relative;
+        width: 100%;
+        height: auto;
+    }
+
+    .context-menu-button-frame {
+        position: relative;
+        width: 100%;
+        height: 35px;
+    }
+
+    .context-menu-button-frame.scanner {
+        background-color: rgb(60, 175, 200);
+        border-top: thin solid rgb(40, 160, 200);
+    }
+
+    .context-menu-button-panel {
+        position: absolute;
+        width: 100%;
+        top: 50%;
+        transform: translateY(-50%);
+        cursor: pointer;
+    }
+
+    .context-menu-button-text {
+        text-align: center;
+        font-size: 0.8em;
+    }
+
 </style>
