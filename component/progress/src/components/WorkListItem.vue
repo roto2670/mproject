@@ -2,7 +2,7 @@
     <div id="workListItem" class="work-list-item-container">
         <div class="work-list-item-text-container"
             @click="handleSelectMenu">
-            {{ workInfo.name }}
+            {{ isDone }} {{ getWorkType }} ({{ getAccumTime }})
         </div>
     </div>
 
@@ -28,6 +28,25 @@ export default {
         }
     },
     computed: {
+        getWorkType() {
+            return window.CONSTANTS.WORK_NAME[this.workInfo.typ];
+        },
+        getAccumTime() {
+            let tmpTime = new Date(0),
+                tmpStr = '';
+            tmpTime.setSeconds(this.workInfo.accum_time);
+            // tmpStr = tmpTime.toISOString().substr(11,8).split(":");
+            // return tmpStr[0] + "H " + tmpStr[1] + "M " + tmpStr[2] + "S";
+            tmpStr = tmpTime.toISOString().substr(11,8);
+            return tmpStr;
+        },
+        isDone() {
+            if (this.workInfo.state == window.CONSTANTS.WORK_STATE.FINISH) {
+                return "(D)";
+            } else {
+                return "";
+            }
+        },
     },
     created() {
         this.workInfo = this.$store.getters.getWork(this.id);
@@ -37,12 +56,17 @@ export default {
 <style>
 .work-list-item-container {
     width: 100%;
-    height: 1.6em;
-    background-color: beige;
+    height: 2.0em;
+    background-color: #ffffff;
     cursor: pointer;
-    border-bottom: 1px solid #000000;
+    border-bottom: 1px solid #dddddd;
+    padding-top: 4px;
+    color: #1b94e2;
+    font-weight: bold;
+    font-size: 1em;
 }
 .work-list-item-text-container {
-    padding-top: 0.2em;
+    width: 100%;
+    padding-top: 0.1em;
 }
 </style>

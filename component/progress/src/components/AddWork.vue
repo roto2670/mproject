@@ -1,29 +1,36 @@
 <template>
     <div v-if="isType()" id="workAddEditor" class="work-add-container">
-      <div class="work-add-title-container">
-        ADD Work
-      </div>
-      <div class="work-add-body-container">
-        <div class="work-add-body-content-container">
-          <div class="work-add-body-content-title">Name</div>
-          <input id="workId" type="text" class="work-add-body-content-message"
-              @change="handleChangeWorkName">
+        <div class="work-add-title-container">
+            ADD ACTIVITY
         </div>
-        <div class="work-add-body-content-container">
-          <div class="work-add-body-content-title">Chainage</div>
-          <input type="text" class="work-add-body-content-message">
+        <div class="work-add-body-container">
+                <div class="work-add-body-content-container">
+                    <div class="work-add-body-content-title">Category</div>
+                    <select id="workType" class="work-add-body-content-message"
+                        @change="handleChangeCategory">
+                        <option value=0>MAIN WORK</option>
+                        <option value=1>SUPPORTING</option>
+                        <option value=2>IDLE TIME</option>
+                    </select>
+                </div>
+                <div class="work-add-body-content-container">
+                    <div class="work-add-body-content-title">Activity</div>
+                    <select id="workKind" class="work-add-body-content-message" v-model="activity">
+                        <option v-for="(value, key) in activityList" :value="value" :key="key"
+                            :disabled="isMainWorkDisabled(value)">{{ key }}</option>
+                    </select>
+                </div>
         </div>
-      </div>
-      <div class="work-add-button-container">
-        <div class="work-add-ok-button"
-            @click="handleOkButton">
-          OK
+        <div class="work-add-button-container">
+            <div class="work-add-ok-button"
+                @click="handleOkButton">
+            OK
+            </div>
+            <div class="work-add-cancle-button"
+                @click="handleCancelButton">
+            CANCEL
+            </div>
         </div>
-        <div class="work-add-cancle-button"
-            @click="handleCancelButton">
-          CANCEL
-        </div>
-      </div>
     </div>
 </template>
 <script>
@@ -36,33 +43,37 @@ export default {
             type: Number,
             default: -1
         },
-        progressId: {
+        blastId: {
             type: String
         }
     },
     data() {
         return {
-            progressInfo: null,
-            chainage: '',
-            workName: ''
+            blastInfo: null,
+            category : 0,
+            activity : 100,
         }
     },
     methods: {
       isType() {
-          this.progressInfo = this.$store.getters.getProgress(this.progressId);
+          this.blastInfo = this.$store.getters.getBlast(this.blastId);
           return this.type == window.CONSTANTS.TYPE.ADD_WORK;
       },
-      handleChangeChainage(e) {
-          this.chainage = e.target.value;
+      isMainWorkDisabled(key) {
+          if (this.category == 0) {
+              return false;
+          } else {
+              return false;
+          }
       },
-      handleChangeWorkName(e) {
-          this.workName = e.target.value;
+      handleChangeCategory(e) {
+          this.category = e.target.value;
       },
       handleOkButton() {
           let data = {
-              progressId: this.progressId,
-              chainage: this.chainage,
-              workName: this.workName
+              blastId: this.blastId,
+              activity: this.activity,
+              category: this.category
           }
           this.$emit('select-ok-button', data);
       },
@@ -71,6 +82,15 @@ export default {
       }
     },
     computed: {
+        activityList() {
+            if (this.category == window.CONSTANTS.CATEGORY.MAIN_WORK) {
+                return window.CONSTANTS.MAIN_WORK;
+            } else if (this.category == window.CONSTANTS.CATEGORY.SUPPORTING) {
+                return window.CONSTANTS.SUPPORTING_WORK;
+            } else {
+                return window.CONSTANTS.IDEL_TIME;
+            }
+        }
     },
     created() {
     }
@@ -83,8 +103,13 @@ export default {
     height: 100%;
     right: 0;
     z-index: 1;
-    background-color: red;
+    background-color: #39B2FF;
+    color: #ffffff;
     cursor: default;
+    border-radius: 10px 0 0 10px!important;
+    font-family: inherit;
+    font-weight: 500;
+    line-height: 1.1;
 }
 .work-add-title-container {
     width: 100%;
@@ -104,18 +129,19 @@ export default {
 .work-add-body-content-title {
     width: 30%;
     height: 2.4em;
-    font-size: 18px;
+    font-size: 15px;
     display: inline-block;
 }
 .work-add-body-content-message {
     width: 70%;
     height: 2.4em;
-    font-size: 18px;
+    font-size: 15px;
     border-radius: 5px;
     border: 1px solid rgb(220, 220, 220);
     padding: 5px;
     box-sizing: border-box;
     display: inline-block;
+    color: #1b94e2;
 }
 
 .work-add-button-container {
@@ -129,11 +155,12 @@ export default {
     padding: 5px;
     font-size: 20px;
     cursor: pointer;
-    width: 5em;
+    width: 6em;
     height: 2em;
     border-radius: 10px;
-    border: 2px solid rgb(220, 220, 220);
+    border: 2px solid #dcdcdc;
     background-color: #ffffff;
+    color: #1b94e2;
 }
 .work-add-cancle-button {
     display: inline-block;
@@ -141,10 +168,11 @@ export default {
     padding: 5px;
     font-size: 20px;
     cursor: pointer;
-    width: 5em;
+    width: 6em;
     height: 2em;
     border-radius: 10px;
-    border: 2px solid rgb(220, 220, 220);
+    border: 2px solid #dcdcdc;
     background-color: #ffffff;
+    color: #1b94e2;
 }
 </style>

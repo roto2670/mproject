@@ -82,9 +82,66 @@ export const getMapFile = (readyCallback) => {
     }
 }
 
+
+export const addBasePoint = (data, successCallback, failCallback) => {
+    axios({
+        url: `${ window.CONSTANTS.URL.CONSOLE }/work/basepoint/add`,
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        data: data
+    }).then(response => {
+        if(response.data) {
+            successCallback(response.data);
+        } else {
+            failCallback(error);
+        }
+    }).catch(error => {
+        failCallback(error);
+    });
+}
+
+export const removeBasePoint = (data, successCallback, failCallback) => {
+    axios({
+        url: `${ window.CONSTANTS.URL.CONSOLE }/work/basepoint/remove`,
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        data: data
+    }).then(response => {
+        if(response.data) {
+            successCallback(response.data);
+        } else {
+            failCallback(error);
+        }
+    }).catch(error => {
+        failCallback(error);
+    });
+}
+
+export const getBasePointList = (successCallback, failCallback) => {
+    axios({
+        url: `${ window.CONSTANTS.URL.CONSOLE }/work/basepoint/get/list`,
+        method: 'GET',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+    }).then(response => {
+        if(response.data) {
+            successCallback(response.data);
+        } else {
+            failCallback(error);
+        }
+    }).catch(error => {
+        failCallback(error);
+    });
+}
+
 export const addTunnel = (data, successCallback, failCallback) => {
     axios({
-        url: `${ window.CONSTANTS.URL.CONSOLE }/workprog/tunnel/add`,
+        url: `${ window.CONSTANTS.URL.CONSOLE }/work/tunnel/add`,
         method: 'POST',
         headers: {
             'Content-Type': 'application/json'
@@ -103,30 +160,12 @@ export const addTunnel = (data, successCallback, failCallback) => {
 
 export const removeTunnel = (data, successCallback, failCallback) => {
     axios({
-        url: `${ window.CONSTANTS.URL.CONSOLE }/workprog/tunnel/remove`,
+        url: `${ window.CONSTANTS.URL.CONSOLE }/work/tunnel/remove`,
         method: 'POST',
         headers: {
             'Content-Type': 'application/json'
         },
         data: data
-    }).then(response => {
-        if(response.data) {
-            successCallback(response.data);
-        } else {
-            failCallback(error);
-        }
-    }).catch(error => {
-        failCallback(error);
-    });
-}
-
-export const getTunnels = (successCallback, failCallback) => {
-    axios({
-        url: `${ window.CONSTANTS.URL.CONSOLE }/workprog/tunnel/get`,
-        method: 'GET',
-        headers: {
-            'Content-Type': 'application/json'
-        },
     }).then(response => {
         if(response.data) {
             successCallback(response.data);
@@ -157,9 +196,46 @@ export const updateTunnel = (data, successCallback, failCallback) => {
     });
 }
 
-export const addProgress = (data, successCallback, failCallback) => {
+export const getTunnelList = (successCallback, failCallback) => {
     axios({
-        url: `${ window.CONSTANTS.URL.CONSOLE }/workprog/progress/add`,
+        url: `${ window.CONSTANTS.URL.CONSOLE }/work/tunnel/get/list`,
+        method: 'GET',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+    }).then(response => {
+        if(response.data) {
+            successCallback(response.data);
+        } else {
+            failCallback(error);
+        }
+    }).catch(error => {
+        failCallback(error);
+    });
+}
+
+export const getTunnelListByBasePoint = (data, successCallback, failCallback) => {
+    axios({
+        url: `${ window.CONSTANTS.URL.CONSOLE }/work/tunnel/get/list/basepoint`,
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        data: data
+    }).then(response => {
+        if(response.data) {
+            successCallback(response.data);
+        } else {
+            failCallback(error);
+        }
+    }).catch(error => {
+        failCallback(error);
+    });
+}
+
+export const addBlast = (data, successCallback, failCallback) => {
+    axios({
+        url: `${ window.CONSTANTS.URL.CONSOLE }/work/blast/add`,
         method: 'POST',
         headers: {
             'Content-Type': 'application/json'
@@ -176,9 +252,27 @@ export const addProgress = (data, successCallback, failCallback) => {
     });
 }
 
-export const getProgress = (data, successCallback, failCallback) => {
+export const getBlastList = (successCallback, failCallback) => {
     axios({
-        url: `${ window.CONSTANTS.URL.CONSOLE }/workprog/progress/get`,
+        url: `${ window.CONSTANTS.URL.CONSOLE }/work/blast/get/list`,
+        method: 'GET',
+        headers: {
+            'Content-Type': 'application/json'
+        }
+    }).then(response => {
+        if(response.data) {
+            successCallback(response.data);
+        } else {
+            failCallback(error);
+        }
+    }).catch(error => {
+        failCallback(error);
+    });
+}
+
+export const getBlastListByTunnel = (data, successCallback, failCallback) => {
+    axios({
+        url: `${ window.CONSTANTS.URL.CONSOLE }/work/blast/get/list/tunnel`,
         method: 'POST',
         headers: {
             'Content-Type': 'application/json'
@@ -195,9 +289,9 @@ export const getProgress = (data, successCallback, failCallback) => {
     });
 }
 
-export const removeProgress = (data, successCallback, failCallback) => {
+export const removeBlast = (data, successCallback, failCallback) => {
     axios({
-        url: `${ window.CONSTANTS.URL.CONSOLE }/workprog/progress/remove`,
+        url: `${ window.CONSTANTS.URL.CONSOLE }/work/blast/remove`,
         method: 'POST',
         headers: {
             'Content-Type': 'application/json'
@@ -214,9 +308,103 @@ export const removeProgress = (data, successCallback, failCallback) => {
     });
 }
 
-export const updateProgress = (data, successCallback, failCallback) => {
+export const updateBlast = (data, successCallback, failCallback) => {
     axios({
-        url: `${ window.CONSTANTS.URL.CONSOLE }/workprog/progress/update`,
+        url: `${ window.CONSTANTS.URL.CONSOLE }/work/blast/update`,
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        data: data
+    }).then(response => {
+        if(response.data) {
+            successCallback(response.data);
+        } else {
+            failCallback(error);
+        }
+    }).catch(error => {
+        failCallback(error);
+    });
+}
+
+export const addBlastInfo = (data, successCallback, failCallback) => {
+    axios({
+        url: `${ window.CONSTANTS.URL.CONSOLE }/work/blastinfo/add`,
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        data: data
+    }).then(response => {
+        if(response.data) {
+            successCallback(response.data);
+        } else {
+            failCallback();
+        }
+    }).catch(error => {
+        failCallback();
+    });
+}
+
+export const getBlastInfoList = (successCallback, failCallback) => {
+    axios({
+        url: `${ window.CONSTANTS.URL.CONSOLE }/work/blastinfo/get/list`,
+        method: 'GET',
+        headers: {
+            'Content-Type': 'application/json'
+        }
+    }).then(response => {
+        if(response.data) {
+            successCallback(response.data);
+        } else {
+            failCallback(error);
+        }
+    }).catch(error => {
+        failCallback(error);
+    });
+}
+
+export const getBlastInfoByBlast = (data, successCallback, failCallback) => {
+    axios({
+        url: `${ window.CONSTANTS.URL.CONSOLE }/work/blastinfo/get/blast`,
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        data: data
+    }).then(response => {
+        if(response.data) {
+            successCallback(response.data);
+        } else {
+            failCallback(error);
+        }
+    }).catch(error => {
+        failCallback(error);
+    });
+}
+
+export const removeBlastInfo = (data, successCallback, failCallback) => {
+    axios({
+        url: `${ window.CONSTANTS.URL.CONSOLE }/work/blastinfo/remove`,
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        data: data
+    }).then(response => {
+        if(response.data) {
+            successCallback(response.data);
+        } else {
+            failCallback(error);
+        }
+    }).catch(error => {
+        failCallback(error);
+    });
+}
+
+export const updateBlastInfo = (data, successCallback, failCallback) => {
+    axios({
+        url: `${ window.CONSTANTS.URL.CONSOLE }/work/blastinfo/update`,
         method: 'POST',
         headers: {
             'Content-Type': 'application/json'
@@ -235,26 +423,7 @@ export const updateProgress = (data, successCallback, failCallback) => {
 
 export const addWork = (data, successCallback, failCallback) => {
     axios({
-        url: `${ window.CONSTANTS.URL.CONSOLE }/workprog/work/add`,
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json'
-        },
-        data: data
-    }).then(response => {
-        if(response.data) {
-            successCallback(response.data);
-        } else {
-            failCallback(error);
-        }
-    }).catch(error => {
-        failCallback(error);
-    });
-}
-
-export const getWork = (data, successCallback, failCallback) => {
-    axios({
-        url: `${ window.CONSTANTS.URL.CONSOLE }/workprog/work/get`,
+        url: `${ window.CONSTANTS.URL.CONSOLE }/work/work/add`,
         method: 'POST',
         headers: {
             'Content-Type': 'application/json'
@@ -273,7 +442,7 @@ export const getWork = (data, successCallback, failCallback) => {
 
 export const updateWork = (data, successCallback, failCallback) => {
     axios({
-        url: `${ window.CONSTANTS.URL.CONSOLE }/workprog/work/update`,
+        url: `${ window.CONSTANTS.URL.CONSOLE }/work/work/update`,
         method: 'POST',
         headers: {
             'Content-Type': 'application/json'
@@ -292,7 +461,44 @@ export const updateWork = (data, successCallback, failCallback) => {
 
 export const removeWork = (data, successCallback, failCallback) => {
     axios({
-        url: `${ window.CONSTANTS.URL.CONSOLE }/workprog/work/remove`,
+        url: `${ window.CONSTANTS.URL.CONSOLE }/work/work/remove`,
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        data: data
+    }).then(response => {
+        if(response.data) {
+            successCallback(response.data);
+        } else {
+            failCallback(error);
+        }
+    }).catch(error => {
+        failCallback(error);
+    });
+}
+
+export const getWorkList = (successCallback, failCallback) => {
+    axios({
+        url: `${ window.CONSTANTS.URL.CONSOLE }/work/work/get/list`,
+        method: 'GET',
+        headers: {
+            'Content-Type': 'application/json'
+        }
+    }).then(response => {
+        if(response.data) {
+            successCallback(response.data);
+        } else {
+            failCallback(error);
+        }
+    }).catch(error => {
+        failCallback(error);
+    });
+}
+
+export const getWorkListByBlast = (data, successCallback, failCallback) => {
+    axios({
+        url: `${ window.CONSTANTS.URL.CONSOLE }/work/work/get/list/blast`,
         method: 'POST',
         headers: {
             'Content-Type': 'application/json'
@@ -312,6 +518,267 @@ export const removeWork = (data, successCallback, failCallback) => {
 export const updateWorkState = (data, successCallback, failCallback) => {
     axios({
         url: `${ window.CONSTANTS.URL.CONSOLE }/workprog/work/state`,
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        data: data
+    }).then(response => {
+        if(response.data) {
+            successCallback(response.data);
+        } else {
+            failCallback(error);
+        }
+    }).catch(error => {
+        failCallback(error);
+    });
+}
+
+export const startWork = (data, successCallback, failCallback) => {
+    axios({
+        url: `${ window.CONSTANTS.URL.CONSOLE }/work/work/start`,
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        data: data
+    }).then(response => {
+        if(response.data) {
+            successCallback(response.data);
+        } else {
+            failCallback(error);
+        }
+    }).catch(error => {
+        failCallback(error);
+    });
+}
+
+export const stopWork = (data, successCallback, failCallback) => {
+    axios({
+        url: `${ window.CONSTANTS.URL.CONSOLE }/work/work/stop`,
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        data: data
+    }).then(response => {
+        if(response.data) {
+            successCallback(response.data);
+        } else {
+            failCallback(error);
+        }
+    }).catch(error => {
+        failCallback(error);
+    });
+}
+
+export const finishWork = (data, successCallback, failCallback) => {
+    axios({
+        url: `${ window.CONSTANTS.URL.CONSOLE }/work/work/finish`,
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        data: data
+    }).then(response => {
+        if(response.data) {
+            successCallback(response.data);
+        } else {
+            failCallback(error);
+        }
+    }).catch(error => {
+        failCallback(error);
+    });
+}
+
+export const getPauseListByWork = (data, successCallback, failCallback) => {
+    axios({
+        url: `${ window.CONSTANTS.URL.CONSOLE }/work/pausehistory/get/list/work`,
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        data: data
+    }).then(response => {
+        if(response.data) {
+            successCallback(response.data);
+        } else {
+            failCallback(error);
+        }
+    }).catch(error => {
+        failCallback(error);
+    });
+}
+
+export const getPauseList = (successCallback, failCallback) => {
+    axios({
+        url: `${ window.CONSTANTS.URL.CONSOLE }/work/pausehistory/get/list`,
+        method: 'GET',
+        headers: {
+            'Content-Type': 'application/json'
+        }
+    }).then(response => {
+        if(response.data) {
+            successCallback(response.data);
+        } else {
+            failCallback(error);
+        }
+    }).catch(error => {
+        failCallback(error);
+    });
+}
+
+export const getActivityList = (successCallback, failCallback) => {
+    axios({
+        url: `${ window.CONSTANTS.URL.CONSOLE }/work/activity/get/list`,
+        method: 'GET',
+        headers: {
+            'Content-Type': 'application/json'
+        }
+    }).then(response => {
+        if(response.data) {
+            successCallback(response.data);
+        } else {
+            failCallback(error);
+        }
+    }).catch(error => {
+        failCallback(error);
+    });
+}
+
+export const getEquipmentList = (successCallback, failCallback) => {
+    axios({
+        url: `${ window.CONSTANTS.URL.CONSOLE }/work/equipment/get/list`,
+        method: 'GET',
+        headers: {
+            'Content-Type': 'application/json'
+        }
+    }).then(response => {
+        if(response.data) {
+            successCallback(response.data);
+        } else {
+            failCallback(error);
+        }
+    }).catch(error => {
+        failCallback(error);
+    });
+}
+
+export const getOperatorList = (successCallback, failCallback) => {
+    axios({
+        url: `${ window.CONSTANTS.URL.CONSOLE }/work/operator/get/list`,
+        method: 'GET',
+        headers: {
+            'Content-Type': 'application/json'
+        }
+    }).then(response => {
+        if(response.data) {
+            successCallback(response.data);
+        } else {
+            failCallback(error);
+        }
+    }).catch(error => {
+        failCallback(error);
+    });
+}
+
+export const getEquipmentInfoList = (successCallback, failCallback) => {
+    axios({
+        url: `${ window.CONSTANTS.URL.CONSOLE }/work/equipment/info/get/list`,
+        method: 'GET',
+        headers: {
+            'Content-Type': 'application/json'
+        }
+    }).then(response => {
+        if(response.data) {
+            successCallback(response.data);
+        } else {
+            failCallback(error);
+        }
+    }).catch(error => {
+        failCallback(error);
+    });
+}
+
+export const addWorkOperator = (data, successCallback, failCallback) => {
+    axios({
+        url: `${ window.CONSTANTS.URL.CONSOLE }/work/work/operator/add`,
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        data: data
+    }).then(response => {
+        if(response.data) {
+            successCallback(response.data);
+        } else {
+            failCallback(error);
+        }
+    }).catch(error => {
+        failCallback(error);
+    });
+}
+
+export const getWorkOperatorByWork = (data, successCallback, failCallback) => {
+    axios({
+        url: `${ window.CONSTANTS.URL.CONSOLE }/work/work/operator/get/list/work`,
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        data: data
+    }).then(response => {
+        if(response.data) {
+            successCallback(response.data);
+        } else {
+            failCallback(error);
+        }
+    }).catch(error => {
+        failCallback(error);
+    });
+}
+
+export const addWorkEquipment = (data, successCallback, failCallback) => {
+    axios({
+        url: `${ window.CONSTANTS.URL.CONSOLE }/work/work/equipment/add`,
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        data: data
+    }).then(response => {
+        if(response.data) {
+            successCallback(response.data);
+        } else {
+            failCallback(error);
+        }
+    }).catch(error => {
+        failCallback(error);
+    });
+}
+
+export const getWorkEquipmentByWork = (data, successCallback, failCallback) => {
+    axios({
+        url: `${ window.CONSTANTS.URL.CONSOLE }/work/work/equipment/get/list/work`,
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        data: data
+    }).then(response => {
+        if(response.data) {
+            successCallback(response.data);
+        } else {
+            failCallback(error);
+        }
+    }).catch(error => {
+        failCallback(error);
+    });
+}
+
+export const getWorkDataByWork = (data, successCallback, failCallback) => {
+    axios({
+        url: `${ window.CONSTANTS.URL.CONSOLE }/work/work/workdata/get/list/work`,
         method: 'POST',
         headers: {
             'Content-Type': 'application/json'

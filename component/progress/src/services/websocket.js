@@ -157,14 +157,32 @@ export class SocketClient {
     _handleEvent(data) {
         if (!!data) {
             switch(data.e) {
+                case window.CONSTANTS.EVENT_TYPE.UPDATE_BASEPOINT_LIST:
+                    this._subscribeHandlers.updateBasePointList(data);
+                break;
                 case window.CONSTANTS.EVENT_TYPE.UPDATE_TUNNEL_LIST:
                     this._subscribeHandlers.updateTunnelList(data);
                 break;
-                case window.CONSTANTS.EVENT_TYPE.UPDATE_PROG_LIST:
-                    this._subscribeHandlers.updateProgressList(data);
+                case window.CONSTANTS.EVENT_TYPE.UPDATE_BLAST_LIST:
+                    this._subscribeHandlers.updateBlastList(data);
+                break;
+                case window.CONSTANTS.EVENT_TYPE.UPDATE_BLAST_INFO_LIST:
+                    this._subscribeHandlers.updateBlastInfoList(data);
                 break;
                 case window.CONSTANTS.EVENT_TYPE.UPDATE_WORK_LIST:
                     this._subscribeHandlers.updateWorkList(data);
+                break;
+                case window.CONSTANTS.EVENT_TYPE.UPDATE_WORK_HISTORY_LIST:
+                    this._subscribeHandlers.updateWorkHistoryList(data);
+                break;
+                case window.CONSTANTS.EVENT_TYPE.UPDATE_PAUSE_HISTORY_LIST:
+                    this._subscribeHandlers.updatePauseHistoryList(data);
+                break;
+                case window.CONSTANTS.EVENT_TYPE.UPDATE_WORK_OPERATOR_LIST:
+                    this._subscribeHandlers.updateWorkOperatorList(data);
+                break;
+                case window.CONSTANTS.EVENT_TYPE.UPDATE_WORK_EQUIPMENT_LIST:
+                    this._subscribeHandlers.updateWorkEquipmentList(data);
                 break;
 //                case window.CONSTANTS.EVENT_TYPE.UPDATED:
 //                    this._subscribeHandlers.updated(data);
