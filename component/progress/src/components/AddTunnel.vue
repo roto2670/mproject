@@ -51,6 +51,7 @@
     </div>
 </template>
 <script>
+import { EventBus } from "@/main";
 export default {
     name: 'AddTunnel',
     components: {
@@ -92,6 +93,13 @@ export default {
         },
         isType() {
             return this.type == window.CONSTANTS.TYPE.ADD_TUNNEL;
+        },
+        _initData() {
+            this.category = 100,
+            this.direction = 0
+            this.tunnelId = ''
+            this.tunnelName = ''
+            this.tunnelLength = 0
         },
         handleOkButton() {
             let data = {
@@ -137,6 +145,9 @@ export default {
     computed: {
     },
     created() {
+        EventBus.$on('add-tunnel-status-init', (v) => {
+            this._initData();
+        })
     },
 }
 </script>

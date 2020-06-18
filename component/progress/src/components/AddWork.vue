@@ -34,6 +34,7 @@
     </div>
 </template>
 <script>
+import { EventBus } from "@/main";
 export default {
     name: 'AddWork',
     components: {
@@ -58,6 +59,11 @@ export default {
       isType() {
           this.blastInfo = this.$store.getters.getBlast(this.blastId);
           return this.type == window.CONSTANTS.TYPE.ADD_WORK;
+      },
+      _initData() {
+          this.blastInfo = null,
+          this.category = 0,
+          this.activity = 100
       },
       isMainWorkDisabled(key) {
           if (this.category == 0) {
@@ -93,6 +99,9 @@ export default {
         }
     },
     created() {
+        EventBus.$on('add-work-status-init', (v) => {
+            this._initData();
+        })
     }
 }
 </script>
