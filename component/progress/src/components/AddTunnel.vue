@@ -25,7 +25,7 @@
           <div class="tunnel-add-body-content-title">Tunnel</div>
           <input id="tunnelName" type="text" class="tunnel-add-body-content-message"
               onkeyup="this.value=this.value.toUpperCase();"
-              maxlength="6" @change="handleChangeName">
+              maxlength="3" @change="handleChangeName">
         </div>
         <div class="tunnel-add-body-content-container">
           <div class="tunnel-add-body-content-title">Tunnel ID</div>
@@ -35,7 +35,7 @@
         <div class="tunnel-add-body-content-container">
           <div class="tunnel-add-body-content-title">Length</div>
           <input id="tunnelLength" type="number" class="tunnel-add-body-content-message"
-              value=0 maxlength="30" @change="handleChangeLength">
+              :value="getTunnelLength()" @change="handleChangeLength">
         </div>
       </div>
       <div class="tunnel-add-button-container">
@@ -67,7 +67,7 @@ export default {
             direction: 0,
             tunnelId: '',
             tunnelName: '',
-            tunnelLength: 0
+            tunnelLength: 100
         }
     },
     methods: {
@@ -114,12 +114,13 @@ export default {
             this._setTunnelId();
         },
         handleChangeLength(e) {
-            this.tunnelLength = e.target.value;
+            this.tunnelLength = parseInt(e.target.value);
+            this.$emit('change-tunnel-length', this.tunnelLength, this.direction);
         },
         handleChangeDirection(e) {
             this.direction = e.target.value;
             this._setTunnelId();
-            this.$emit('change-tunnel-direction', this.direction);
+            this.$emit('change-tunnel-direction', this.direction, this.tunnelLength);
         },
         handleChangeCategory(e) {
             this.category = e.target.value;
@@ -128,6 +129,9 @@ export default {
         getTunnelId() {
             this.tunnelId = this.tunnelName + this._getCategoryName(this.category) + this._getDirectionName(this.direction);
             return this.tunnelId;
+        },
+        getTunnelLength() {
+            return this.tunnelLength;
         },
     },
     computed: {

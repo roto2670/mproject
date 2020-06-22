@@ -74,15 +74,17 @@ window.CONSTANTS = {
     },
     TUNNEL_DEFAULT_SIZE: {
         CAVERN_ROW: {
-            WIDTH: 140,
-            HEIGHT: 18
+            //WIDTH: 140,
+            WIDTH: 0.884,
+            HEIGHT: 18,
+            LOCATION_LENGTH: 0.078
         },
         BASEPOINT: {
             WIDTH: 8,
             HEIGHT:18
         },
         BLAST: {
-            WIDTH: 10
+            // WIDTH: 50
         }
     },
     TYPE: {
