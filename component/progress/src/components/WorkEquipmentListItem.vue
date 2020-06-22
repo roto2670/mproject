@@ -39,10 +39,18 @@ export default {
             return '';
         },
         getName() {
-            return this.equipmentInfo.name;
+            if (this.equipmentInfo) {
+                return this.equipmentInfo.name;
+            } else {
+                return null;
+            }
         },
         getDepartment() {
-            return this.equipmentInfo.department;
+            if (this.equipmentInfo) {
+                return this.equipmentInfo.department;
+            } else {
+                return null;
+            }
         },
     },
     created() {

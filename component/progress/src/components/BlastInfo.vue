@@ -83,6 +83,7 @@
 </template>
 <script>
 import WorkListItem from '@/components/WorkListItem';
+import { EventBus } from "@/main";
 export default {
     name: 'BlastInfo',
     components: {
@@ -155,6 +156,7 @@ export default {
       },
       handleAddWorkButton() {
           if (!this.isFinish) {
+              EventBus.$emit('add-work-status-init');
               this.$emit('select-add-work-button', this.id);
           }
       },

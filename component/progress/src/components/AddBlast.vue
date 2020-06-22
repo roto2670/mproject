@@ -68,6 +68,7 @@
     </div>
 </template>
 <script>
+import { EventBus } from "@/main";
 export default {
     name: 'AddBlast',
     components: {
@@ -106,6 +107,17 @@ export default {
               this.lastBlast = this.$store.getters.getBlast(this.lastBlastId);
           }
           return this.type == window.CONSTANTS.TYPE.ADD_BLAST;
+      },
+      _initData() {
+          this.tunnelInfo = null,
+          this.explosive = 0,
+          this.detonator = 0,
+          this.drillingDepth = 0,
+          this.blastingDate = null,
+          this.blastingTime = null,
+          this.startPoint = 0,
+          this.finishPoint = 0,
+          this.blastingLength = 0
       },
       handleChangeBlastExplosive(e) {
           this.explosive = e.target.value;
@@ -207,6 +219,9 @@ export default {
         }
     },
     created() {
+        EventBus.$on('add-blast-status-init', (v) => {
+            this._initData();
+        })
     }
 }
 </script>

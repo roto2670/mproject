@@ -39,10 +39,18 @@ export default {
             return '';
         },
         getName() {
-            return this.operatorInfo.name;
+            if (this.operatorInfo) {
+                return this.operatorInfo.name;
+            } else {
+                return null;
+            }
         },
         getDepartment() {
-            return this.operatorInfo.department;
+            if (this.operatorInfo) {
+                return this.operatorInfo.department;
+            } else {
+                return null;
+            }
         },
     },
     created() {

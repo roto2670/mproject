@@ -64,6 +64,7 @@ import TunnelInfo from '@/components/TunnelInfo';
 import BlastInfo from '@/components/BlastInfo';
 import BlastInformation from '@/components/BlastInformation';
 import WorkInfo from '@/components/WorkInfo';
+import { EventBus } from "@/main";
 export default {
     name: 'Main',
     components: {
@@ -1059,6 +1060,8 @@ export default {
                 console.log("Success to get work Data list", resData);
                 this.workOperatorIdList = [];
                 this.workEquipmentIdList = [];
+                this.workOperatorList = [];
+                this.workEquipmentList = [];
 
                 this._.forEach(resData.operator, workOperator => {
                     this.workOperatorList.push(workOperator);
@@ -1284,6 +1287,8 @@ export default {
                                     console.log("Success to get work Data list", resData);
                                     this.workOperatorIdList = [];
                                     this.workEquipmentIdList = [];
+                                    this.workOperatorList = [];
+                                    this.workEquipmentList = [];
 
                                     this._.forEach(resData.operator, workOperator => {
                                         this.workOperatorList.push(workOperator);
