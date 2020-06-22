@@ -1058,8 +1058,6 @@ export default {
         handleSelectWorkItem(workId) {
             this.services.getWorkDataByWork({"work_id": workId}, (resData) => {
                 console.log("Success to get work Data list", resData);
-                this.workOperatorIdList = [];
-                this.workEquipmentIdList = [];
                 this.workOperatorList = [];
                 this.workEquipmentList = [];
 
@@ -1285,8 +1283,6 @@ export default {
 
                                 this.services.getWorkDataByWork({"work_id": tmp[0]}, (resData) => {
                                     console.log("Success to get work Data list", resData);
-                                    this.workOperatorIdList = [];
-                                    this.workEquipmentIdList = [];
                                     this.workOperatorList = [];
                                     this.workEquipmentList = [];
 
@@ -1686,7 +1682,6 @@ export default {
             const list = data.v;
             this._.forEach(list, item => {
                 if (data.kind === 'add') {
-                    this.$store.commit('addOperator', item);
                     if (this.workOperatorList.indexOf(item.id) < 0) {
                         this.workOperatorList.push(item);
                     }
@@ -1699,7 +1694,6 @@ export default {
             const list = data.v;
             this._.forEach(list, item => {
                 if (data.kind === 'add') {
-                    this.$store.commit('addEquipment', item);
                     if (this.workEquipmentList.indexOf(item.id) < 0) {
                         this.workEquipmentList.push(item);
                     }
