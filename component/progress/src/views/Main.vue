@@ -12,6 +12,7 @@
             @select-remove-basepoint-button="handleRemoveBasePoint"></BasePointInfo>
         <AddTunnel :type="getCurrentType()"
             @change-tunnel-direction="handleChangeDirectionCavern"
+            @change-tunnel-length="handleChangeLengthCavern"
             @select-ok-button="handleAddTunnelOkButton"
             @select-cancel-button="handleAddTunnelCancelButton"></AddTunnel>
         <TunnelInfo :type="getCurrentType()" :id="currentTunnelId"
@@ -20,6 +21,8 @@
             @select-add-blast-button="handleAddBlast"
             @select-remove-tunnel-button="handleRemoveTunnel"></TunnelInfo>
         <AddBlast :type="getCurrentType()" :tunnelId="currentTunnelId"
+            :lastBlastId="lastBlastId"
+            @change-blasting-length="_handleChangeLengthBlast"
             @select-ok-button="handleAddBlastOkButton"
             @select-cancel-button="handleAddBlastCancelButton"></AddBlast>
         <BlastInfo :type="getCurrentType()" :id="currentBlastId"
@@ -116,6 +119,7 @@ export default {
             currentWorkId: null,
             currentBlastType: null,
             currentMarker: null,
+            lastBlastId: '',
             //
             blastLayer: null,
             workLayer: null,
@@ -186,7 +190,7 @@ export default {
                         this.blastLayers[value].setZIndex(2);
 
                         this.basePointLayers[value] = new maptalks.VectorLayer('b' + value).addTo(this.map);
-                        this.basePointLayers[value].setZIndex(100);
+                        this.basePointLayers[value].setZIndex(0);
                         this.basePointMarkers[value] = {};
                     });
                     this._getActivityList();
@@ -198,13 +202,15 @@ export default {
                     this.blastLayer.setZIndex(2);
                     this.workLayer = new maptalks.VectorLayer('vector1').addTo(this.map);
                     this.workLayer.setZIndex(101);
+
                 });
                 this.map.on('zoomend moveend', (e) => {
                     this.zoomLevel = 50 * (this.map.getZoom() / 11);
                     this._setContextMenuPosition();
                 });
                 this.map.on('click', (e) => {
-                    console.log("##### x : " +  e.coordinate.x + " Y : " + e.coordinate.y);
+                    // TODO:
+                    // console.log("##### x : " +  e.coordinate.x + " Y : " + e.coordinate.y);
                     this.closeInfoWindow();
                     this.closeAddWindow();
                     this.closeMenu();
@@ -221,14 +227,15 @@ export default {
         _getActivityList() {
             this.services.getActivityList(activityList => {
                 // TODO:
-                console.log("Success to get activity list.", activityList);
+                // console.log("Success to get activity list.", activityList);
             }, (error) => {
                 console.log("Failed to get activity list.", error);
             });
         },
         _getEquipmentList() {
             this.services.getEquipmentList(equipmentList => {
-                console.log("Success to get equipment list.", equipmentList);
+                // TODO:
+                // console.log("Success to get equipment list.", equipmentList);
                 this.$store.commit('addEquipmentList', equipmentList);
             }, (error) => {
                 console.log("Failed to get equipment list.", error);
@@ -236,7 +243,8 @@ export default {
         },
         _getOperatorList() {
             this.services.getOperatorList(operatorList => {
-                console.log("Success to get operator list.", operatorList);
+                // TODO:
+                // console.log("Success to get operator list.", operatorList);
                 this.$store.commit('addOperatorList', operatorList);
             }, (error) => {
                 console.log("Failed to get operator list.", error);
@@ -245,14 +253,15 @@ export default {
         _getEquipmentInfoList() {
             this.services.getEquipmentInfoList(equipmentInfoList => {
                 // TODO:
-                console.log("Success to get equipment info list.", equipmentInfoList);
+                // console.log("Success to get equipment info list.", equipmentInfoList);
             }, (error) => {
                 console.log("Failed to get equipment info list.", error);
             });
         },
         _getBasePointList() {
             this.services.getBasePointList(basePointList => {
-                console.log("Success to get basepoint list.");
+                // TODO:
+                // console.log("Success to get basepoint list.");
                 this._.forEach(basePointList, basePoint => {
                     this._drawBasePoint(basePoint);
                 });
@@ -263,7 +272,8 @@ export default {
         },
         _getTunnelList() {
             this.services.getTunnelList(tunnels => {
-                console.log("Success to get tunnels");
+                // TODO:
+                // console.log("Success to get tunnels");
                 this._.forEach(tunnels, tunnel => {
                     this.tunnelIDList.push(tunnel.id);
                     this.blastIdWithTunnel[tunnel.id] = [];
@@ -325,7 +335,7 @@ export default {
                             2: []   // Idel Time
                         }
                     }
-                    this._drawBlast(blast);
+                    this._drawBlast(blast, false);
                     this.blastIDList.push(blast.id);
                 });
                 this._getBlastInfoList();
@@ -516,6 +526,12 @@ export default {
         clearCurrentWorkId() {
             this.currentWorkId = null;
         },
+        setLastBlastId(blastId) {
+            this.lastBlastId = blastId;
+        },
+        clearLastBlastId() {
+            this.lastBlastId = '';
+        },
         clearAll() {
             this.clearCurrentType();
             this.clearCurrentMarker();
@@ -524,6 +540,7 @@ export default {
             this.clearCurrentBlastId();
             this.clearBlastType();
             this.clearCurrentWorkId();
+            this.clearLastBlastId();
         },
         initContextMenu() {
             this.contextMenuOption = {
@@ -603,8 +620,8 @@ export default {
             data.name = value.name;
             data.width = this.currentMarker.defaultWidth;
             data.height = this.currentMarker.defaultHeight;
-            data.x_loc = this.currentMarker.getCoordinates().x;
-            data.y_loc = this.currentMarker.getCoordinates().y;
+            data.x_loc = parseFloat(this.currentMarker.getCoordinates().x.toFixed(4));
+            data.y_loc = parseFloat(this.currentMarker.getCoordinates().y.toFixed(4));
             this.currentMarker.remove();
             this.services.addBasePoint(data, (resData) => {
                 console.log("Success to add basepoint.");
@@ -664,10 +681,12 @@ export default {
         handleAddCavern(basePointId) {
             this.setCurrentType(window.CONSTANTS.TYPE.ADD_TUNNEL);
             this.setTunnelType(window.CONSTANTS.TUNNEL_TYPE.CAVERN);
+            let defaultLength = 100;
             let basePointInfo = this.$store.getters.getBasePoint(basePointId),
-                width = window.CONSTANTS.TUNNEL_DEFAULT_SIZE.CAVERN_ROW.WIDTH,
+                width = parseFloat((window.CONSTANTS.TUNNEL_DEFAULT_SIZE.CAVERN_ROW.WIDTH * defaultLength).toFixed(4)),
                 height = window.CONSTANTS.TUNNEL_DEFAULT_SIZE.CAVERN_ROW.HEIGHT,
-                xLocation = basePointInfo.x_loc + 6.5;
+                xLocation = parseFloat((basePointInfo.x_loc + (window.CONSTANTS.TUNNEL_DEFAULT_SIZE.CAVERN_ROW.LOCATION_LENGTH * (defaultLength / 2))).toFixed(4));
+                //xLocation = basePointInfo.x_loc + 6.5;
             // First is East  ( value == 0)
             // if (direction === window.CONSTANTS.DIRECTION.EAST) {
             //     xLocation += 6.5;
@@ -699,15 +718,32 @@ export default {
             this.tunnelLayers[window.CONSTANTS.TUNNEL_TYPE.CAVERN].addGeometry([marker]);
             this.setCurrentMarker(marker);
         },
-        handleChangeDirectionCavern(direction) {
+        handleChangeDirectionCavern(direction, length) {
             let basePointInfo = this.$store.getters.getBasePoint(this.currentMarker.basepointId),
                 xLocation = basePointInfo.x_loc;
             if (direction == window.CONSTANTS.DIRECTION.EAST) {
-                xLocation += 6.5;
+                // xLocation += ((0.078 * length) / 2);
+                xLocation += parseFloat((window.CONSTANTS.TUNNEL_DEFAULT_SIZE.CAVERN_ROW.LOCATION_LENGTH * (length / 2)).toFixed(4));
             } else {
-                xLocation -= 6.5;
+                //xLocation -= ((0.078 * length) / 2);
+                xLocation -= parseFloat((window.CONSTANTS.TUNNEL_DEFAULT_SIZE.CAVERN_ROW.LOCATION_LENGTH * (length / 2)).toFixed(4));
             }
             this.currentMarker.setCoordinates([xLocation, basePointInfo.y_loc]);
+        },
+        handleChangeLengthCavern(length, direction) {
+            let basePointInfo = this.$store.getters.getBasePoint(this.currentMarker.basepointId),
+                xLocation = basePointInfo.x_loc;
+            if (direction == window.CONSTANTS.DIRECTION.EAST) {
+                //xLocation += ((0.078 * length) / 2);
+                xLocation += parseFloat((window.CONSTANTS.TUNNEL_DEFAULT_SIZE.CAVERN_ROW.LOCATION_LENGTH * (length / 2)).toFixed(4));
+            } else {
+                //xLocation -= ((0.078 * length) / 2);
+                xLocation -= parseFloat((window.CONSTANTS.TUNNEL_DEFAULT_SIZE.CAVERN_ROW.LOCATION_LENGTH * (length / 2)).toFixed(4));
+            }
+            this.currentMarker.setCoordinates([xLocation, basePointInfo.y_loc]);
+            let width = parseFloat((window.CONSTANTS.TUNNEL_DEFAULT_SIZE.CAVERN_ROW.WIDTH * length).toFixed(4));
+            this.currentMarker.setWidth({stops: [[4, width], [5, width * 2], [6, width * 4], [7, width * 8]]});
+            this.currentMarker.defaultWidth = width;
         },
         handleAddTunnelOkButton(value) {
             const data = {}
@@ -805,28 +841,41 @@ export default {
                 console.log("fail to remove tunnel : ", error)
             });
         },
-        _getBlastPosition(tunnelData, count) {
+        _getBlastPosition(tunnelData, oldBlastId, blastLength) {
             let xPosition = tunnelData.x_loc,
                 yPosition = tunnelData.y_loc,
                 _xPosition = 0,
-                _yPosition = 0;
+                _yPosition = 0,
+                _t = 0,
+                _oldBlast = null;
+            if (oldBlastId != null) {
+                _oldBlast = this.$store.getters.getBlast(oldBlastId);
+                xPosition = _oldBlast.x_loc;
+                yPosition = _oldBlast.y_loc;
+            }
 
             if (tunnelData.direction == window.CONSTANTS.DIRECTION.EAST) {
-                _xPosition = (xPosition - ((tunnelData.width / 2) / 11.25));
-                _yPosition = yPosition;
-
-                _xPosition += (((10 / 2) / 11.25) * count);
-                if (count > 1) {
-                    _xPosition += (((10 / 2) / 11.25));
+                let __t = null;
+                if (_oldBlast != null) {
+                    __t = parseFloat(((_oldBlast.width / 2) * 0.088).toFixed(4));
+                    _t = xPosition + __t;
+                } else {
+                    __t = parseFloat(((tunnelData.width / 2) * 0.088).toFixed(4));
+                    _t = xPosition - __t;
                 }
+                _xPosition = _t + parseFloat(((blastLength / 2) * window.CONSTANTS.TUNNEL_DEFAULT_SIZE.CAVERN_ROW.LOCATION_LENGTH).toFixed(4));
+                _yPosition = yPosition;
             } else if (tunnelData.direction == window.CONSTANTS.DIRECTION.WEST) {
-                _xPosition = (xPosition + ((tunnelData.width / 2) / 11.25));
-                _yPosition = yPosition;
-
-                _xPosition -= (((10 / 2) / 11.25) * count);
-                if (count > 1) {
-                    _xPosition -= (((10 / 2) / 11.25));
+                let __t = null;
+                if (_oldBlast != null) {
+                    __t = parseFloat(((_oldBlast.width / 2) * 0.088).toFixed(4));
+                    _t = xPosition - __t;
+                } else {
+                    __t = parseFloat(((tunnelData.width / 2) * 0.088).toFixed(4));
+                    _t = xPosition + __t;
                 }
+                _xPosition = _t - parseFloat(((blastLength / 2) * window.CONSTANTS.TUNNEL_DEFAULT_SIZE.CAVERN_ROW.LOCATION_LENGTH).toFixed(4));
+                _yPosition = yPosition;
             }
             return [_xPosition, _yPosition];
         },
@@ -842,25 +891,31 @@ export default {
                 this._handleAddBlast(tunnelId, tunnelType);
             }
         },
+        _handleChangeLengthBlast(tunnelId, lastBlastId, blastLength) {
+            const tunnelData = this.$store.getters.getTunnel(tunnelId);
+            let position = this._getBlastPosition(tunnelData, lastBlastId, blastLength),
+                width = parseFloat((blastLength * window.CONSTANTS.TUNNEL_DEFAULT_SIZE.CAVERN_ROW.WIDTH).toFixed(4)),
+                height = tunnelData.height;
+            this.currentMarker.setCoordinates(position);
+            this.currentMarker.setWidth({stops: [[4, width], [5, width * 2], [6, width * 4], [7, width * 8]]});
+            this.currentMarker.defaultWidth = width;
+        },
         _handleAddBlast(tunnelId, tunnelType) {
             this.setCurrentTunnelId(tunnelId);
-            // this.setCurrentType(window.CONSTANTS.TYPE.ADD_BLAST);
+            this.setCurrentType(window.CONSTANTS.TYPE.ADD_BLAST);
             const tunnelData = this.$store.getters.getTunnel(tunnelId),
                   data = {};
 
-            let count = this.blastIdWithTunnel[tunnelId].length;
-            console.log("##### count : ", count);
-            // TODO:  ????
-            if (count === 0) {
-                count = 1;
-            } else if (count === 1) {
-                count += 1;
-            } else {
-                count += 2;
+            let count = this.blastIdWithTunnel[tunnelId].length,
+                lastBlastId = null;
+            if (count >= 1) {
+                lastBlastId = this.blastIdWithTunnel[tunnelId][0];
             }
 
-            let position = this._getBlastPosition(tunnelData, count),
-                blastWidth = window.CONSTANTS.TUNNEL_DEFAULT_SIZE.BLAST.WIDTH,
+            this.setLastBlastId(lastBlastId);
+            let defaultBlastLength = 1,
+                position = this._getBlastPosition(tunnelData, lastBlastId, defaultBlastLength),
+                blastWidth = parseFloat((defaultBlastLength * window.CONSTANTS.TUNNEL_DEFAULT_SIZE.CAVERN_ROW.WIDTH).toFixed(4)),
                 blastHeight = tunnelData.height;
 
             let _marker = new maptalks.TextBox("", position,
@@ -884,7 +939,7 @@ export default {
             _marker.defaultHeight = blastHeight;
             _marker.markerType = window.CONSTANTS.TUNNEL_TYPE.BLAST;
             this.blastLayers[tunnelType].addGeometry(_marker);
-            this.currentMarker = _marker;
+            this.setCurrentMarker(_marker);
             let bif = {
                 explosive: 0,
                 detonator: 0,
@@ -895,7 +950,8 @@ export default {
                 finish_point: 0,
                 blasting_length: 0
             }
-            this.handleAddBlastOkButton(tunnelId, bif);
+            // TODO:
+            // this.handleAddBlastOkButton(tunnelId, bif);
         },
         handleAddBlastOkButton(tunnelId, value) {
             const data = {'blast': {},
@@ -918,7 +974,7 @@ export default {
             data.info.blast_id = blastId;
             data.info.id = this._getUUID();
 
-            this.blastIdWithTunnel[tunnelId].push(data.id);
+            this.blastIdWithTunnel[tunnelId].unshift(data.blast.id);
             this.services.addBlast(data, (resData) => {
                 console.log("success to add blast.")
                 this.currentMarker.remove();
@@ -949,7 +1005,7 @@ export default {
         handleBlastInfoCloseButton() {
             this.handleClearSelectItem();
         },
-        _drawBlast(blast) {
+        _drawBlast(blast, isUpdated) {
             const tunnelData = this.$store.getters.getTunnel(blast.tunnel_id),
                   position = [blast.x_loc, blast.y_loc],
                   blastWidth = blast.width,
@@ -986,7 +1042,13 @@ export default {
             _marker.defaultHeight = blastHeight;
             _marker.markerType = typ;
             this.blastMarkers[blast.id] = _marker;
-            this.blastIdWithTunnel[tunnelData.id].push(blast.id);
+            if (this.blastIdWithTunnel[tunnelData.id].indexOf(blast.id) < 0) {
+                if (isUpdated) {
+                    this.blastIdWithTunnel[tunnelData.id].unshift(blast.id);
+                } else {
+                    this.blastIdWithTunnel[tunnelData.id].push(blast.id);
+                }
+            }
             this.$store.commit('addBlast', blast);
             this._handleBlastClickEvent(_marker)
             this.blastLayers[window.CONSTANTS.TUNNEL_TYPE.CAVERN].addGeometry(_marker);
@@ -1543,7 +1605,7 @@ export default {
                             1: [],  // Supporting
                             2: []   // Idel Time
                         }
-                        this._drawBlast(item);
+                        this._drawBlast(item, true);
                     }
                     this.$store.commit('addBlast', item);
                 } else if (data.kind === 'remove') {
