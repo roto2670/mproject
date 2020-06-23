@@ -68,7 +68,6 @@
     </div>
 </template>
 <script>
-import { EventBus } from "@/main";
 export default {
     name: 'AddBlast',
     components: {
@@ -101,23 +100,25 @@ export default {
         }
     },
     methods: {
+      _clearData() {
+          this.tunnelInfo = null;
+          this.lastBlast = null;
+          this.explosive = 0;
+          this.detonator = 0;
+          this.drillingDepth = 0;
+          this.blastingDate = null;
+          this.blastingTime = null;
+          this.startPoint = 0;
+          this.finishPoint = 0;
+          this.blastingLength = 0;
+          this.isChangeFinishPoint = false;
+      },
       isType() {
           this.tunnelInfo = this.$store.getters.getTunnel(this.tunnelId);
           if (this.lastBlastId != '') {
               this.lastBlast = this.$store.getters.getBlast(this.lastBlastId);
           }
           return this.type == window.CONSTANTS.TYPE.ADD_BLAST;
-      },
-      _initData() {
-          this.tunnelInfo = null,
-          this.explosive = 0,
-          this.detonator = 0,
-          this.drillingDepth = 0,
-          this.blastingDate = null,
-          this.blastingTime = null,
-          this.startPoint = 0,
-          this.finishPoint = 0,
-          this.blastingLength = 0
       },
       handleChangeBlastExplosive(e) {
           this.explosive = e.target.value;
@@ -156,25 +157,12 @@ export default {
               blasting_length: this.blastingLength
           }
           this.$emit('select-ok-button', this.tunnelId, data);
-          this.clearData();
+          this._clearData();
       },
       handleCancelButton() {
           this.$emit('select-cancel-button', {});
-          this.clearData();
+          this._clearData();
       },
-      clearData() {
-          this.tunnelInfo = null;
-          this.lastBlast = null
-          this.explosive = 0;
-          this.detonator = 0;
-          this.drillingDepth = 0;
-          this.blastingDate = null;
-          this.blastingTime = null;
-          this.startPoint = 0;
-          this.finishPoint = 0;
-          this.blastingLength = 0;
-          this.isChangeFinishPoint = false;
-      }
     },
     computed: {
         getTunnelName() {
@@ -219,9 +207,6 @@ export default {
         }
     },
     created() {
-        EventBus.$on('add-blast-status-init', (v) => {
-            this._initData();
-        })
     }
 }
 </script>

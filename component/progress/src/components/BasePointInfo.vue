@@ -56,7 +56,6 @@
     </div>
 </template>
 <script>
-import { EventBus } from "@/main";
 export default {
     name: 'BasePointInfo',
     components: {
@@ -109,7 +108,6 @@ export default {
           this.$emit('select-add-cavern-button', this.id, window.CONSTANTS.DIRECTION.EAST);
       },
       handleAddWestCavernButton() {
-          EventBus.$emit('add-tunnel-status-init');
           this.$emit('select-add-cavern-button', this.id, window.CONSTANTS.DIRECTION.WEST);
       },
     },

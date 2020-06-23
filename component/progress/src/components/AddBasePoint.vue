@@ -39,23 +39,28 @@ export default {
         }
     },
     methods: {
-      isType() {
-          return this.type == window.CONSTANTS.TYPE.ADD_BASEPOINT;
-      },
-      handleOkButton() {
-          if (this.basePointName !== null) {
-            let data = {
-                name: this.basePointName
+        _clearData() {
+            this.basePointName = null;
+        },
+        isType() {
+            return this.type == window.CONSTANTS.TYPE.ADD_BASEPOINT;
+        },
+        handleOkButton() {
+            if (this.basePointName !== null) {
+                let data = {
+                    name: this.basePointName
+                }
+                this.$emit('select-ok-button', data);
+                this._clearData();
             }
-             this.$emit('select-ok-button', data);
-          }
-      },
-      handleCancelButton() {
-          this.$emit('select-cancel-button', {});
-      },
-      handleChangeName(e) {
-          this.basePointName = e.target.value;
-      }
+        },
+        handleCancelButton() {
+            this.$emit('select-cancel-button', {});
+            this._clearData();
+        },
+        handleChangeName(e) {
+            this.basePointName = e.target.value;
+        }
     },
     computed: {
     },

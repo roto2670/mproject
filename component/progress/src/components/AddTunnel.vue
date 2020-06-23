@@ -8,9 +8,9 @@
           <div class="tunnel-add-body-content-title">Category</div>
             <select id="category" class="work-info-body-content-message"
                 @change="handleChangeCategory">
-                <option value=100 selected>TH</option>
-                <option value=101>B1</option>
-                <option value=102>B2</option>
+                <option value=100 selected>Top Heading(TH)</option>
+                <option value=101>Bench-01(B1)</option>
+                <option value=102>Bench-02(B2)</option>
             </select>
         </div>
         <div class="tunnel-add-body-content-container">
@@ -35,7 +35,8 @@
         <div class="tunnel-add-body-content-container">
           <div class="tunnel-add-body-content-title">Length</div>
           <input id="tunnelLength" type="number" class="tunnel-add-body-content-message"
-              :value="getTunnelLength()" @change="handleChangeLength">
+              step="0.1" :value="getTunnelLength()"
+              @change="handleChangeLength">
         </div>
       </div>
       <div class="tunnel-add-button-container">
@@ -51,7 +52,6 @@
     </div>
 </template>
 <script>
-import { EventBus } from "@/main";
 export default {
     name: 'AddTunnel',
     components: {
@@ -68,7 +68,7 @@ export default {
             direction: 0,
             tunnelId: '',
             tunnelName: '',
-            tunnelLength: 100
+            tunnelLength: 100.0
         }
     },
     methods: {
@@ -91,15 +91,15 @@ export default {
                 return "W";
             }
         },
+        _clearData() {
+            this.category = 100;
+            this.direction = 0;
+            this.tunnelId = '';
+            this.tunnelName = '';
+            this.tunnelLength = 100.0;
+        },
         isType() {
             return this.type == window.CONSTANTS.TYPE.ADD_TUNNEL;
-        },
-        _initData() {
-            this.category = 100,
-            this.direction = 0
-            this.tunnelId = ''
-            this.tunnelName = ''
-            this.tunnelLength = 0
         },
         handleOkButton() {
             let data = {
@@ -111,18 +111,20 @@ export default {
             }
             if (tunnelName !== null) {
                 this.$emit('select-ok-button', data);
+                this._clearData();
             } else {
             }
         },
         handleCancelButton() {
             this.$emit('select-cancel-button', {});
+            this._clearData();
         },
         handleChangeName(e) {
             this.tunnelName = e.target.value;
             this._setTunnelId();
         },
         handleChangeLength(e) {
-            this.tunnelLength = parseInt(e.target.value);
+            this.tunnelLength = parseFloat(e.target.value);
             this.$emit('change-tunnel-length', this.tunnelLength, this.direction);
         },
         handleChangeDirection(e) {
@@ -139,15 +141,12 @@ export default {
             return this.tunnelId;
         },
         getTunnelLength() {
-            return this.tunnelLength;
+            return this.tunnelLength.toFixed(1);
         },
     },
     computed: {
     },
     created() {
-        EventBus.$on('add-tunnel-status-init', (v) => {
-            this._initData();
-        })
     },
 }
 </script>

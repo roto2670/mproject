@@ -10,9 +10,6 @@ import * as services from '@/services/services.js';
 Vue.config.productionTip = false
 Vue.prototype.services = services;
 Vue.prototype.sweetbox = sweetalert;
-
-export const EventBus = new Vue({});
-
 Vue.use(VueLodash);
 new Vue({
   router,

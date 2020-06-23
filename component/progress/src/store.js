@@ -19,37 +19,37 @@ export default new Vuex.Store({
             return state.basePoint[id];
         },
         getBasePointList: (state) => {
-			      return _.values(state.basePoint);
+			return _.values(state.basePoint);
         },
         getTunnel: (state) => (id) => {
             return state.tunnel[id];
         },
         getTunnelList: (state) => {
-			      return _.values(state.tunnel);
+			return _.values(state.tunnel);
         },
         getBlast: (state) => (id) => {
             return state.blast[id];
         },
         getBlastList: (state) => {
-			      return _.values(state.blast);
+			return _.values(state.blast);
         },
         getBlastInfo: (state) => (id) => {
             return state.blastInfo[id];
         },
         getBlastInfoList: (state) => {
-			      return _.values(state.blastInfo);
+			return _.values(state.blastInfo);
         },
         getWork: (state) => (id) => {
             return state.work[id];
         },
         getWorkList: (state) => {
-			      return _.values(state.work);
+			return _.values(state.work);
         },
         getPause: (state) => (id) => {
             return state.pause[id];
         },
         getPauseList: (state) => {
-			      return _.values(state.pause);
+			return _.values(state.pause);
         },
         getOperator: (state) => (id) => {
             return state.operator[id];

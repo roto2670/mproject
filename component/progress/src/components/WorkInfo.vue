@@ -56,7 +56,7 @@
                 <div class="work-info-body-content-container">
                     <div class="work-info-body-content-title">Category</div>
                     <input type="text" class="work-info-body-content-message"
-                        :value="getWorkCategory" maxlength="30" readonly/>
+                        :value="getWorkCategory" readonly/>
                 </div>
                 <div class="work-info-body-content-container">
                     <div class="work-info-body-content-title">Activity</div>
@@ -66,17 +66,17 @@
                 <div class="work-info-body-content-container">
                     <div class="work-info-body-content-title">State</div>
                     <input type="text" class="work-info-body-content-message"
-                        :value="getWorkState" maxlength="30" readonly/>
+                        :value="getWorkState" readonly/>
                 </div>
                 <div class="work-info-body-content-container">
                     <div class="work-info-body-content-title">Start Time</div>
-                    <input type="datetime-local" class="work-info-body-content-message"
-                        :value="getStartTime" @change="handleChangeWorkStartTime" readonly>
+                    <input type="text" class="work-info-body-content-message"
+                        :value="getStartTimeStr" readonly>
                 </div>
                 <div class="work-info-body-content-container">
                     <div class="work-info-body-content-title">Finish Time</div>
-                    <input type="datetime-local" class="work-info-body-content-message"
-                        :value="getFinishTime" @change="handleChangeWorkFinishTime" readonly>
+                    <input type="text" class="work-info-body-content-message"
+                        :value="getFinishTimeStr" readonly>
                 </div>
 
                 <div class="work-info-body-content-container">
@@ -203,6 +203,14 @@ export default {
         }
     },
     methods: {
+        _clearData() {
+            this.isEdit = false;
+            this.isStart = false;
+            this.isFinish = false;
+            this.startTime = null;
+            this.finishTime = null;
+            this.workInfo = null;
+        },
         isType() {
             if (this.type == window.CONSTANTS.TYPE.SELECT_WORK) {
                 this.workInfo = this.$store.getters.getWork(this.id);
@@ -245,12 +253,14 @@ export default {
             this.workInfo.start_time = this.startTime;
             this.workInfo.finish_time = this.finishTime;
             this.$emit('select-ok-button', this.workInfo);
+            this._clearData();
         },
         handleCancelButton() {
             this.isEdit = false;
         },
         handleCloseButton() {
             this.$emit('select-close-button', {});
+            this._clearData();
         },
         handleChangeWorkStartTime (e) {
             var startTime = new Date(e.target.value).getTime();
@@ -431,7 +441,7 @@ export default {
             return window.CONSTANTS.WORK_STATE_NAME[this.workInfo.state];
         },
         getFinishTime() {
-            let finishTime = null;
+            let finishTime = '';
             if (this.workInfo.state == window.CONSTANTS.WORK_STATE.FINISH) {
                 if (this.workInfo.work_history_list.length > 0) {
                     finishTime = this.workInfo.work_history_list[0].timestamp;
@@ -439,23 +449,60 @@ export default {
             }
             return finishTime;
         },
+        getFinishTimeStr() {
+            let finishTime = '';
+            if (this.workInfo.state == window.CONSTANTS.WORK_STATE.FINISH) {
+                if (this.workInfo.work_history_list.length > 0) {
+                    finishTime = this.workInfo.work_history_list[0].timestamp.substring(0, 16);
+                    finishTime = finishTime.replace("T", ". ");
+                    finishTime = finishTime.replace("-", ". ");
+                    finishTime = finishTime.replace("-", ". ");
+                }
+            }
+            return finishTime;
+        },
         getStartTime() {
-            let startTime = null;
+            let startTime = 'Not Started';
             if (this.workInfo.work_history_list != undefined &&
                 this.workInfo.work_history_list.length > 0) {
                 startTime = this.workInfo.work_history_list[this.workInfo.work_history_list.length - 1].timestamp;
             }
             return startTime;
         },
+        getStartTimeStr() {
+            let startTime = 'Not Started';
+            if (this.workInfo.work_history_list != undefined &&
+                this.workInfo.work_history_list.length > 0) {
+                startTime = this.workInfo.work_history_list[this.workInfo.work_history_list.length - 1].timestamp.substring(0, 16);
+                startTime = startTime.replace("T", ". ");
+                startTime = startTime.replace("-", ". ");
+                startTime = startTime.replace("-", ". ");
+            }
+            return startTime;
+        },
         getTotalTime() {
             let tmpTime = new Date(0);
             tmpTime.setSeconds(this.workInfo.accum_time);
-            return tmpTime.toISOString().substr(11,8);
+            // OLD format
+            // return tmpTime.toISOString().substr(11,8);
+            let tList = tmpTime.toISOString().substr(9,7).split('T');
+            let day = parseInt(tList[0]) - 1;
+            let tStr = tList[1].split(":");
+            let h = tStr[0] + 'H';
+            let m = tStr[1] + "M";
+            return day + "D" + " " + h + " " + m
         },
         getPauseTotalTime() {
             let tmpTime = new Date(0);
             tmpTime.setSeconds(this.workInfo.p_accum_time);
-            return tmpTime.toISOString().substr(11,8);
+            // OLD format
+            // return tmpTime.toISOString().substr(11,8);
+            let tList = tmpTime.toISOString().substr(9,7).split('T');
+            let day = parseInt(tList[0]) - 1;
+            let tStr = tList[1].split(":");
+            let h = tStr[0] + 'H';
+            let m = tStr[1] + "M";
+            return day + "D" + " " + h + " " + m;
         }
     },
     created() {
