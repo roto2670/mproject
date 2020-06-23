@@ -34,7 +34,6 @@
     </div>
 </template>
 <script>
-import { EventBus } from "@/main";
 export default {
     name: 'AddWork',
     components: {
@@ -56,14 +55,14 @@ export default {
         }
     },
     methods: {
-      isType() {
-          this.blastInfo = this.$store.getters.getBlast(this.blastId);
-          return this.type == window.CONSTANTS.TYPE.ADD_WORK;
-      },
-      _initData() {
+      _clearData() {
           this.blastInfo = null,
           this.category = 0,
           this.activity = 100
+      },
+      isType() {
+          this.blastInfo = this.$store.getters.getBlast(this.blastId);
+          return this.type == window.CONSTANTS.TYPE.ADD_WORK;
       },
       isMainWorkDisabled(key) {
           if (this.category == 0) {
@@ -82,9 +81,11 @@ export default {
               category: this.category
           }
           this.$emit('select-ok-button', data);
+          this._clearData();
       },
       handleCancelButton() {
           this.$emit('select-cancel-button', {});
+          this._clearData();
       }
     },
     computed: {
@@ -99,9 +100,6 @@ export default {
         }
     },
     created() {
-        EventBus.$on('add-work-status-init', (v) => {
-            this._initData();
-        })
     }
 }
 </script>

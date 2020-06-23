@@ -19,18 +19,18 @@
         </div>
         <div class="tunnel-info-body-container">
           <div class="tunnel-info-body-content-container">
-            <div class="tunnel-info-body-content-title">Name</div>
+            <div class="tunnel-info-body-content-title">Tunnel ID</div>
             <input type="text" class="tunnel-info-body-content-message" :value="getItemName"
                 readonly>
           </div>
           <div class="tunnel-info-body-content-container">
-            <div class="tunnel-info-body-content-title">Length</div>
+            <div class="tunnel-info-body-content-title">Progress</div>
             <input type="text" class="tunnel-info-body-content-message" :value="getLength"
                 readonly>
           </div>
           <div class="tunnel-info-body-content-container">
             <div class="tunnel-info-body-content-title">Started Date</div>
-            <input v-if="isStarted()" type="datetime-local" class="work-info-body-content-message"
+            <input v-if="isStarted()" type="text" class="work-info-body-content-message"
                 :value="getStartTime" readonly>
             <input v-else type="text" class="tunnel-info-body-content-message" value="Not Started"
                 readonly>
@@ -95,9 +95,7 @@ export default {
           }
       },
       isStarted() {
-          // TODO:
-          let a = this.tunnelInfo.initial_b_time != null;
-          return a;
+          return this.tunnelInfo.initial_b_time != 'None';
       },
       handleOkButton() {
           const data = {};
@@ -133,10 +131,14 @@ export default {
             let curLength = this.tunnelInfo.b_accum_length,
                 totalLength = this.tunnelInfo.length,
                 percent = (curLength / totalLength) * 100;
-            return curLength + "m / " + totalLength + "m ( " + percent + " % )";
+            return curLength.toFixed(1) + "m / " + totalLength.toFixed(1) + "m ( " + percent.toFixed(1) + " % )";
         },
         getStartTime() {
-            return this.tunnelInfo.initial_b_time;
+            let t = this.tunnelInfo.initial_b_time.substring(0, 16);
+            t = t.replace("T", ". ");
+            t = t.replace("-", ". ");
+            t = t.replace("-", ". ");
+            return t;
         },
         getTotalTime() {
             let totalTime = 0,
@@ -145,8 +147,14 @@ export default {
                 totalTime += blast.accum_time;
             });
             tmpTime.setSeconds(totalTime);
-            return tmpTime.toISOString().substr(11,8);
-            return totalTime;
+            // OLD format
+            // return tmpTime.toISOString().substr(11,8);
+            let tList = tmpTime.toISOString().substr(9,7).split('T');
+            let day = parseInt(tList[0]) - 1;
+            let tStr = tList[1].split(":");
+            let h = tStr[0] + 'H';
+            let m = tStr[1] + "M";
+            return day + "D" + " " + h + " " + m;
         }
     },
     created() {

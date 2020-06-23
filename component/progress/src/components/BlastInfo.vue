@@ -83,7 +83,6 @@
 </template>
 <script>
 import WorkListItem from '@/components/WorkListItem';
-import { EventBus } from "@/main";
 export default {
     name: 'BlastInfo',
     components: {
@@ -117,76 +116,114 @@ export default {
         }
     },
     methods: {
-      isType() {
-          if (this.type == window.CONSTANTS.TYPE.SELECT_BLAST) {
-              this.blast = this.$store.getters.getBlast(this.id);
-              this.tunnel = this.$store.getters.getTunnel(this.blast.tunnel_id);
-              this.setState();
-              return true;
-          } else {
-              return false;
-          }
-      },
-      setState() {
-          if (this.blast.state === window.CONSTANTS.WORK_STATE.IN_PROGRESS) {
-              this.isFinish = false;
-          } else {
-              this.isFinish = true;
-           }
-      },
-    //   handleOkButton() {
-    //       const data = {};
-    //       data._id = this.id;
-    //       data.name = this.blastName;
-    //       this.$emit('select-ok-button', data);
-    //   },
-    //   handleCancelButton() {
-    //       this.isEdit = false;
-    //   },
-      handleCloseButton() {
-          this.$emit('select-close-button', {});
-      },
-      handleInformationButton() {
-          this.$emit('select-information-button', this.id);
-      },
-      handleEditBlastButton() {
-          this.isEdit = true;
-      },
-      handleRemoveBlastButton() {
-      },
-      handleAddWorkButton() {
-          if (!this.isFinish) {
-              EventBus.$emit('add-work-status-init');
-              this.$emit('select-add-work-button', this.id);
-          }
-      },
-      handleChangeBlastName(e) {
-          this.blastName = e.target.value;
-      },
-      handleSelectWorkItem(workId) {
-          this.$emit("select-work-item", workId);
-      }
+        _clearData() {
+            this.isEdit = false;
+            this.isFinish = false;
+            this.blastName = '';
+            this.blast = null;
+            this.tunnel = null;
+        },
+        isType() {
+            if (this.type == window.CONSTANTS.TYPE.SELECT_BLAST) {
+                this.blast = this.$store.getters.getBlast(this.id);
+                this.tunnel = this.$store.getters.getTunnel(this.blast.tunnel_id);
+                this.setState();
+                return true;
+            } else {
+                return false;
+            }
+        },
+        setState() {
+            if (this.blast.state === window.CONSTANTS.WORK_STATE.IN_PROGRESS) {
+                this.isFinish = false;
+            } else {
+                this.isFinish = true;
+            }
+        },
+        //   handleOkButton() {
+        //       const data = {};
+        //       data._id = this.id;
+        //       data.name = this.blastName;
+        //       this.$emit('select-ok-button', data);
+        //   },
+        //   handleCancelButton() {
+        //       this.isEdit = false;
+        //   },
+        handleCloseButton() {
+            this.$emit('select-close-button', {});
+            this._clearData();
+        },
+        handleInformationButton() {
+            this.$emit('select-information-button', this.id);
+            this._clearData();
+        },
+        handleEditBlastButton() {
+            this.isEdit = true;
+        },
+        handleRemoveBlastButton() {
+        },
+        handleAddWorkButton() {
+            if (!this.isFinish) {
+                this.$emit('select-add-work-button', this.id);
+                this._clearData();
+            }
+        },
+        handleChangeBlastName(e) {
+            this.blastName = e.target.value;
+        },
+        handleSelectWorkItem(workId) {
+            this.$emit("select-work-item", workId);
+            this._clearData();
+        }
     },
     computed: {
         getMainWorkTime() {
             let tmpTime = new Date(0);
             tmpTime.setSeconds(this.blast.m_accum_time);
-            return tmpTime.toISOString().substr(11,8);
+            // OLD format
+            // return tmpTime.toISOString().substr(11,8);
+            let tList = tmpTime.toISOString().substr(9,7).split('T');
+            let day = parseInt(tList[0]) - 1;
+            let tStr = tList[1].split(":");
+            let h = tStr[0] + 'H';
+            let m = tStr[1] + "M";
+            return day + "D" + " " + h + " " + m;
         },
         getSupportingTime() {
             let tmpTime = new Date(0);
             tmpTime.setSeconds(this.blast.s_accum_time);
-            return tmpTime.toISOString().substr(11,8);
+            // OLD format
+            // return tmpTime.toISOString().substr(11,8);
+            let tList = tmpTime.toISOString().substr(9,7).split('T');
+            let day = parseInt(tList[0]) - 1;
+            let tStr = tList[1].split(":");
+            let h = tStr[0] + 'H';
+            let m = tStr[1] + "M";
+            return day + "D" + " " + h + " " + m;
         },
         getIdleTime() {
             let tmpTime = new Date(0);
             tmpTime.setSeconds(this.blast.i_accum_time);
-            return tmpTime.toISOString().substr(11,8);
+            // OLD format
+            // return tmpTime.toISOString().substr(11,8);
+            let tList = tmpTime.toISOString().substr(9,7).split('T');
+            let day = parseInt(tList[0]) - 1;
+            let tStr = tList[1].split(":");
+            let h = tStr[0] + 'H';
+            let m = tStr[1] + "M";
+            return day + "D" + " " + h + " " + m;
         },
         getTotalTime() {
             let tmpTime = new Date(0);
             tmpTime.setSeconds(this.blast.accum_time);
-            return tmpTime.toISOString().substr(11,8);
+            // OLD format
+            // return tmpTime.toISOString().substr(11,8);
+            let tList = tmpTime.toISOString().substr(9,7).split('T');
+            let day = parseInt(tList[0]) - 1;
+            let tStr = tList[1].split(":");
+            let h = tStr[0] + 'H';
+            let m = tStr[1] + "M";
+            return day + "D" + " " + h + " " + m;
         },
         getTunnelId() {
             return this.tunnel.tunnel_id;
@@ -325,13 +362,13 @@ export default {
 }
 .main-work-list-title {
     display: inline-block;
-    width: 40%;
+    width: 35%;
     text-align: right;
 }
 .main-work-list-time {
     display: inline-block;
     font-size: 0.8em;
-    width: 25%;
+    width: 30%;
 }
 .main-work-list-progress {
     display: inline-block;

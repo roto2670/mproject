@@ -161,7 +161,6 @@
 </template>
 <script>
 import WorkListItem from '@/components/WorkListItem';
-import { EventBus } from "@/main";
 export default {
     name: 'BlastInformation',
     components: {
@@ -206,7 +205,6 @@ export default {
           this.$emit('select-close-button', {});
       },
       handleEditBlastButton() {
-          EventBus.$emit('add-blast-status-init');
           this.isEdit = true;
       },
       handleRemoveBlastButton() {

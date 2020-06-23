@@ -64,7 +64,6 @@ import TunnelInfo from '@/components/TunnelInfo';
 import BlastInfo from '@/components/BlastInfo';
 import BlastInformation from '@/components/BlastInformation';
 import WorkInfo from '@/components/WorkInfo';
-import { EventBus } from "@/main";
 export default {
     name: 'Main',
     components: {
@@ -128,15 +127,26 @@ export default {
                 'selected': '#dddddd',
                 '0': '#a0a0ff',
                 '1': '#00aabb',
-                '3': '#ff0000',
+                '3': '#00aabb',
                 '4': '#0000ff',
-                '100': '#00aabb',
-                '101': '#0070c0',
-                '102': '#92d050',
-                '1000': '#00b050',
-                '1001': '#ffcd8c',
-                '1002': '#a05900',
-            }
+                '100': '#01b050',
+                '101': '#9f5900',
+                '102': '#7031a0',
+                '1000': '#01b050',
+                '1001': '#9f5900',
+                '1002': '#7031a0',
+                // OLD
+                // '100': '#00aabb',
+                // '101': '#0070c0',
+                // '102': '#92d050',
+                // '1000': '#00b050',
+                // '1001': '#ffcd8c',
+                // '1002': '#a05900',
+                'main' : '#ff0a01',
+                'supporting' : '#0f02ff',
+                'idle' : '#feff00'
+            },
+            tunnelOpacity: 0.6
         }
     },
     methods: {
@@ -405,7 +415,7 @@ export default {
                     markerLineColor: this.colorMap[typ],
                     markerLineWidth: 1,
                     markerFill: this.colorMap[typ],
-                    markerFillOpacity: 1
+                    markerFillOpacity: this.tunnelOpacity
                 },
                 symbol: {
                     textMaxWidth: {stops: [[4, width], [5, width * 2], [6, width * 4], [7, width * 8]]},
@@ -570,12 +580,23 @@ export default {
         },
         handleClearSelectItem() {
             if (this.currentMarker !== null) {
-                this.currentMarker.updateSymbol({
-                        markerLineColor: this.colorMap[this.currentMarker.markerType],
-                        markerLineWidth: 1,
-                        markerFill: this.colorMap[this.currentMarker.markerType],
-                        markerFillOpacity: 1
-                });
+                if (this.currentMarker.markerType == window.CONSTANTS.TUNNEL_CATEGORY.TH
+                    || this.currentMarker.markerType == window.CONSTANTS.TUNNEL_CATEGORY.B1
+                    || this.currentMarker.markerType == window.CONSTANTS.TUNNEL_CATEGORY.B2) {
+                    this.currentMarker.updateSymbol({
+                            markerLineColor: this.colorMap[this.currentMarker.markerType],
+                            markerLineWidth: 1,
+                            markerFill: this.colorMap[this.currentMarker.markerType],
+                            markerFillOpacity: this.tunnelOpacity
+                    });
+                } else {
+                    this.currentMarker.updateSymbol({
+                            markerLineColor: this.colorMap[this.currentMarker.markerType],
+                            markerLineWidth: 1,
+                            markerFill: this.colorMap[this.currentMarker.markerType],
+                            markerFillOpacity: 1
+                    });
+                }
                 this.clearAll();
             }
         },
@@ -1019,6 +1040,16 @@ export default {
                     typ = window.CONSTANTS.TUNNEL_TYPE.FINISH_B1;
                 } else {
                     typ = window.CONSTANTS.TUNNEL_TYPE.FINISH_B2;
+                }
+            } else {
+                if (blast.work_list.length > 0) {
+                    if (blast.work_list[0].category == window.CONSTANTS.CATEGORY.MAIN_WORK) {
+                        typ = "main";
+                    } else if (blast.work_list[0].category == window.CONSTANTS.CATEGORY.SUPPORTING) {
+                        typ = "supporting";
+                    } else {
+                        typ = "idle";
+                    }
                 }
             }
 
@@ -1674,6 +1705,9 @@ export default {
                         this.pauseIdWithWork[item.work_id].push(item.id);
                     }
                 } else if (data.kind === 'remove') {
+                    let pause = this.$store.getters.getPause(item);
+                    this.pauseIdWithWork[pause.work_id] = this._.without(this.pauseIdWithWork[pause.work_id], item);
+                    this.$store.commit('removePause', item);
                 } else if (data.kind === 'update') {
                 }
             });
@@ -1686,6 +1720,9 @@ export default {
                         this.workOperatorList.push(item);
                     }
                 } else if (data.kind === 'remove') {
+                    if (this.workOperatorList.indexOf(item) >= 0) {
+                        this.workOperatorList = this._.without(this.workOperatorList, item);
+                    }
                 } else if (data.kind === 'update') {
                 }
             });
@@ -1698,6 +1735,9 @@ export default {
                         this.workEquipmentList.push(item);
                     }
                 } else if (data.kind === 'remove') {
+                    if (this.workEquipmentList.indexOf(item) >= 0) {
+                        this.workEquipmentList = this._.without(this.workEquipmentList, item);
+                    }
                 } else if (data.kind === 'update') {
                 }
             });

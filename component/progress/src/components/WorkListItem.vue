@@ -37,8 +37,14 @@ export default {
             tmpTime.setSeconds(this.workInfo.accum_time);
             // tmpStr = tmpTime.toISOString().substr(11,8).split(":");
             // return tmpStr[0] + "H " + tmpStr[1] + "M " + tmpStr[2] + "S";
-            tmpStr = tmpTime.toISOString().substr(11,8);
-            return tmpStr;
+            // OLD format
+            // return tmpTime.toISOString().substr(11,8);
+            let tList = tmpTime.toISOString().substr(9,7).split('T');
+            let day = parseInt(tList[0]) - 1;
+            let tStr = tList[1].split(":");
+            let h = tStr[0] + 'H';
+            let m = tStr[1] + "M";
+            return day + "D" + " " + h + " " + m;
         },
         isDone() {
             if (this.workInfo.state == window.CONSTANTS.WORK_STATE.FINISH) {
