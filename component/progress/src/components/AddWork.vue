@@ -15,7 +15,8 @@
                 </div>
                 <div class="work-add-body-content-container">
                     <div class="work-add-body-content-title">Activity</div>
-                    <select id="workKind" class="work-add-body-content-message" v-model="activity">
+                    <select id="workKind" class="work-add-body-content-message"
+                        @change="handleChangeActivity">
                         <option v-for="(value, key) in activityList" :value="value" :key="key"
                             :disabled="isMainWorkDisabled(value)">{{ key }}</option>
                     </select>
@@ -50,22 +51,22 @@ export default {
     data() {
         return {
             blastInfo: null,
-            category : 0,
-            activity : 100,
+            category : '0',
+            activity : '100',
         }
     },
     methods: {
       _clearData() {
           this.blastInfo = null,
-          this.category = 0,
-          this.activity = 100
+          this.category = '0',
+          this.activity = '100'
       },
       isType() {
           this.blastInfo = this.$store.getters.getBlast(this.blastId);
           return this.type == window.CONSTANTS.TYPE.ADD_WORK;
       },
       isMainWorkDisabled(key) {
-          if (this.category == 0) {
+          if (this.category == '0') {
               return false;
           } else {
               return false;
@@ -73,6 +74,16 @@ export default {
       },
       handleChangeCategory(e) {
           this.category = e.target.value;
+          if (this.category == window.CONSTANTS.CATEGORY.MAIN_WORK) {
+              this.activity = '100'
+          } else if (this.category == window.CONSTANTS.CATEGORY.SUPPORTING) {
+              this.activity = '200'
+          } else {
+              this.activity = '300'
+          }
+      },
+      handleChangeActivity(e) {
+          this.activity = e.target.value;
       },
       handleOkButton() {
           let data = {

@@ -10,10 +10,16 @@
               :value="getTunnelName" readonly>
         </div>
         <div class="blast-add-body-content-container">
-          <div class="blast-add-body-content-title">Explosive</div>
+          <div class="blast-add-body-content-title">Explosive Bulk</div>
           <input type="number" class="blast-add-body-content-message"
-              :value="getExplosive"
-              @change="handleChangeBlastExplosive">
+              :value="getExplosiveBulk"
+              @change="handleChangeBlastExplosiveBulk">
+        </div>
+        <div class="blast-add-body-content-container">
+          <div class="blast-add-body-content-title">Explosive Cartridge</div>
+          <input type="number" class="blast-add-body-content-message"
+              :value="getExplosiveCartridge"
+              @change="handleChangeBlastExplosiveCartridge">
         </div>
         <div class="blast-add-body-content-container">
           <div class="blast-add-body-content-title">Detonator</div>
@@ -24,7 +30,7 @@
         <div class="blast-add-body-content-container">
           <div class="blast-add-body-content-title">Drilling Depth</div>
           <input type="number" class="blast-add-body-content-message"
-              :value="getDrillingDepth"
+              step="0.1" :value="getDrillingDepth"
               @change="handleChangeBlastDrillingDepth">
         </div>
         <div class="blast-add-body-content-container">
@@ -35,6 +41,7 @@
         <div class="blast-add-body-content-container">
           <div class="blast-add-body-content-title">Blast Time</div>
           <input type="time" class="blast-add-body-content-message"
+              step="1800" min="00:00" max="23:59"
               @change="handleChangeBlastBlastingTime">
         </div>
         <div class="blast-add-body-content-container">
@@ -45,7 +52,7 @@
         <div class="blast-add-body-content-container">
           <div class="blast-add-body-content-title">Finish Point</div>
           <input type="number" class="blast-add-body-content-message"
-              :value="getFinishPoint" :min="getMinFinishPoint"
+              step="0.1" :value="getFinishPoint" :min="getMinFinishPoint"
               :max="getMaxFinishPoint"
               @change="handleChangeBlastFinishPoint">
         </div>
@@ -53,6 +60,22 @@
           <div class="blast-add-body-content-title">Blast Length</div>
           <input type="number" class="blast-add-body-content-message default-cursor"
               :value="getBlastingLength" readonly>
+        </div>
+        <div class="blast-add-body-content-container">
+          <div class="blast-add-body-content-title">Charging Team</div>
+          <select class="blast-add-body-content-message default-cursor"
+              @change="handleChangeChargingTeam">
+              <option disabled selected>Select Team</option>
+              <option v-for="value in getTeamList" :value="value.id" :key="value.id">
+                  {{ value.name }}
+              </option>
+          </select>
+        </div>
+        <div class="blast-add-body-content-container">
+          <div class="blast-add-body-content-title">Charging Team Nos</div>
+          <input type="number" class="blast-add-body-content-message default-cursor"
+              :value="getTeamNos"
+              @change="handleChangeChargingTeamNos" readonly>
         </div>
       </div>
       <div class="blast-add-button-container">
@@ -88,30 +111,36 @@ export default {
         return {
             tunnelInfo: null,
             lastBlast: null,
-            explosive: 0,
+            explosiveBulk: 0,
+            explosiveCartridge: 0,
             detonator: 0,
-            drillingDepth: 0,
+            drillingDepth: 0.0,
             blastingDate: null,
             blastingTime: null,
-            startPoint: 0,
-            finishPoint: 0,
-            blastingLength: 0,
-            isChangeFinishPoint: false
+            startPoint: 0.0,
+            finishPoint: 0.0,
+            blastingLength: 0.0,
+            isChangeFinishPoint: false,
+            teamId: null,
+            teamNos: 0
         }
     },
     methods: {
       _clearData() {
           this.tunnelInfo = null;
           this.lastBlast = null;
-          this.explosive = 0;
+          this.explosiveBulk = 0;
+          this.explosiveCartridge = 0;
           this.detonator = 0;
-          this.drillingDepth = 0;
+          this.drillingDepth = 0.0;
           this.blastingDate = null;
           this.blastingTime = null;
-          this.startPoint = 0;
-          this.finishPoint = 0;
-          this.blastingLength = 0;
+          this.startPoint = 0.0;
+          this.finishPoint = 0.0;
+          this.blastingLength = 0.0;
           this.isChangeFinishPoint = false;
+          this.teamId = null;
+          this.teamNos = 0;
       },
       isType() {
           this.tunnelInfo = this.$store.getters.getTunnel(this.tunnelId);
@@ -120,8 +149,11 @@ export default {
           }
           return this.type == window.CONSTANTS.TYPE.ADD_BLAST;
       },
-      handleChangeBlastExplosive(e) {
-          this.explosive = e.target.value;
+      handleChangeBlastExplosiveBulk(e) {
+          this.explosiveBulk = e.target.value;
+      },
+      handleChangeBlastExplosiveCartridge(e) {
+          this.explosiveCartridge = e.target.value;
       },
       handleChangeBlastDetonator(e) {
           this.detonator = e.target.value;
@@ -145,16 +177,25 @@ export default {
           this.blastingLength = this.finishPoint - this.startPoint;
           this.$emit('change-blasting-length', this.tunnelId, this.lastBlastId, this.blastingLength);
       },
+      handleChangeChargingTeam(e) {
+          this.teamId = e.target.value;
+      },
+      handleChangeChargingTeamNos(e) {
+          this.teamNos = e.target.value;
+      },
       handleOkButton() {
           let data = {
-              explosive: this.explosive,
+              explosive_bulk: this.explosiveBulk,
+              explosive_cartridge: this.explosiveCartridge,
               detonator: this.detonator,
               drilling_depth: this.drillingDepth,
               blasting_date: this.blastingDate,
               blasting_time: this.blastingTime,
               start_point: this.startPoint,
               finish_point: this.finishPoint,
-              blasting_length: this.blastingLength
+              blasting_length: this.blastingLength,
+              team_id: this.teamId,
+              team_nos: this.teamNos
           }
           this.$emit('select-ok-button', this.tunnelId, data);
           this._clearData();
@@ -168,8 +209,11 @@ export default {
         getTunnelName() {
             return `${ this.tunnelInfo.tunnel_id }`;
         },
-        getExplosive() {
-            return this.explosive;
+        getExplosiveBulk() {
+            return this.explosiveBulk;
+        },
+        getExplosiveCartridge() {
+            return this.explosiveCartridge;
         },
         getDetonator() {
             return this.detonator;
@@ -196,14 +240,22 @@ export default {
             return this.finishPoint;
         },
         getMaxFinishPoint() {
-            return this.tunnelInfo.length - this.tunnelInfo.b_accum_length;
+            let ret = this.tunnelInfo.length - this.tunnelInfo.b_accum_length;
+            return ret;
         },
         getMinFinishPoint() {
-            return this.startPoint + 1;
+            let ret = this.startPoint + 1;
+            return ret;
         },
         getBlastingLength() {
             this.blastingLength = this.finishPoint - this.startPoint;
             return this.blastingLength;
+        },
+        getTeamList() {
+            return this.$store.getters.getTeamList();
+        },
+        getTeamNos() {
+            return this.teamNos;
         }
     },
     created() {
@@ -236,18 +288,19 @@ export default {
     width: 100%;
     height: 75%;
     padding: 1em;
+    overflow-y: scroll;
 }
 .blast-add-body-content-container {
     font-size: 1.4em;
 }
 .blast-add-body-content-title {
-    width: 30%;
+    width: 35%;
     height: 2.4em;
     font-size: 15px;
     display: inline-block;
 }
 .blast-add-body-content-message {
-    width: 70%;
+    width: 65%;
     height: 2.4em;
     font-size: 15px;
     border-radius: 5px;

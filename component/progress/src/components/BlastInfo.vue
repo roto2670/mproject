@@ -1,80 +1,242 @@
 <template>
     <div v-if="isType()">
-        <div v-if="isEdit" id="blastInfoEditor" class="blast-info-container">
-        </div>
-        <div v-else id="blastInfoEditor" class="blast-info-container">
+        <div id="blastInfoEditor" class="blast-info-container">
             <div class='panel-close-button' @click="handleCloseButton"></div>
             <div class="blast-info-title-container">
                 Work Information
             </div>
             <div class="blast-info-body-container">
                 <div class="blast-info-body-content-container">
-                    <div class="blast-info-body-content-title">Tunnel ID</div>
+                    <div class="blast-info-body-content-title">Excavt. ID</div>
                     <input class="blast-info-body-content-message" type="text"
                         :value="getTunnelId" readonly>
                 </div>
                 <div class="blast-info-body-content-container">
+                    <div class="blast-info-body-content-title">Status</div>
+                    <input class="blast-info-body-content-message" type="text"
+                        :value="getWorkState" readonly>
+                </div>
+                <div class="blast-info-body-content-container line">
                     <div class="blast-info-body-content-title">Cycle Time</div>
                     <input class="blast-info-body-content-message" type="text"
                         :value="getTotalTime" readonly>
                 </div>
-                <div class="blast-info-body-content-container">
+                <!-- <div class="blast-info-body-content-container">
                     <div class="blast-info-information-button"
                         @click="handleInformationButton">
                     Blast Information
                     </div>
-                </div>
+                </div> -->
+                <div class="blast-info-information-container">
+                    <div class="b-detail-title-container" @click="handleCycleDetail">
+                        <div class="detail-title">Cycle Time Detail </div>
+                        <div class="button-image position" :class="{ down : isCycleDetailClose }"></div>
+                    </div>
+                    <div id="detailInfo" class="detail-container" :class="{ close: isCycleDetailClose }">
+                        <div class="blast-info-body-work-container">
+                            <div class="blast-info-body-work-list-container">
+                                <div class="main-work-list-container">
+                                    <div class="main-work-list-text" onclick="if(mainWorkList.style.display=='none') {mainWorkList.style.display='';} else {mainWorkList.style.display = 'none';}">
+                                        <div class="main-work-list-title">Main Work </div>
+                                        <div class="main-work-list-time">({{getMainWorkTime}})</div>
+                                        <div class="main-work-list-progress"><progress class="progressbar" max="100" :value="getMainWorkPercent"></progress></div>
+                                        <div class="main-work-list-progress-number">({{getMainWorkPercent}}%)</div>
+                                    </div>
+                                    <div id="mainWorkList" style="display: none">
+                                        <WorkListItem v-for="workId in workIdList" :key="workId" :id="workId"
+                                            @select-item="handleSelectWorkItem">
+                                        </WorkListItem>
+                                    </div>
+                                </div>
+                                <div class="supporting-work-list-container">
+                                    <div class="supporting-work-list-text" onclick="if(supportingWorkList.style.display=='none') {supportingWorkList.style.display='';} else {supportingWorkList.style.display = 'none';}">
+                                        <div class="main-work-list-title">Supporting </div>
+                                        <div class="main-work-list-time">({{getSupportingTime}})</div>
+                                        <div class="main-work-list-progress"><progress class="progressbar" max="100" :value="getSupportingPercent"></progress></div>
+                                        <div class="main-work-list-progress-number">({{getSupportingPercent}}%)</div>
+                                    </div>
+                                    <div id="supportingWorkList" style="display: none">
+                                        <WorkListItem v-for="supportingId in supportingIdList" :key="supportingId" :id="supportingId"
+                                            @select-item="handleSelectWorkItem">
+                                        </WorkListItem>
+                                    </div>
+                                </div>
+                                <div class="idle-time-list-container">
+                                    <div class="idle-time-list-text" onclick="if(idleTimeList.style.display=='none') {idleTimeList.style.display='';} else {idleTimeList.style.display = 'none';}">
+                                        <div class="main-work-list-title">Idle Time </div>
+                                        <div class="main-work-list-time">({{getIdleTime}})</div>
+                                        <div class="main-work-list-progress"><progress class="progressbar" max="100" :value="getIdleTimePercent"></progress></div>
+                                        <div class="main-work-list-progress-number">({{getIdleTimePercent}}%)</div>
+                                    </div>
+                                    <div id="idleTimeList" style="display: none">
+                                        <WorkListItem v-for="idleId in idleIdList" :key="idleId" :id="idleId"
+                                            @select-item="handleSelectWorkItem">
+                                        </WorkListItem>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="blast-info-body-work-button-container">
+                                <div class="blast-info-body-work-button-add" :class="{ buttonDisabled: isFinish }"
+                                    @click="handleAddWorkButton">ADD ACTIVITY</div>
+                            </div>
+                        </div>
+                    </div>
 
-                <div class="blast-info-body-work-container">
-                    <div class="blast-info-body-work-title-container">
-                        Activity List
-                    </div>
-                    <div class="blast-info-body-work-list-container">
-                        <div class="main-work-list-container">
-                            <div class="main-work-list-text" onclick="if(mainWorkList.style.display=='none') {mainWorkList.style.display='';} else {mainWorkList.style.display = 'none';}">
-                                <div class="main-work-list-title">Main Work </div>
-                                <div class="main-work-list-time">({{getMainWorkTime}})</div>
-                                <div class="main-work-list-progress"><progress class="progressbar" max="100" :value="getMainWorkPercent"></progress></div>
-                                <div class="main-work-list-progress-number">({{getMainWorkPercent}}%)</div>
+                    <div class="blast-info-information-container">
+                        <div class="b-detail-title-container" @click="handleBlastingDetail">
+                            <div class="detail-title">Blasting Detail </div>
+                            <div class="button-image position" :class="{ down : isBlastingDetailClose }"></div>
+                        </div>
+                        <div id="detailInfo" class="detail-container" :class="{ close: isBlastingDetailClose }">
+                            <div v-if="isEdit">
+                                <!-- isEdit = true -->
+
+                                <div class="blast-info-body-content-container fold">
+                                    <div class="blast-info-body-content-title fold">Blasting Date</div>
+                                    <input class="blast-info-body-content-message fold" type="date"
+                                        @change="handleChangeBlastingDate"
+                                        :value="getBlastingDate">
+                                </div>
+                                <div class="blast-info-body-content-container fold">
+                                    <div class="blast-info-body-content-title fold">Blasting Time</div>
+                                    <input class="blast-info-body-content-message fold" type="time"
+                                        @change="handleChangeBlastingTime"
+                                        :value="getBlastingTime">
+                                </div>
+                                <div class="blast-info-body-content-container fold">
+                                    <div class="blast-info-body-content-title fold">Start Point</div>
+                                    <input class="blast-info-body-content-message fold" type="Number"
+                                        @change="handleChangeStartPoint"
+                                        :value="getStartPointEdit" readonly>
+                                </div>
+                                <div class="blast-info-body-content-container fold">
+                                    <div class="blast-info-body-content-title fold">End Point</div>
+                                    <input class="blast-info-body-content-message fold" type="number"
+                                        @change="handleChangeFinishPoint"
+                                        step="0.1" :value="getFinishPointEdit">
+                                </div>
+                                <div class="blast-info-body-content-container fold">
+                                    <div class="blast-info-body-content-title fold">Drilling Length</div>
+                                    <input class="blast-info-body-content-message fold" type="text"
+                                        @change="handleChangeDrillingDepth"
+                                        :value="getLengthEdit" readonly>
+                                </div>
+                                <div class="blast-info-body-content-container fold">
+                                    <div class="blast-info-body-content-title fold">Explosive Bulk</div>
+                                    <input class="blast-info-body-content-message fold" type="number"
+                                        @change="handleChangeExplosiveBulk"
+                                        :value="getExplosiveBulkEdit">
+                                </div>
+                                <div class="blast-info-body-content-container fold">
+                                    <div class="blast-info-body-content-title fold">Explosive Cartridge</div>
+                                    <input class="blast-info-body-content-message fold" type="number"
+                                        @change="handleChangeExplosiveCartridge"
+                                        :value="getExplosiveCartridgeEdit">
+                                </div>
+                                <div class="blast-info-body-content-container fold">
+                                    <div class="blast-info-body-content-title fold">Detonator</div>
+                                    <input class="blast-info-body-content-message fold" type="Number"
+                                        @change="handleChangeDetonator"
+                                        :value="getDetonatorEdit">
+                                </div>
+                                <div class="blast-info-body-content-container fold">
+                                    <div class="blast-info-body-content-title fold">Drilling Depth</div>
+                                    <input class="blast-info-body-content-message fold" type="Number"
+                                        @change="handleChangeDrillingDepth"
+                                        step="0.1" :value="getDrillingDepthEdit">
+                                </div>
+                                <div class="blast-info-body-content-container fold">
+                                    <div class="blast-info-body-content-title fold">Charging Team</div>
+                                    <select class="blast-info-body-content-message fold"
+                                        @change="handleChangeTeamId">
+                                        <option disabled :selected="isSelectedTeam(null)">Select Team</option>
+                                        <option v-for="value in getTeamEdit" :value="value.id" :key="value.id"
+                                            :selected="isSelectedTeam(value)">
+                                            {{ value.name }}
+                                        </option>
+                                    </select>
+                                    <input class="blast-info-body-content-message fold sub" type="number"
+                                        @change="handleChangeTeamNos"
+                                        :value="getTeamNosEdit">
+                                </div>
+
+
+                                <div class="blast-info-button-container">
+                                    <div class="blast-info-ok-button"
+                                        @click="handleOkButton">
+                                    SAVE
+                                    </div>
+                                    <div class="blast-info-cancle-button"
+                                        @click="handleCancelButton">
+                                    CANCEL
+                                    </div>
+                                </div>
                             </div>
-                            <div id="mainWorkList" style="display: none">
-                                <WorkListItem v-for="workId in workIdList" :key="workId" :id="workId"
-                                    @select-item="handleSelectWorkItem">
-                                </WorkListItem>
+                            <div v-else>
+                                <!-- isEdit = false -->
+                                <div class="blast-info-body-content-container fold">
+                                    <div class="blast-info-body-content-title fold">Blasting Date</div>
+                                    <input class="blast-info-body-content-message fold" type="text"
+                                        :value="getBlastingDate" readonly>
+                                </div>
+                                <div class="blast-info-body-content-container fold">
+                                    <div class="blast-info-body-content-title fold">Blasting Time</div>
+                                    <input class="blast-info-body-content-message fold" type="text"
+                                        :value="getBlastingTime" readonly>
+                                </div>
+                                <div class="blast-info-body-content-container fold">
+                                    <div class="blast-info-body-content-title fold">Start Point</div>
+                                    <input class="blast-info-body-content-message fold" type="text"
+                                        :value="getStartPoint" readonly>
+                                </div>
+                                <div class="blast-info-body-content-container fold">
+                                    <div class="blast-info-body-content-title fold">End Point</div>
+                                    <input class="blast-info-body-content-message fold" type="text"
+                                        :value="getFinishPoint" readonly>
+                                </div>
+                                <div class="blast-info-body-content-container fold">
+                                    <div class="blast-info-body-content-title fold">Drilling Length</div>
+                                    <input class="blast-info-body-content-message fold" type="text"
+                                        :value="getLength" readonly>
+                                </div>
+                                <div class="blast-info-body-content-container fold">
+                                    <div class="blast-info-body-content-title fold">Explosive Bulk</div>
+                                    <input class="blast-info-body-content-message fold" type="text"
+                                        :value="getExplosiveBulk" readonly>
+                                </div>
+                                <div class="blast-info-body-content-container fold">
+                                    <div class="blast-info-body-content-title fold">Explosive Cartridge</div>
+                                    <input class="blast-info-body-content-message fold" type="text"
+                                        :value="getExplosiveCartridge" readonly>
+                                </div>
+                                <div class="blast-info-body-content-container fold">
+                                    <div class="blast-info-body-content-title fold">Detonator</div>
+                                    <input class="blast-info-body-content-message fold" type="text"
+                                        :value="getDetonator" readonly>
+                                </div>
+                                <div class="blast-info-body-content-container fold">
+                                    <div class="blast-info-body-content-title fold">Drilling Depth</div>
+                                    <input class="blast-info-body-content-message fold" type="text"
+                                        :value="getDrillingDepth" readonly>
+                                </div>
+                                <div class="blast-info-body-content-container fold">
+                                    <div class="blast-info-body-content-title fold">Charging Team</div>
+                                    <input class="blast-info-body-content-message fold" type="text"
+                                        :value="getTeam" readonly>
+                                    <input class="blast-info-body-content-message fold sub" type="text"
+                                        :value="getTeamNos" readonly>
+                                </div>
+                                <div class="blast-info-button-container">
+                                    <div class="blast-info-edit-button"
+                                        @click="handleEditButton">
+                                    EDIT
+                                    </div>
+                                </div>
                             </div>
                         </div>
-                        <div class="supporting-work-list-container">
-                            <div class="supporting-work-list-text" onclick="if(supportingWorkList.style.display=='none') {supportingWorkList.style.display='';} else {supportingWorkList.style.display = 'none';}">
-                                <div class="main-work-list-title">Supporting </div>
-                                <div class="main-work-list-time">({{getSupportingTime}})</div>
-                                <div class="main-work-list-progress"><progress class="progressbar" max="100" :value="getSupportingPercent"></progress></div>
-                                <div class="main-work-list-progress-number">({{getSupportingPercent}}%)</div>
-                            </div>
-                            <div id="supportingWorkList" style="display: none">
-                                <WorkListItem v-for="supportingId in supportingIdList" :key="supportingId" :id="supportingId"
-                                    @select-item="handleSelectWorkItem">
-                                </WorkListItem>
-                            </div>
-                        </div>
-                        <div class="idle-time-list-container">
-                            <div class="idle-time-list-text" onclick="if(idleTimeList.style.display=='none') {idleTimeList.style.display='';} else {idleTimeList.style.display = 'none';}">
-                                <div class="main-work-list-title">Idle Time </div>
-                                <div class="main-work-list-time">({{getIdleTime}})</div>
-                                <div class="main-work-list-progress"><progress class="progressbar" max="100" :value="getIdleTimePercent"></progress></div>
-                                <div class="main-work-list-progress-number">({{getIdleTimePercent}}%)</div>
-                            </div>
-                            <div id="idleTimeList" style="display: none">
-                                <WorkListItem v-for="idleId in idleIdList" :key="idleId" :id="idleId"
-                                    @select-item="handleSelectWorkItem">
-                                </WorkListItem>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="blast-info-body-work-button-container">
-                        <div class="blast-info-body-work-button-add" :class="{ buttonDisabled: isFinish }"
-                            @click="handleAddWorkButton">ADD ACTIVITY</div>
-                    </div>
-                </div>
+                    </div> <!-- Blasting detail -->
+
+                </div> <!-- Cycle time detail-->
             </div>
             <div class="blast-info-button-container">
             </div>
@@ -113,6 +275,12 @@ export default {
             blastName: '',
             blast: null,
             tunnel: null,
+            blastDate: "",
+            blastTime: "",
+            blastInformation: null,
+            isCycleDetailClose: true,
+            isBlastingDetailClose: true,
+            blastingLength: 0,
         }
     },
     methods: {
@@ -122,11 +290,19 @@ export default {
             this.blastName = '';
             this.blast = null;
             this.tunnel = null;
+            this.blastDate = "";
+            this.blastTime = "";
+            this.blastInformation = null;
+            this.blastingLength = 0;
+            this.isCycleDetailClose = true;
+            this.isBlastingDetailClose = true;
         },
         isType() {
             if (this.type == window.CONSTANTS.TYPE.SELECT_BLAST) {
                 this.blast = this.$store.getters.getBlast(this.id);
+                this.blastInformation = this.blast.blast_info;
                 this.tunnel = this.$store.getters.getTunnel(this.blast.tunnel_id);
+                this.blastingLength = this.blastInformation.blasting_length;
                 this.setState();
                 return true;
             } else {
@@ -140,24 +316,22 @@ export default {
                 this.isFinish = true;
             }
         },
-        //   handleOkButton() {
-        //       const data = {};
-        //       data._id = this.id;
-        //       data.name = this.blastName;
-        //       this.$emit('select-ok-button', data);
-        //   },
-        //   handleCancelButton() {
-        //       this.isEdit = false;
-        //   },
+        handleOkButton() {
+            this.$emit('select-ok-button', this.blastInformation);
+            this.isEdit = false;
+        },
+        handleCancelButton() {
+            this.isEdit = false;
+        },
         handleCloseButton() {
             this.$emit('select-close-button', {});
             this._clearData();
         },
-        handleInformationButton() {
-            this.$emit('select-information-button', this.id);
-            this._clearData();
-        },
-        handleEditBlastButton() {
+        // handleInformationButton() {
+        //     this.$emit('select-information-button', this.id);
+        //     this._clearData();
+        // },
+        handleEditButton() {
             this.isEdit = true;
         },
         handleRemoveBlastButton() {
@@ -168,13 +342,55 @@ export default {
                 this._clearData();
             }
         },
-        handleChangeBlastName(e) {
-            this.blastName = e.target.value;
-        },
         handleSelectWorkItem(workId) {
             this.$emit("select-work-item", workId);
             this._clearData();
-        }
+        },
+        handleCycleDetail() {
+            this.isCycleDetailClose = !this.isCycleDetailClose;
+        },
+        handleBlastingDetail() {
+            this.isBlastingDetailClose = !this.isBlastingDetailClose;
+        },
+        isSelectedTeam(value) {
+            return this.blastInformation.team_id == value;
+        },
+        handleChangeExplosiveBulk(e) {
+            this.blastInformation.explosive_bulk = e.target.value;
+        },
+        handleChangeExplosiveCartridge(e) {
+            this.blastInformation.explosive_cartridge = e.target.value;
+        },
+        handleChangeDetonator(e) {
+            this.blastInformation.detonator = e.target.value;
+        },
+        handleChangeDrillingDepth(e) {
+            this.blastInformation.drilling_depth = e.target.value;
+        },
+        handleChangeBlastingDate(e) {
+            this.blastDate = e.target.value;
+            this.blastInformation.blasting_time = this.blastDate + " " + this.blastTime;
+        },
+        handleChangeBlastingTime(e) {
+            this.blastTime = e.target.value;
+            this.blastInformation.blasting_time = this.blastDate + " " + this.blastTime;
+        },
+        handleChangeStartPoint(e) {
+            this.blastInformation.start_point = e.target.value;
+            this.blastInformation.blasting_length = this.blastInformation.finish_point - this.blastInformation.start_point;
+            this.blastingLength = this.blastInformation.blasting_length;
+        },
+        handleChangeFinishPoint(e) {
+            this.blastInformation.finish_point = e.target.value;
+            this.blastInformation.blasting_length = this.blastInformation.finish_point - this.blastInformation.start_point;
+            this.blastingLength = this.blastInformation.blasting_length;
+        },
+        handleChangeTeamId(e) {
+            this.blastInformation.team_id = e.target.value;
+        },
+        handleChangeTeamNos(e) {
+            this.blastInformation.team_nos = e.target.value;
+        },
     },
     computed: {
         getMainWorkTime() {
@@ -226,7 +442,21 @@ export default {
             return day + "D" + " " + h + " " + m;
         },
         getTunnelId() {
-            return this.tunnel.tunnel_id;
+            let tunnelID = this.tunnel.tunnel_id;
+            if (this.tunnel.blast_list.length > 0) {
+                let blastInfo = this.tunnel.blast_list[0].blast_info;
+                tunnelID += "_CH." + blastInfo.start_point.toFixed(1)
+                    + '~CH.' + blastInfo.finish_point.toFixed(1);
+            }
+            return tunnelID;
+        },
+        getWorkState() {
+            if (this.tunnel.blast_list.length > 0) {
+                return window.CONSTANTS.WORK_STATE_NAME[this.tunnel.blast_list[0].state];
+            } else {
+                // Not Started
+                return window.CONSTANTS.WORK_STATE_NAME[0];
+            }
         },
         getMainWorkPercent() {
             let mwTime = this.blast.m_accum_time,
@@ -254,6 +484,86 @@ export default {
             } else {
                 return 0;
             }
+        },
+        getExplosiveBulk() {
+            return this.blastInformation.explosive_bulk + ' kg';
+        },
+        getExplosiveBulkEdit() {
+            return this.blastInformation.explosive_bulk;
+        },
+        getExplosiveCartridge() {
+            return this.blastInformation.explosive_cartridge + ' kg';
+        },
+        getExplosiveCartridgeEdit() {
+            return this.blastInformation.explosive_cartridge;
+        },
+        getDetonator() {
+            return this.blastInformation.detonator + ' Nos';
+        },
+        getDetonatorEdit() {
+            return this.blastInformation.detonator;
+        },
+        getDrillingDepth() {
+            return this.blastInformation.drilling_depth.toFixed(1) + 'm';
+        },
+        getDrillingDepthEdit() {
+            return this.blastInformation.drilling_depth.toFixed(1);
+        },
+        getBlastingDate() {
+            let date = null;
+            if (this.blastInformation.blasting_time != null) {
+                date = this.blastInformation.blasting_time.split(' ')[0];
+            }
+            return date;
+        },
+        getBlastingTime() {
+            let time = null;
+            if (this.blastInformation.blasting_time != null) {
+                time = this.blastInformation.blasting_time.split(' ')[1];
+                time = time.substring(0,5);
+            }
+            return time;
+        },
+        getStartPoint() {
+            return this.blastInformation.start_point.toFixed(1) + "m";
+        },
+        getStartPointEdit() {
+            return this.blastInformation.start_point.toFixed(1);
+        },
+        getFinishPoint() {
+            return this.blastInformation.finish_point.toFixed(1) + 'm';
+        },
+        getFinishPointEdit() {
+            return this.blastInformation.finish_point.toFixed(1);
+        },
+        getLength() {
+            return this.blastingLength.toFixed(1) + 'm';
+        },
+        getLengthEdit() {
+            return this.blastingLength.toFixed(1);
+        },
+        getTeam() {
+            let teamId = this.blastInformation.team_id,
+                teamInfo = this.$store.getters.getTeam(teamId);
+            console.log("team id : ", this.teamId)
+            if (teamInfo) {
+                return teamInfo.name;
+            } else {
+                return "Not Selected Team";
+            }
+        },
+        getTeamEdit() {
+            return this.$store.getters.getTeamList();
+        },
+        getTeamNos() {
+            if (this.blastInformation.team_nos) {
+                return this.blastInformation.team_nos + ' Nos';
+            } else {
+                return "0 Nos";
+            }
+        },
+        getTeamNosEdit() {
+            return this.blastInformation.team_nos;
         },
     },
     created() {
@@ -291,17 +601,31 @@ export default {
 }
 .blast-info-body-container {
     width: 100%;
-    height: 75%;
+    height: 85%;
     padding: 1em;
+    overflow-y: scroll;
 }
 .blast-info-body-content-container {
     font-size: 1.4em;
+}
+.blast-info-body-content-container.fold {
+    text-align: right;
+    margin-bottom: 6px;
+}
+.blast-info-body-content-container.line {
+    border-bottom: 2px solid #fefefe;
+    margin-bottom: 10px;
 }
 .blast-info-body-content-title {
     width: 30%;
     height: 2.4em;
     font-size: 15px;
     display: inline-block;
+}
+.blast-info-body-content-title.fold {
+    width: 35%;
+    font-size: 13px;
+    text-align: left;
 }
 .blast-info-body-content-message {
     width: 70%;
@@ -314,6 +638,15 @@ export default {
     box-sizing: border-box;
     display: inline-block;
     cursor: default;
+}
+.blast-info-body-content-message.fold {
+    width: 60%;
+    font-size: 13px;
+    padding-left: 14px;
+}
+.blast-info-body-content-message.sub {
+    margin-left: 30%;
+    margin-bottom: 0.7em;
 }
 .blast-info-information-button {
     display: inline-block;
@@ -332,19 +665,15 @@ export default {
 .blast-info-body-work-container {
     text-align: center;
 }
-.blast-info-body-work-title-container {
-    font-size: 24px;
-    width: 100%;
-    margin-top: 1em;
-    margin-bottom: 0.4em;
-}
 .blast-info-body-work-list-container {
     border: 1px solid #ffffff;
-    width: 100%;
+    width: 90%;
     height: 17em;
     overflow: scroll;
     border-radius: 10px;
-    background-color: #ffffff
+    background-color: #ffffff;
+    margin-top: 0.4em;
+    margin-left: 25px;
 }
 .main-work-list-container {
     width: 100%;
@@ -364,10 +693,11 @@ export default {
     display: inline-block;
     width: 35%;
     text-align: right;
+    font-size: 0.8em;
 }
 .main-work-list-time {
     display: inline-block;
-    font-size: 0.8em;
+    font-size: 0.7em;
     width: 30%;
 }
 .main-work-list-progress {
@@ -376,7 +706,7 @@ export default {
 }
 .main-work-list-progress-number {
     display: inline-block;
-    font-size: 0.8em;
+    font-size: 0.7em;
     width: 15%;
     text-align: left;
 }
@@ -412,17 +742,17 @@ export default {
 }
 .blast-info-body-work-button-add {
     display: inline-block;
-    margin: 5px;
+    margin: 5px 5px 5px 15px;
     padding: 5px;
-    font-size: 16px;
+    font-size: 14px;
     cursor: pointer;
     width: 12em;
     height: 2em;
     border-radius: 10px;
     border: 2px solid #dcdcdc;
-    background-color: #ffffff;
+    background-color: #fffff1;
     color: #1b94e2;
-
+    box-shadow: 2px 2px;
 }
 .blast-info-body-work-button-add.buttonDisabled {
     cursor: not-allowed;
@@ -430,34 +760,50 @@ export default {
 }
 .blast-info-button-container {
     width: 100%;
-    height: 15%;
+    height: 5%;
     text-align: center;
 }
 .blast-info-ok-button {
     display: inline-block;
     margin: 5px;
     padding: 5px;
-    font-size: 20px;
+    font-size: 16px;
     cursor: pointer;
     width: 5em;
-    height: 2em;
+    height: 1.8em;
     border-radius: 10px;
     border: 2px solid rgb(220, 220, 220);
-    background-color: #ffffff;
-    color: #666666;
+    background-color: #fffff1;
+    color: #1b94e2;
+    box-shadow: 2px 2px;
 }
 .blast-info-cancle-button {
     display: inline-block;
     margin: 5px;
     padding: 5px;
-    font-size: 20px;
+    font-size: 16px;
     cursor: pointer;
     width: 5em;
-    height: 2em;
+    height: 1.8em;
     border-radius: 10px;
     border: 2px solid rgb(220, 220, 220);
-    background-color: #ffffff;
-    color: #666666;
+    background-color: #fffff1;
+    color: #1b94e2;
+    box-shadow: 2px 2px;
+}
+.blast-info-edit-button {
+    display: inline-block;
+    margin: 5px;
+    padding: 5px;
+    font-size: 16px;
+    cursor: pointer;
+    width: 10em;
+    height: 1.8em;
+    border-radius: 10px;
+    border: 2px solid rgb(220, 220, 220);
+    background-color: #fffff1;
+    color: #1b94e2;
+    box-shadow: 2px 2px;
 }
 .panel-close-button {
     position: absolute;
@@ -473,4 +819,45 @@ export default {
     top: 10px;
     cursor: pointer;
 }
+
+.blast-info-information-container {
+    width: 100%;
+    height: 2em;
+    text-align: center;
+}
+.b-detail-title-container {
+    width: 100%;
+    height: 100%;
+    margin: 5px;
+    padding: 5px;
+    font-size: 16px;
+    cursor: pointer;
+    border-radius: 10px;
+    border: 2px solid #dcdcdc;
+    background-color: #eef0fa;
+    color: #1b94e2;
+    text-align: center
+}
+.detail-title {
+    display: inline-block;
+    width: 90%;
+}
+.detail-container {
+    padding: 4px;
+}
+.detail-container.close {
+    display: none;
+}
+.button-image.position {
+    position: unset;
+    display: inline-block;
+    width: 15px;
+    height: 15px;
+    background-color: white;
+    background-image: url('../assets/imgs/up-arrow.png');
+}
+.button-image.down {
+    background-image: url('../assets/imgs/down-arrow.png');
+}
+
 </style>

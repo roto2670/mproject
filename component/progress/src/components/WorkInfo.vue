@@ -1,8 +1,15 @@
 <template>
     <div v-if="isType()">
+        <div>
+            <AddWorkEquipmentListItem :isOpen="isOpenAddWorkEquipment"
+                :operatorList="operatorList" :equipmentList="equipmentList"
+                @select-add-button="handleAddEquipmentAddButton"
+                @select-cancel-button="handleAddEquipmentCancelButton">
+            </AddWorkEquipmentListItem>
+        </div>
         <div v-if="isEdit" id="workInfoEditor" class="work-info-container">
             <div class="work-info-title-container">
-                ACTIVITY
+                ACTIVITY DETAILS
             </div>
             <div class="work-info-body-container" :class="{ edit: isEdit }">
                 <div class="work-info-body-content-container">
@@ -16,7 +23,7 @@
                         :value="getWorkType" maxlength="30" readonly/>
                 </div>
                 <div class="work-info-body-content-container">
-                    <div class="work-info-body-content-title">State</div>
+                    <div class="work-info-body-content-title">Status</div>
                     <input id="workState" type="text" class="work-info-body-content-message"
                         :value="getWorkState" maxlength="30" readonly/>
                 </div>
@@ -50,9 +57,14 @@
         <div v-else id="workInfoEditor" class="work-info-container">
             <div class='panel-close-button' @click="handleCloseButton"></div>
             <div class="work-info-title-container">
-                ACTIVITY
+                ACTIVITY DETAILS
             </div>
             <div class="work-info-body-container">
+                <div class="work-info-body-content-container">
+                    <div class="work-info-body-content-title">Excavt. ID</div>
+                    <input type="text" class="work-info-body-content-message"
+                        :value="getTunnelId" readonly/>
+                </div>
                 <div class="work-info-body-content-container">
                     <div class="work-info-body-content-title">Category</div>
                     <input type="text" class="work-info-body-content-message"
@@ -64,7 +76,7 @@
                         :value="getWorkType" maxlength="30" readonly/>
                 </div>
                 <div class="work-info-body-content-container">
-                    <div class="work-info-body-content-title">State</div>
+                    <div class="work-info-body-content-title">Status</div>
                     <input type="text" class="work-info-body-content-message"
                         :value="getWorkState" readonly/>
                 </div>
@@ -93,61 +105,60 @@
                     <div class="work-info-body-button" :class="{ buttonDisabled: isFinish, buttonFinishDisabled: isFinish }"
                         @click="handleFinishWork">Finish</div>
                 </div>
-                <div class="work-info-body-button-container">
+                <div class="work-info-body-button-container line">
                     <div class="work-info-body-button" :class="{ buttonDisabled: isStart }"
                         @click="handleEditButton">Edit</div>
                     <div class="work-info-body-button" :class="{ buttonDisabled: isStart, buttonFinishDisabled: isFinish }"
                         @click="handleRemoveWork">Remove</div>
                 </div>
 
-                <div class="work-info-body-list-container">
-                    <div class="work-info-body-list-title-container">
-                        Pause ( {{ getPauseTotalTime }} )
+                <div class="work-info-pause-detail-container">
+                    <div class="detail-title-container" @click="handlePauseDetail">
+                        <div class="detail-title">Pause Time Detail </div>
+                        <div class="button-image position" :class="{ down : isPauseClose }"></div>
                     </div>
-                    <div class="work-info-body-sub-list-container">
-                        <div class="work-info-content-list-container">
-                            <div id="mainWorkList">
-                                <PauseListItem v-for="(pause, i) in pauseList" :key="pause" :id="pause" :rank="i">
-                                </PauseListItem>
+                    <div id="detailInfo" class="detail-container" :class="{ close: isPauseClose }">
+                        <div class="work-info-body-list-container">
+                            <div class="work-info-body-list-title-container">
+                                Pause ( {{ getPauseTotalTime }} )
+                            </div>
+                            <div class="work-info-body-sub-list-container">
+                                <div class="work-info-content-list-container">
+                                    <div id="mainWorkList">
+                                        <PauseListItem v-for="(pause, i) in pauseList" :key="pause" :id="pause" :rank="i">
+                                        </PauseListItem>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     </div>
-                </div>
 
-                <div class="work-info-body-list-container">
-                    <div class="work-info-body-list-title-container">
-                        Operator List
-                    </div>
-                    <div class="work-info-body-sub-list-container">
-                        <div class="work-info-content-list-container">
-                            <div id="mainWorkList">
-                                <WorkOperatorListItem v-for="workOperator in workOperatorList"
-                                    :key="workOperator.id" :id="workOperator.id" :info="workOperator">
-                                </WorkOperatorListItem>
+
+                    <div class="work-info-equip-detail-container">
+                        <div class="detail-title-container" @click="handleEquipDetail">
+                            <div class="detail-title">Equipment Detail </div>
+                            <div class="button-image position" :class="{ down : isEquipClose }"></div>
+                        </div>
+                        <div id="detailInfo" class="detail-container" :class="{ close: isEquipClose }">
+                            <div class="work-info-body-list-container">
+                                <div class="work-info-body-list-title-container">
+                                    Equipment List
+                                </div>
+                                <div class="work-info-body-sub-list-container">
+                                    <div class="work-info-content-list-container">
+                                        <div id="mainWorkList">
+                                            <WorkEquipmentListItem v-for="workEquipment in workEquipmentList"
+                                                :key="workEquipment.id" :id="workEquipment.id" :info="workEquipment">
+                                            </WorkEquipmentListItem>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="work-info-body-list-button-container">
+                                    <div class="work-info-body-list-button-add" :class="{ buttonDisabled: isFinish }"
+                                        @click="handleAddEquipmentButton">ADD Equipment</div>
+                                </div>
                             </div>
                         </div>
-                    </div>
-                    <div class="work-info-body-list-button-container">
-                        <div class="work-info-body-list-button-add" :class="{ buttonDisabled: isFinish }"
-                            @click="handleAddOperatorButton">ADD Operator</div>
-                    </div>
-                </div>
-                <div class="work-info-body-list-container">
-                    <div class="work-info-body-list-title-container">
-                        Equipment List
-                    </div>
-                    <div class="work-info-body-sub-list-container">
-                        <div class="work-info-content-list-container">
-                            <div id="mainWorkList">
-                                <WorkEquipmentListItem v-for="workEquipment in workEquipmentList"
-                                    :key="workEquipment.id" :id="workEquipment.id" :info="workEquipment">
-                                </WorkEquipmentListItem>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="work-info-body-list-button-container">
-                        <div class="work-info-body-list-button-add" :class="{ buttonDisabled: isFinish }"
-                            @click="handleAddEquipmentButton">ADD Equipment</div>
                     </div>
                 </div>
             </div>
@@ -156,13 +167,13 @@
 </template>
 <script>
 import PauseListItem from '@/components/PauseListItem';
-import WorkOperatorListItem from '@/components/WorkOperatorListItem';
+import AddWorkEquipmentListItem from '@/components/AddWorkEquipmentListItem';
 import WorkEquipmentListItem from '@/components/WorkEquipmentListItem';
 export default {
     name: 'WorkInfo',
     components: {
         PauseListItem,
-        WorkOperatorListItem,
+        AddWorkEquipmentListItem,
         WorkEquipmentListItem,
     },
     props: {
@@ -185,9 +196,6 @@ export default {
         equipmentList: {
             type: Array
         },
-        workOperatorList: {
-            type: Array
-        },
         workEquipmentList: {
             type: Array
         }
@@ -200,6 +208,11 @@ export default {
             startTime: null,
             finishTime: null,
             workInfo: null,
+            blastInfo: null,
+            tunnelInfo: null,
+            isPauseClose: true,
+            isEquipClose: true,
+            isOpenAddWorkEquipment: false
         }
     },
     methods: {
@@ -210,10 +223,17 @@ export default {
             this.startTime = null;
             this.finishTime = null;
             this.workInfo = null;
+            this.blastInfo = null;
+            this.tunnelInfo = null;
+            this.isPauseClose = true;
+            this.isEquipClose = true;
+            this.isOpenAddWorkEquipment = false;
         },
         isType() {
             if (this.type == window.CONSTANTS.TYPE.SELECT_WORK) {
                 this.workInfo = this.$store.getters.getWork(this.id);
+                this.blastInfo = this.$store.getters.getBlast(this.workInfo.blast_id);
+                this.tunnelInfo = this.$store.getters.getTunnel(this.blastInfo.tunnel_id);
                 this.setState();
                 return true;
             } else {
@@ -295,18 +315,24 @@ export default {
         handleStopWork() {
             if (this.isStart && !this.isFinish) {
                 if (this.workInfo.state == window.CONSTANTS.WORK_STATE.IN_PROGRESS) {
+                    let messageList = this.$store.getters.getMessageList(),
+                        inputOptions = {};
+                    this._.forEach(messageList, (message) => {
+                        inputOptions[message.id] = message.message;
+                    });
                     this.sweetbox.fire({
                         title: 'Do you want to pause the work?',
-                        input: 'text',
-                        inputPlaceholder: 'Please write the reason',
+                        input: 'select',
+                        inputPlaceholder: 'Please select the reason',
+                        inputOptions: inputOptions,
                         showCancelButton: true,
                         confirmButtonText: "Pause",
-                        preConfirm: (message) => {
+                        preConfirm: (id) => {
                             let data = {};
                             data.id = this.workInfo.id;
                             data.category = this.workInfo.category;
                             data.typ = this.workInfo.typ;
-                            data.message = message;
+                            data.message = this.$store.getters.getMessage(id).message;
                             data.blast_id = this.workInfo.blast_id;
                             this.services.stopWork(data, (resData) => {
                                 this.workInfo = this.$store.getters.getWork(this.id);
@@ -317,18 +343,6 @@ export default {
                             });
                         }}
                     )
-                    // let data = {};
-                    // data.id = this.workInfo.id;
-                    // data.category = this.workInfo.category;
-                    // data.typ = this.workInfo.typ;
-                    // data.blast_id = this.workInfo.blast_id;
-                    // this.services.stopWork(data, (resData) => {
-                    //     this.workInfo = this.$store.getters.getWork(this.id);
-                    //     this.setState();
-                    //     console.log("success to stop work");
-                    // }, (error) => {
-                    //     console.log("fail to stop work : ", error);
-                    // });
                 } else if (this.workInfo.state == window.CONSTANTS.WORK_STATE.FINISH) {
                     this.sweetbox.fire("Already Finish.");
                 } else {
@@ -368,55 +382,8 @@ export default {
                 }
             }
         },
-        handleAddOperatorButton() {
-            let operatorData = {}
-            this._.forEach(this.operatorList, operator => {
-                operatorData[operator.id] = operator.name;
-            });
-            this.sweetbox.fire({
-                title: "Select Operator",
-                input: "select",
-                inputOptions: operatorData,
-                inputPlaceholder: "Select an operator",
-                showCancelButton: true,
-                preConfirm: (value) => {
-                    let data = {};
-                    data.operator_id = value;
-                    data.accum_time = 0;
-                    data.p_accum_time = 0;
-                    data.work_id = this.id;
-                    this.services.addWorkOperator(data, (resData) => {
-                        console.log("Success add work operator.", resData);
-                    }, (error) => {
-                        console.log("Fail to add work operator : ", error);
-                    });
-                }
-            });
-        },
         handleAddEquipmentButton() {
-            let equipmentData = {};
-            this._.forEach(this.equipmentList, equipment => {
-                equipmentData[equipment.id] = equipment.name;
-            });
-            this.sweetbox.fire({
-                title: "Select Equipment",
-                input: "select",
-                inputOptions: equipmentData,
-                inputPlaceholder: "Select an Equipment",
-                showCancelButton: true,
-                preConfirm: (value) => {
-                    let data = {};
-                    data.equipment_id = value;
-                    data.accum_time = 0;
-                    data.p_accum_time = 0;
-                    data.work_id = this.id;
-                    this.services.addWorkEquipment(data, (resData) => {
-                        console.log("Success add work eqiupment.", resData);
-                    }, (error) => {
-                        console.log("Fail to add work equipment : ", error);
-                    });
-                }
-            });
+            this.isOpenAddWorkEquipment = true;
         },
         formatDate(date) {
             var dateInfo = new Date(date),
@@ -428,9 +395,39 @@ export default {
             if (day.length < 2)
                 day = '0' + day;
             return [year, month, day].join('-');
+        },
+        handlePauseDetail() {
+            this.isPauseClose = !this.isPauseClose;
+        },
+        handleEquipDetail() {
+            this.isEquipClose = !this.isEquipClose;
+        },
+        handleAddEquipmentAddButton(equipmentId, operatorId) {
+            let data = {};
+                data.equipment_id = equipmentId;
+                data.operator_id = operatorId;
+                data.accum_time = 0;
+                data.p_accum_time = 0;
+                data.work_id = this.id;
+            this.services.addWorkEquipment(data, (resData) => {
+                console.log("Success add work eqiupment.", resData);
+                this.isOpenAddWorkEquipment = false;
+            }, (error) => {
+                console.log("Fail to add work equipment : ", error);
+                this.isOpenAddWorkEquipment = false;
+            });
+        },
+        handleAddEquipmentCancelButton() {
+            this.isOpenAddWorkEquipment = false;
         }
     },
     computed: {
+        getTunnelId() {
+            let tunnelId = this.tunnelInfo.tunnel_id + "_CH." +
+                this.blastInfo.blast_info.start_point.toFixed(1) + "~CH." +
+                this.blastInfo.blast_info.finish_point.toFixed(1);
+            return tunnelId;
+        },
         getWorkCategory() {
             return window.CONSTANTS.CATEGORY_NAME[this.workInfo.category];
         },
@@ -566,6 +563,11 @@ export default {
 .work-info-body-button-container {
     text-align: center;
 }
+.work-info-body-button-container.line {
+    border-bottom: 2px solid #ffffff;
+    padding-bottom: 8px;
+    margin-bottom: 8px;
+}
 .work-info-body-button {
     display: inline-block;
     margin: 5px;
@@ -576,8 +578,9 @@ export default {
     height: 2em;
     border-radius: 10px;
     border: 2px solid #dcdcdc;
-    background-color: #ffffff;
+    background-color: #fffff1;
     color: #1b94e2;
+    box-shadow: 2px 2px;
 }
 .work-info-body-button.buttonDisabled {
     cursor: not-allowed;
@@ -602,8 +605,9 @@ export default {
     height: 2em;
     border-radius: 10px;
     border: 2px solid #dcdcdc;
-    background-color: #ffffff;
+    background-color: #fffff1;
     color: #1b94e2;
+    box-shadow: 2px 2px;
 }
 .work-info-cancel-button {
     display: inline-block;
@@ -615,8 +619,9 @@ export default {
     height: 2em;
     border-radius: 10px;
     border: 2px solid #dcdcdc;
-    background-color: #ffffff;
+    background-color: #fffff1;
     color: #1b94e2;
+    box-shadow: 2px 2px;
 }
 .panel-close-button {
     position: absolute;
@@ -635,11 +640,17 @@ export default {
 
 .work-info-body-list-container {
     text-align: center;
+    width: 95%;
+    margin-left: 3.5%;
+}
+.work-info-body-list-container.line {
+    border-bottom: 2px solid #ffffff;
+    padding-bottom: 8px;
 }
 .work-info-body-list-title-container {
     font-size: 24px;
     width: 100%;
-    margin-top: 1em;
+    margin-top: 0.2em;
     margin-bottom: 0.4em;
 }
 .work-info-body-sub-list-container {
@@ -665,8 +676,55 @@ export default {
     height: 2em;
     border-radius: 10px;
     border: 2px solid #dcdcdc;
-    background-color: #ffffff;
+    background-color: #fffff1;
     color: #1b94e2;
+    box-shadow: 2px 2px;
+}
+
+.work-info-pause-detail-container {
+    width: 100%;
+    height: 2em;
+    text-align: center;
+}
+.detail-title-container {
+    width: 100%;
+    height: 100%;
+    margin: 5px;
+    padding: 5px;
+    font-size: 16px;
+    cursor: pointer;
+    border-radius: 10px;
+    border: 2px solid #dcdcdc;
+    background-color: #eef0fa;
+    color: #1b94e2;
+    text-align: center
+}
+.detail-title {
+    display: inline-block;
+    width: 90%;
+}
+.detail-container {
+    padding: 4px;
+}
+.detail-container.close {
+    display: none;
+}
+.button-image.position {
+    position: unset;
+    display: inline-block;
+    width: 15px;
+    height: 15px;
+    background-color: white;
+    background-image: url('../assets/imgs/up-arrow.png');
+}
+.button-image.down {
+    background-image: url('../assets/imgs/down-arrow.png');
+}
+
+.work-info-equip-detail-container {
+    width: 100%;
+    height: 2em;
+    text-align: center;
 }
 
 </style>

@@ -69,7 +69,7 @@ export default {
     padding-top: 4px;
     color: #1b94e2;
     font-weight: bold;
-    font-size: 1em;
+    font-size: 0.9em;
 }
 .work-list-item-text-container {
     width: 100%;

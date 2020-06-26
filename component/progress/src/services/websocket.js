@@ -178,11 +178,14 @@ export class SocketClient {
                 case window.CONSTANTS.EVENT_TYPE.UPDATE_PAUSE_HISTORY_LIST:
                     this._subscribeHandlers.updatePauseHistoryList(data);
                 break;
-                case window.CONSTANTS.EVENT_TYPE.UPDATE_WORK_OPERATOR_LIST:
-                    this._subscribeHandlers.updateWorkOperatorList(data);
-                break;
                 case window.CONSTANTS.EVENT_TYPE.UPDATE_WORK_EQUIPMENT_LIST:
                     this._subscribeHandlers.updateWorkEquipmentList(data);
+                break;
+                case window.CONSTANTS.EVENT_TYPE.UPDATE_MESSAGE_LIST:
+                    this._subscribeHandlers.updateMessageList(data);
+                break;
+                case window.CONSTANTS.EVENT_TYPE.UPDATE_TEAM_LIST:
+                    this._subscribeHandlers.updateTeamList(data);
                 break;
 //                case window.CONSTANTS.EVENT_TYPE.UPDATED:
 //                    this._subscribeHandlers.updated(data);

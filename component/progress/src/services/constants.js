@@ -47,7 +47,7 @@ window.CONSTANTS = {
         MINUS: 'minus',
         // TODO:
         // FILTER: 'filter',
-        // WINDOW: 'window',
+        WINDOW: 'window',
     },
     EVENT_TYPE: {
         ADDED: 'add',
@@ -60,8 +60,9 @@ window.CONSTANTS = {
         UPDATE_WORK_LIST: 'update_work_list',
         UPDATE_WORK_HISTORY_LIST: 'update_work_history_list',
         UPDATE_PAUSE_HISTORY_LIST: 'update_pause_history_list',
-        UPDATE_WORK_OPERATOR_LIST: 'update_work_operator_list',
-        UPDATE_WORK_EQUIPMENT_LIST: 'update_work_equipment_list'
+        UPDATE_WORK_EQUIPMENT_LIST: 'update_work_equipment_list',
+        UPDATE_MESSAGE_LIST: 'update_message_list',
+        UPDATE_TEAM_LIST: 'update_team_list',
     },
     REQUEST_TYPE: {
         SUBSCRIBE: "subscribe",
@@ -121,7 +122,11 @@ window.CONSTANTS = {
     },
     DIRECTION: {
         EAST: 0,
-        WEST: 1
+        WEST: 1,
+        EAST_SIDE_EAST: 2,
+        EAST_SIDE_WEST: 3,
+        WEST_SIDE_EAST: 4,
+        WEST_SIDE_WEST: 5
     },
     CATEGORY: {
         MAIN_WORK: 0,
@@ -211,9 +216,9 @@ window.CONSTANTS = {
         FINISH: 2
     },
     WORK_STATE_NAME: {
-        0: "STOP",
-        1: "IN PROGRESS",
-        2: "FINISH"
+        0: "Not Started",
+        1: "In Progress",
+        2: "Completed"
     },
     BLAST_STATE: {
         IN_PROGRESS: 1,

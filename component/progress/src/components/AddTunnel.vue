@@ -6,7 +6,7 @@
       <div class="tunnel-add-body-container">
         <div class="tunnel-add-body-content-container">
           <div class="tunnel-add-body-content-title">Category</div>
-            <select id="category" class="work-info-body-content-message"
+            <select id="category" class="tunnel-add-body-content-message"
                 @change="handleChangeCategory">
                 <option value=100 selected>Top Heading(TH)</option>
                 <option value=101>Bench-01(B1)</option>
@@ -15,25 +15,37 @@
         </div>
         <div class="tunnel-add-body-content-container">
           <div class="tunnel-add-body-content-title">Direction</div>
-            <select id="direction" class="work-info-body-content-message"
+            <select id="direction" class="tunnel-add-body-content-message"
                 @change="handleChangeDirection">
-                <option value=0 selected>EAST</option>
-                <option value=1>WEST</option>
+                <option v-for="(value, key) in getDirectionList" :value="key" :key="value"
+                    :selected="isDirectionSelect(key)">
+                    {{ value }}
+                </option>
             </select>
         </div>
         <div class="tunnel-add-body-content-container">
           <div class="tunnel-add-body-content-title">Tunnel</div>
-          <input id="tunnelName" type="text" class="tunnel-add-body-content-message"
-              onkeyup="this.value=this.value.toUpperCase();"
-              maxlength="3" @change="handleChangeName">
+          <select id="tunnelName" class="tunnel-add-body-content-message"
+              @change="handleChangeName">
+              <option value='C1' selected>C1</option>
+              <option value='C2'>C2</option>
+              <option value='C3'>C3</option>
+          </select>
+          <select id="tunnelName2" class="tunnel-add-body-content-message sub"
+              @change="handleChangeName2">
+              <option value='A'>A</option>
+              <option value='B'>B</option>
+              <option value='C'>C</option>
+              <option value='D'>D</option>
+          </select>
         </div>
         <div class="tunnel-add-body-content-container">
           <div class="tunnel-add-body-content-title">Tunnel ID</div>
-          <input id="tunnelId" type="text" class="tunnel-add-body-content-message"
+          <input id="tunnelId" type="text" class="tunnel-add-body-content-message default-cursor"
               :value="getTunnelId()" readonly>
         </div>
         <div class="tunnel-add-body-content-container">
-          <div class="tunnel-add-body-content-title">Length</div>
+          <div class="tunnel-add-body-content-title">Length (m)</div>
           <input id="tunnelLength" type="number" class="tunnel-add-body-content-message"
               step="0.1" :value="getTunnelLength()"
               @change="handleChangeLength">
@@ -67,13 +79,19 @@ export default {
             category: 100,
             direction: 0,
             tunnelId: '',
-            tunnelName: '',
-            tunnelLength: 100.0
+            tunnelName: 'C1',
+            tunnelName2: 'A',
+            totalTunnelName: 'C1A',
+            tunnelLength: 100.0,
+            thList: {0: "EAST", 1: "WEST"},
+            bhList: {2: "East Side - EAST", 3: "East Side - WEST",
+                     4: "West Side - EAST", 5: "West Side - WEST"}
         }
     },
     methods: {
         _setTunnelId() {
-            this.tunnelId = this.tunnelName + this._getCategoryName(this.category) + this._getDirectionName(this.direction);
+            this.totalTunnelName = this.tunnelName + this.tunnelName2;
+            this.tunnelId = this.totalTunnelName + this._getCategoryName(this.category) + this._getDirectionName(this.direction);
         },
         _getCategoryName(categoryId) {
             if (categoryId == window.CONSTANTS.TUNNEL_CATEGORY.TH) {
@@ -85,7 +103,9 @@ export default {
             }
         },
         _getDirectionName(directionId) {
-            if (directionId == window.CONSTANTS.DIRECTION.EAST) {
+            if (directionId == window.CONSTANTS.DIRECTION.EAST ||
+                directionId == window.CONSTANTS.DIRECTION.EAST_SIDE_EAST ||
+                directionId == window.CONSTANTS.DIRECTION.WEST_SIDE_EAST) {
                 return "E";
             } else {
                 return "W";
@@ -95,17 +115,22 @@ export default {
             this.category = 100;
             this.direction = 0;
             this.tunnelId = '';
-            this.tunnelName = '';
+            this.tunnelName = 'C1';
+            this.tunnelName2 = 'A';
+            this.totalTunnelName = 'C1A';
             this.tunnelLength = 100.0;
         },
         isType() {
             return this.type == window.CONSTANTS.TYPE.ADD_TUNNEL;
         },
+        isDirectionSelect(value) {
+            return this.direction == value;
+        },
         handleOkButton() {
             let data = {
                 category: this.category,
                 tunnelId: this.tunnelId,
-                tunnelName: this.tunnelName,
+                tunnelName: this.totalTunnelName,
                 tunnelDirection: this.direction,
                 tunnelLength: this.tunnelLength
             }
@@ -123,6 +148,10 @@ export default {
             this.tunnelName = e.target.value;
             this._setTunnelId();
         },
+        handleChangeName2(e) {
+            this.tunnelName2 = e.target.value;
+            this._setTunnelId();
+        },
         handleChangeLength(e) {
             this.tunnelLength = parseFloat(e.target.value);
             this.$emit('change-tunnel-length', this.tunnelLength, this.direction);
@@ -134,10 +163,28 @@ export default {
         },
         handleChangeCategory(e) {
             this.category = e.target.value;
+            if (this.category == 100) { // TH
+                if (this.direction == window.CONSTANTS.DIRECTION.EAST ||
+                    this.direction == window.CONSTANTS.DIRECTION.EAST_SIDE_EAST ||
+                    this.direction == window.CONSTANTS.DIRECTION.WEST_SIDE_EAST) {
+                    this.direction = window.CONSTANTS.DIRECTION.EAST;
+                } else {
+                    this.direction = window.CONSTANTS.DIRECTION.WEST;
+                }
+            } else {
+                if (this.direction == window.CONSTANTS.DIRECTION.EAST ||
+                    this.direction == window.CONSTANTS.DIRECTION.EAST_SIDE_EAST ||
+                    this.direction == window.CONSTANTS.DIRECTION.WEST_SIDE_EAST) {
+                    this.direction = window.CONSTANTS.DIRECTION.EAST_SIDE_EAST;
+                } else {
+                    this.direction = window.CONSTANTS.DIRECTION.EAST_SIDE_WEST;
+                }
+            }
+            this.$emit('change-tunnel-direction', this.direction, this.tunnelLength);
             this._setTunnelId();
         },
         getTunnelId() {
-            this.tunnelId = this.tunnelName + this._getCategoryName(this.category) + this._getDirectionName(this.direction);
+            this.tunnelId = this.totalTunnelName + this._getCategoryName(this.category) + this._getDirectionName(this.direction);
             return this.tunnelId;
         },
         getTunnelLength() {
@@ -145,6 +192,13 @@ export default {
         },
     },
     computed: {
+        getDirectionList() {
+            if (this.category == 100) {
+                return this.thList;
+            } else {
+                return this.bhList;
+            }
+        }
     },
     created() {
     },
@@ -197,6 +251,10 @@ export default {
     display: inline-block;
     color: #1b94e2;
 }
+.tunnel-add-body-content-message.sub {
+    margin-left: 30%;
+    margin-bottom: 0.7em;
+}
 .tunnel-add-button-container {
     width: 100%;
     height: 15%;
@@ -227,5 +285,8 @@ export default {
     border: 2px solid #dcdcdc;
     background-color: #ffffff;
     color: #1b94e2;
+}
+.default-cursor {
+    cursor: default;
 }
 </style>

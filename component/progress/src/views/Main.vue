@@ -29,8 +29,8 @@
             :workIdList="getWorkList()"
             :supportingIdList="getSupportingList()"
             :idleIdList="getIdleList()"
-            @select-information-button="handleBlastInfoInformationButton"
             @select-close-button="handleBlastInfoCloseButton"
+            @select-ok-button="handleBlastInfoOkButton"
             @select-add-work-button="handleAddWork"
             @select-work-item="handleSelectWorkItem"></BlastInfo>
         <BlastInformation :type="getCurrentType()" :id="currentBlastId"
@@ -42,12 +42,12 @@
         <WorkInfo :type="getCurrentType()" :blastId="currentBlastId"
             :id="currentWorkId" :pauseList="getPauseList()"
             :operatorList="getOperatorList()" :equipmentList="getEquipmentList()"
-            :workOperatorList="workOperatorList"
             :workEquipmentList="workEquipmentList"
             @select-cancel-button="handleWorkInfoCancelButton"
             @select-ok-button="handleWorkInfoOkButton"
             @select-close-button="handleWorkInfoCloseButton"
             @select-remove-work-button="handleWorkRemoveButton"></WorkInfo>
+        <Legend :isShow="isShowLegend"></Legend>
         <div :id="id" class="map-container">
         </div>
     </div>
@@ -64,6 +64,7 @@ import TunnelInfo from '@/components/TunnelInfo';
 import BlastInfo from '@/components/BlastInfo';
 import BlastInformation from '@/components/BlastInformation';
 import WorkInfo from '@/components/WorkInfo';
+import Legend from '@/components/Legend';
 export default {
     name: 'Main',
     components: {
@@ -76,7 +77,8 @@ export default {
         TunnelInfo,
         BlastInfo,
         BlastInformation,
-        WorkInfo
+        WorkInfo,
+        Legend
     },
     data() {
         return {
@@ -96,9 +98,7 @@ export default {
             pauseIdWithWork: {},  // {w_id: [p_id, ..]}
             markers: {},
             infoWindowItem: null,
-            addWindowItem: null,
             contextMenuItem: null,
-            windowItem: null,
             markerPosition: null,
             checkInterval: null,
             isWebsoketConnected: false,
@@ -109,7 +109,6 @@ export default {
             blastIDList: [],
             progIDList: [],
             workIDList: [],
-            workOperatorList: [],
             workEquipmentList: [],
             //
             currentType: null,
@@ -146,7 +145,8 @@ export default {
                 'supporting' : '#0f02ff',
                 'idle' : '#feff00'
             },
-            tunnelOpacity: 0.6
+            tunnelOpacity: 0.6,
+            isShowLegend: false
         }
     },
     methods: {
@@ -207,6 +207,9 @@ export default {
                     this._getActivityList();
                     this._getEquipmentList();
                     this._getOperatorList();
+                    //TODO:
+                    this._getMessageList();
+                    this._getTeamList();
                     this._getEquipmentInfoList();
                     this._getBasePointList();
                     this.blastLayer = new maptalks.VectorLayer('vector').addTo(this.map);
@@ -223,7 +226,6 @@ export default {
                     // TODO:
                     // console.log("##### x : " +  e.coordinate.x + " Y : " + e.coordinate.y);
                     this.closeInfoWindow();
-                    this.closeAddWindow();
                     this.closeMenu();
                     this.isTopPressedType = '';
                 });
@@ -259,6 +261,20 @@ export default {
                 this.$store.commit('addOperatorList', operatorList);
             }, (error) => {
                 console.log("Failed to get operator list.", error);
+            });
+        },
+        _getMessageList() {
+            this.services.getMessageList(messageList => {
+                this.$store.commit('addMessageList', messageList);
+            }, (error) => {
+                console.log("Failed to get message list.", error);
+            });
+        },
+        _getTeamList() {
+            this.services.getTeamList(teamList => {
+                this.$store.commit('addTeamList', teamList);
+            }, (error) => {
+                console.log("Failed to get team list.", error);
             });
         },
         _getEquipmentInfoList() {
@@ -398,13 +414,43 @@ export default {
             // TODO: right click?
             marker.on('contextmenu', () => {});
         },
+        _getCfactor(base, tunnel) {
+            let ret = base,
+                factor = 4;
+            if (tunnel.length >= 1200) {
+                ret += (factor * 12);
+            } else if (tunnel.length >= 1100) {
+                ret += (factor * 11);
+            } else if (tunnel.length >= 1000) {
+                ret += (factor * 10);
+            } else if (tunnel.length >= 900) {
+                ret += (factor * 9);
+            } else if (tunnel.length >= 800) {
+                ret += (factor * 8);
+            } else if (tunnel.length >= 700) {
+                ret += (facotr * 7);
+            } else if (tunnel.length >= 600) {
+                ret += (factor * 6);
+            } else if (tunnel.length >= 500) {
+                ret += (factor * 5);
+            } else if (tunnel.length >= 400) {
+                ret += (factor * 4);
+            } else if (tunnel.length >= 300) {
+                ret += (factor * 3);
+            } else if (tunnel.length >= 200) {
+                ret += (factor * 2);
+            } else if (tunnel.length >= 100) {
+                ret += (factor * 1);
+            }
+            return ret;
+        },
         _drawTunnel(tunnel){
             const xPosition = tunnel.x_loc,
                   yPosition = tunnel.y_loc,
                   width = tunnel.width,
                   height = tunnel.height,
                   typ = tunnel.category; // TODO:
-            var marker = new maptalks.TextBox("", [xPosition, yPosition],
+            let marker = new maptalks.TextBox("", [xPosition, yPosition],
                                               {stops: [[4, width], [5, width * 2], [6, width * 4], [7, width * 8]]},
                                               {stops: [[4, height], [5, height * 2], [6, height * 4], [7, height * 8]]}, {
                 id: tunnel.id,
@@ -431,6 +477,42 @@ export default {
             this._handleTunnelClickEvent(marker);
             // TODO: right click?
             marker.on('contextmenu', () => {});
+            let cFactor = 30;   // 100 : 34  , 200 : 38  , 300 : 42
+            cFactor = this._getCfactor(cFactor, tunnel);
+            let arrowPosition = parseFloat(((tunnel.width / 2) * 0.078).toFixed(1)),
+                arrowPl = "vertex-last",
+                textDxBase = parseInt(tunnel.width / 2) - cFactor,
+                textDx = {stops: [[4, textDxBase], [5, textDxBase * 2], [6, textDxBase * 4], [7, textDxBase * 8]]};
+            if (tunnel.direction == window.CONSTANTS.DIRECTION.WEST ||
+                tunnel.direction == window.CONSTANTS.DIRECTION.EAST_SIDE_WEST ||
+                tunnel.direction == window.CONSTANTS.DIRECTION.WEST_SIDE_WEST) {
+                arrowPl = "vertex-first";
+                textDxBase = -parseInt((tunnel.width / 2) - cFactor),
+                textDx = {stops: [[4, textDxBase], [5, textDxBase * 2], [6, textDxBase * 4], [7, textDxBase * 8]]};
+            }
+            // TODO: arrowMarker id
+            let _arrowMarker = new maptalks.LineString(
+                [[xPosition - arrowPosition, yPosition], [xPosition + arrowPosition - 0.5, yPosition]],
+                {
+                    // arrowStyle: "classic",
+                    arrowStyle: [0.5, 0.5],
+                    arrowPlacement: arrowPl,
+                    symbol: {
+                        'lineColor': this.colorMap[typ],
+                        'lineWidth': {stops: [[4, 8], [5, 16], [6, 32], [7, 64]]},
+                        'lineOpacity': 1,
+                        'textName': tunnel.tunnel_id,
+                        'textPlacement': 'line',
+                        'textSize': {stops: [[4, 10], [5, 20], [6, 40], [7, 80]]},
+                        'textDy': {stops: [[4, 2], [5, 4], [6, 8], [7, 16]]},
+                        'textFill': '#ffffff',
+                        'textWeight': 'bold',
+                        'textDx': textDx
+                    }
+                }
+            );
+            this.tunnelLayers[typ].addGeometry([_arrowMarker]);
+
         },
         _fixDrawTunnel(tunnel){
             var _marker = this.tunnelLayers[window.CONSTANTS.TUNNEL_TYPE.CAVERN].getGeometryById(tunnel.id)
@@ -568,7 +650,6 @@ export default {
                 this.contextCoordinate = e.coordinate;
                 this.closeInfoWindow();
                 this.closeMenu();
-                this.closeWindow();
                 this.map.closeMenu();
                 this.map.setMenu(this.contextMenuOption).openMenu(e.coordinate);
 
@@ -743,7 +824,9 @@ export default {
         handleChangeDirectionCavern(direction, length) {
             let basePointInfo = this.$store.getters.getBasePoint(this.currentMarker.basepointId),
                 xLocation = basePointInfo.x_loc;
-            if (direction == window.CONSTANTS.DIRECTION.EAST) {
+            if (direction == window.CONSTANTS.DIRECTION.EAST ||
+                direction == window.CONSTANTS.DIRECTION.EAST_SIDE_EAST ||
+                direction == window.CONSTANTS.DIRECTION.WEST_SIDE_EAST) {
                 // xLocation += ((0.078 * length) / 2);
                 xLocation += parseFloat((window.CONSTANTS.TUNNEL_DEFAULT_SIZE.CAVERN_ROW.LOCATION_LENGTH * (length / 2)).toFixed(4));
             } else {
@@ -755,7 +838,9 @@ export default {
         handleChangeLengthCavern(length, direction) {
             let basePointInfo = this.$store.getters.getBasePoint(this.currentMarker.basepointId),
                 xLocation = basePointInfo.x_loc;
-            if (direction == window.CONSTANTS.DIRECTION.EAST) {
+            if (direction == window.CONSTANTS.DIRECTION.EAST ||
+                direction == window.CONSTANTS.DIRECTION.EAST_SIDE_EAST ||
+                direction == window.CONSTANTS.DIRECTION.WEST_SIDE_EAST) {
                 //xLocation += ((0.078 * length) / 2);
                 xLocation += parseFloat((window.CONSTANTS.TUNNEL_DEFAULT_SIZE.CAVERN_ROW.LOCATION_LENGTH * (length / 2)).toFixed(4));
             } else {
@@ -876,7 +961,9 @@ export default {
                 yPosition = _oldBlast.y_loc;
             }
 
-            if (tunnelData.direction == window.CONSTANTS.DIRECTION.EAST) {
+            if (tunnelData.direction == window.CONSTANTS.DIRECTION.EAST ||
+                tunnelData.direction == window.CONSTANTS.DIRECTION.EAST_SIDE_EAST ||
+                tunnelData.direction == window.CONSTANTS.DIRECTION.WEST_SIDE_EAST) {
                 let __t = null;
                 if (_oldBlast != null) {
                     __t = parseFloat(((_oldBlast.width / 2) * 0.088).toFixed(4));
@@ -887,7 +974,9 @@ export default {
                 }
                 _xPosition = _t + parseFloat(((blastLength / 2) * window.CONSTANTS.TUNNEL_DEFAULT_SIZE.CAVERN_ROW.LOCATION_LENGTH).toFixed(4));
                 _yPosition = yPosition;
-            } else if (tunnelData.direction == window.CONSTANTS.DIRECTION.WEST) {
+            } else if (tunnelData.direction == window.CONSTANTS.DIRECTION.WEST ||
+                tunnelData.direction == window.CONSTANTS.DIRECTION.EAST_SIDE_WEST ||
+                tunnelData.direction == window.CONSTANTS.DIRECTION.WEST_SIDE_WEST) {
                 let __t = null;
                 if (_oldBlast != null) {
                     __t = parseFloat(((_oldBlast.width / 2) * 0.088).toFixed(4));
@@ -962,18 +1051,6 @@ export default {
             _marker.markerType = window.CONSTANTS.TUNNEL_TYPE.BLAST;
             this.blastLayers[tunnelType].addGeometry(_marker);
             this.setCurrentMarker(_marker);
-            let bif = {
-                explosive: 0,
-                detonator: 0,
-                drilling_depth: 0,
-                blasting_date: null,
-                blasting_time: null,
-                start_point: 0,
-                finish_point: 0,
-                blasting_length: 0
-            }
-            // TODO:
-            // this.handleAddBlastOkButton(tunnelId, bif);
         },
         handleAddBlastOkButton(tunnelId, value) {
             const data = {'blast': {},
@@ -1012,12 +1089,12 @@ export default {
             this.currentMarker.remove();
             this.handleClearSelectItem();
         },
-        handleBlastInfoInformationButton(blastId) {
-            this.setCurrentType(window.CONSTANTS.TYPE.SELECT_BLAST_INFORMATION);
-            //this.handleClearSelectItem();
-        },
+        // handleBlastInfoInformationButton(blastId) {
+        //     this.setCurrentType(window.CONSTANTS.TYPE.SELECT_BLAST_INFORMATION);
+        //     //this.handleClearSelectItem();
+        // },
         handleBlastInfoOkButton(data) {
-            this.handleClearSelectItem();
+            // this.handleClearSelectItem();
             this.services.updateBlastInfo(data, (resData) => {
                 console.log("success to update blast info")
             }, (error) => {
@@ -1061,6 +1138,8 @@ export default {
                 boxSymbol: {
                     markerType: 'square',
                     markerLineColor: this.colorMap[typ],
+                    // TODO:
+                    // markerLineColor: '#ffffff',
                     markerLineWidth: 1,
                     markerFill: this.colorMap[typ],
                     markerFillOpacity: 1
@@ -1085,16 +1164,14 @@ export default {
             this._handleBlastClickEvent(_marker)
             this.blastLayers[window.CONSTANTS.TUNNEL_TYPE.CAVERN].addGeometry(_marker);
             this.drawWork(blast);
+            // TODO:
+            // this.setBlastContextMenu(_marker, tunnelData.tunnel_id);
         },
         handleSelectWorkItem(workId) {
             this.services.getWorkDataByWork({"work_id": workId}, (resData) => {
                 console.log("Success to get work Data list", resData);
-                this.workOperatorList = [];
                 this.workEquipmentList = [];
 
-                this._.forEach(resData.operator, workOperator => {
-                    this.workOperatorList.push(workOperator);
-                });
                 this._.forEach(resData.equipment, workEquipment => {
                     this.workEquipmentList.push(workEquipment);
                 });
@@ -1216,7 +1293,8 @@ export default {
                     latestIdle = null,
                     latestTmpData = null,
                     currentCategory = null,
-                    currentTyp = null;
+                    currentTyp = null,
+                    currentWorkId = null;
 
                 if (tmp.length > 0) {
                     latestWork = this.$store.getters.getWork(tmp[0]);
@@ -1225,10 +1303,12 @@ export default {
                         latestTmpData = latestWork;
                         currentCategory = latestWork.category;
                         currentTyp = latestWork.typ;
+                        currentWorkId = latestWork.id;
                     } else {
                         latestTmpData = latestWork;
                         currentCategory = latestWork.category;
                         currentTyp = latestWork.typ;
+                        currentWorkId = latestWork.id;
                     }
                 }
                 if (tmp1.length > 0) {
@@ -1237,17 +1317,20 @@ export default {
                         latestSupporting.state == window.CONSTANTS.WORK_STATE.STOP) {
                         currentCategory = latestSupporting.category;
                         currentTyp = latestSupporting.typ;
+                        currentWorkId = latestSupporting.id;
                     } else {
                         if (latestTmpData != null) {
                             if (latestTmpData.last_updated_time < latestSupporting.last_updated_time) {
                                 latestTmpData = latestSupporting;
                                 currentCategory = latestSupporting.category;
                                 currentTyp = latestSupporting.typ;
+                                currentWorkId = latestSupporting.id;
                             }
                         } else {
                             latestTmpData = latestSupporting;
                             currentCategory = latestSupporting.category;
                             currentTyp = latestSupporting.typ;
+                            currentWorkId = latestSupporting.id;
                         }
                     }
                 }
@@ -1257,17 +1340,20 @@ export default {
                         latestIdle.state == window.CONSTANTS.WORK_STATE.STOP) {
                         currentCategory = latestIdle.category;
                         currentTyp = latestIdle.typ;
+                        currentWorkId = latestIdle.id;
                     } else {
                         if (latestTmpData != null) {
                             if (latestTmpData.last_updated_time < latestIdle.last_updated_time) {
                                 latestTmpData = latestIdle;
                                 currentCategory = latestIdle.category;
                                 currentTyp = latestIdle.typ;
+                                currentWorkId = latestIdle.id;
                             }
                         } else {
                             latestTmpData = latestIdle;
                             currentCategory = latestIdle.category;
                             currentTyp = latestIdle.typ;
+                            currentWorkId = latestIdle.id;
                         }
                     }
                 }
@@ -1284,13 +1370,16 @@ export default {
 
                 if (fileUrl !== '') {
                     let marker = new maptalks.Marker(
-                        [blast.x_loc, blast.y_loc + 0.4], {
+                        // Origin (200623)
+                        // [blast.x_loc, blast.y_loc + 0.4], {
+                        [blast.x_loc, blast.y_loc + 0.05], {
                             id: blast.id,  // TODO:
                             symbol: {
                                 'markerFile': fileUrl,
                                 'markerWidth': {stops: [[4, 20], [5, 30], [6, 50], [7, 80]]},
-                                'markerHeight': {stops: [[4, 20], [5, 30], [6, 50], [7, 80]]},
-                                'markerDy': {stops:[[4, 10], [5, 20], [6, 30], [7, 40]]}
+                                'markerHeight': {stops: [[4, 20], [5, 30], [6, 50], [7, 80]]}
+                                // Origin (200623)
+                                // 'markerDy': {stops:[[4, 10], [5, 20], [6, 30], [7, 40]]}
                             }
                         }
                     )
@@ -1309,21 +1398,17 @@ export default {
                             this.setCurrentBlastId(_blastMarker.getId());
                             this.setCurrentMarker(_blastMarker);
                             this.setBlastType(_blastMarker.type);
-                            if (tmp !== undefined && tmp.length > 0) {
+                            if (currentWorkId != null) {
                                 // View the Current Work information
 
-                                this.services.getWorkDataByWork({"work_id": tmp[0]}, (resData) => {
+                                this.services.getWorkDataByWork({"work_id": currentWorkId}, (resData) => {
                                     console.log("Success to get work Data list", resData);
-                                    this.workOperatorList = [];
                                     this.workEquipmentList = [];
 
-                                    this._.forEach(resData.operator, workOperator => {
-                                        this.workOperatorList.push(workOperator);
-                                    });
                                     this._.forEach(resData.equipment, workEquipment => {
                                         this.workEquipmentList.push(workEquipment);
                                     });
-                                    this.setCurrentWorkId(tmp[0]);
+                                    this.setCurrentWorkId(currentWorkId);
                                     this.setCurrentType(window.CONSTANTS.TYPE.SELECT_WORK);
                                 }, (error) => {
                                     console.log("Failed to work data list.")
@@ -1362,20 +1447,6 @@ export default {
             }
             this.map.closeMenu();
         },
-        closeAddWindow() {
-            if (this.addWindowItem !== null) {
-                this.addWindowItem.remove();
-                this.addWindowItem = null;
-            }
-            this.map.closeMenu();
-        },
-        closeWindow() {
-            if (this.windowItem !== null) {
-                this.windowItem.hide();
-                this.windowItem = null;
-            }
-            this.map.closeMenu();
-        },
         setTunnelInfoWindow(marker) {
             marker.updateSymbol({
                 lineColor: '#000000',
@@ -1385,10 +1456,36 @@ export default {
             });
 
         },
+        setBlastContextMenu(marker, tunnel_id) {
+            marker.setMenu({
+                items: `<div class="context-menu-container scanner">
+                            <div class="context-menu-top-panel">
+                                <div class="context-menu-text-wrapper">
+                                    <div class="context-menu-name-text">${ tunnel_id }</div>
+                                </div>
+                            </div>
+                            <div class="context-menu-bottom-panel">
+                                <div id="detail-button" class="context-menu-button-frame scanner">
+                                    <div class="context-menu-button-panel">
+                                        <div id="detail-button-text" class="context-menu-button-text">DETAIL ON</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>`,
+                width: 350,
+                custom: true,
+                dy: -150,
+                dx: -90,
+                animation: 'fade'
+            }).openMenu();
+            document.getElementById('detail-button').onclick = () => {
+                console.log("### click")
+                marker.closeMenu();
+            }
+        },
         setContextMenu(marker) {
             marker.on('contextmenu', () => {
                 this.closeInfoWindow();
-                this.closeWindow();
                 document.getElementById('add-button').onclick = () => {
                     this.closeMenu();
                 }
@@ -1429,49 +1526,8 @@ export default {
             }
         },
         _showWindow() {
-            var coordinate = this.map.getCenter();
-
-            var options = {
-                    //'autoOpenOn' : 'click',  //set to null if not to open window when clicking on map
-                    'single' : true,
-                    'custom' : true,
-                    'autoCloseOn': true,
-                    'autoOpenOn': false,
-                    'dx' : -3,
-                    'dy' : -12,
-                    'content'   : '<div class="content">' +
-                        '<div class="row">' +
-                            '<div class="column">' +
-                                '<div class="pop_title">Jumbo Drill</div>' +
-                                '<div class="sub-row">' +
-                                    '<div class="item">' + "JD-01" + '</div>' +
-                                    '<div class="item">' + "JD-02" + '</div>' +
-                                    '<div class="item">' + "JD-03" + '</div>' +
-                                '</div>' +
-                            '</div>' +
-                            '<div class="column">' +
-                                '<div class="pop_title">LOADER</div>' +
-                                '<div class="sub-row">' +
-                                    '<div class="item">' + "WL-01" + '</div>' +
-                                    '<div class="item">' + "WL-02" + '</div>' +
-                                    '<div class="item">' + "WL-03" + '</div>' +
-                                '</div>' +
-                            '</div>' +
-                            '<div class="column">' +
-                                '<div class="pop_title">Shortcrete</div>' +
-                                '<div class="sub-row">' +
-                                    '<div class="item">' + "SC-01" + '</div>' +
-                                    '<div class="item">' + "SC-02" + '</div>' +
-                                    '<div class="item">' + "SC-03" + '</div>' +
-                                '</div>' +
-                            '</div>' +
-                        '</div>' +
-                    '</div>'
-                };
-            var infoWindow = new maptalks.ui.InfoWindow(options);
             console.log(coordinate)
             infoWindow.addTo(this.map).show({x: coordinate.x + 20, y: coordinate.y + 10});
-            this.windowItem = infoWindow;
         },
         _handleFilterGroup(item, checked) {
             // TODO: filter function
@@ -1506,7 +1562,7 @@ export default {
                     this._zoomOut();
                     this._setContextMenuPosition();
                 } else if (type === window.CONSTANTS.TOP_BUTTON_TYPE.WINDOW) {
-                    this._showWindow();
+                    this.isShowLegend = !this.isShowLegend;
                 } else if (type === window.CONSTANTS.TOP_BUTTON_TYPE.FILTER) {
                 }
             });
@@ -1568,11 +1624,14 @@ export default {
                 updatePauseHistoryList: (data) => {
                     this._handleUpdatePauseHistoryList(data);
                 },
-                updateWorkOperatorList: (data) => {
-                    this._handleUpdateWorkOperatorList(data);
-                },
                 updateWorkEquipmentList: (data) => {
                     this._handleUpdateWorkEquipmentList(data);
+                },
+                updateMessageList: (data) => {
+                    this._handleUpdateMessageList(data);
+                },
+                updateTeamList: (data) => {
+                    this._handleUpdateTeamList(data);
                 },
             });
         },
@@ -1665,12 +1724,31 @@ export default {
         _handleUpdateWorkList(data) {
             const list = data.v;
             this._.forEach(list, item => {
-                // TODO:
                 if (data.kind === 'add') {
                     this.$store.commit('addWork', item);
                     if (!(item.id in this.pauseIdWithWork)) {
                         this.pauseIdWithWork[item.id] = [];
                     }
+                    let blast = this.$store.getters.getBlast(item.blast_id);
+                    let _marker = this.workLayer.getGeometryById(blast.id);
+                    if (_marker != null) {
+                        this.workLayer.removeGeometry([_marker]);
+                    }
+                    let _blastMarker = this.blastLayers[window.CONSTANTS.TUNNEL_TYPE.CAVERN].getGeometryById(blast.id);
+                    if (_blastMarker != null) {
+                        let typ = '';
+                        if (item.category == window.CONSTANTS.CATEGORY.MAIN_WORK) {
+                            typ = "main";
+                        } else if (item.category == window.CONSTANTS.CATEGORY.SUPPORTING) {
+                            typ = "supporting";
+                        } else {
+                            typ = "idle";
+                        }
+                        _blastMarker.updateSymbol({
+                            markerFill: this.colorMap[typ]
+                        });
+                    }
+                    this.drawWork(blast);
                 } else if (data.kind === 'remove') {
                     this.$store.commit('removeWork', item)
                     if (item.id in this.pauseIdWithWork) {
@@ -1678,12 +1756,6 @@ export default {
                     }
                 } else if (data.kind === 'update') {
                     this.$store.commit('updateWork', item);
-                    if (item.state == 1) {
-                        let blast = this.$store.getters.getBlast(item.blast_id);
-                        var _marker = this.workLayer.getGeometryById(blast.id);
-                        this.workLayer.removeGeometry([_marker]);
-                        this.drawWork(blast);
-                    }
                 }
             });
         },
@@ -1712,21 +1784,6 @@ export default {
                 }
             });
         },
-        _handleUpdateWorkOperatorList(data) {
-            const list = data.v;
-            this._.forEach(list, item => {
-                if (data.kind === 'add') {
-                    if (this.workOperatorList.indexOf(item.id) < 0) {
-                        this.workOperatorList.push(item);
-                    }
-                } else if (data.kind === 'remove') {
-                    if (this.workOperatorList.indexOf(item) >= 0) {
-                        this.workOperatorList = this._.without(this.workOperatorList, item);
-                    }
-                } else if (data.kind === 'update') {
-                }
-            });
-        },
         _handleUpdateWorkEquipmentList(data) {
             const list = data.v;
             this._.forEach(list, item => {
@@ -1739,6 +1796,30 @@ export default {
                         this.workEquipmentList = this._.without(this.workEquipmentList, item);
                     }
                 } else if (data.kind === 'update') {
+                }
+            });
+        },
+        _handleUpdateMessageList(data){
+            const list = data.v;
+            this._.forEach(list, item => {
+                if (data.kind === 'add') {
+                    this.$store.commit('addMessage', item);
+                } else if (data.kind === 'remove') {
+                    this.$store.commit('removeMessage', item);
+                } else if (data.kind === 'update') {
+                    this.$store.commit('updateMessage', item);
+                }
+            });
+        },
+        _handleUpdateTeamList(data){
+            const list = data.v;
+            this._.forEach(list, item => {
+                if (data.kind === 'add') {
+                    this.$store.commit('addTeam', item);
+                } else if (data.kind === 'remove') {
+                    this.$store.commit('removeTeam', item);
+                } else if (data.kind === 'update') {
+                    this.$store.commit('updateTeam', item);
                 }
             });
         },
@@ -1864,5 +1945,67 @@ div {
 .item {
     text-align: center;
 }
+
+    .context-menu-container {
+        width: 180px;
+        height: auto;
+        border-radius: 15px;
+        color: white;
+        overflow: hidden;
+        box-shadow: 10px 10px 25px rgba(40, 40, 40, 0.3);
+    }
+
+    .context-menu-container.scanner {
+        background-color: rgb(40, 160, 200);
+    }
+
+    .context-menu-top-panel {
+        position: relative;
+        width: 100%;
+        height: 40px;
+    }
+
+    .context-menu-text-wrapper {
+        position: absolute;
+        width: 100%;
+        bottom: 5px;
+        text-align: center;
+    }
+
+    .context-menu-name-text {
+        font-size: 1.2em;
+        font-weight: bold;
+        margin-top: .5em;
+    }
+
+    .context-menu-bottom-panel {
+        position: relative;
+        width: 100%;
+        height: auto;
+    }
+
+    .context-menu-button-frame {
+        position: relative;
+        width: 100%;
+        height: 35px;
+    }
+
+    .context-menu-button-frame.scanner {
+        background-color: rgb(60, 175, 200);
+        border-top: thin solid rgb(40, 160, 200);
+    }
+
+    .context-menu-button-panel {
+        position: absolute;
+        width: 100%;
+        top: 50%;
+        transform: translateY(-50%);
+        cursor: pointer;
+    }
+
+    .context-menu-button-text {
+        text-align: center;
+        font-size: 0.8em;
+    }
 
 </style>
