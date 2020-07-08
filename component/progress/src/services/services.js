@@ -700,14 +700,13 @@ export const getEquipmentInfoList = (successCallback, failCallback) => {
     });
 }
 
-export const addWorkOperator = (data, successCallback, failCallback) => {
+export const getMessageList = (successCallback, failCallback) => {
     axios({
-        url: `${ window.CONSTANTS.URL.CONSOLE }/work/work/operator/add`,
-        method: 'POST',
+        url: `${ window.CONSTANTS.URL.CONSOLE }/work/message/get/list`,
+        method: 'GET',
         headers: {
             'Content-Type': 'application/json'
-        },
-        data: data
+        }
     }).then(response => {
         if(response.data) {
             successCallback(response.data);
@@ -719,14 +718,13 @@ export const addWorkOperator = (data, successCallback, failCallback) => {
     });
 }
 
-export const getWorkOperatorByWork = (data, successCallback, failCallback) => {
+export const getTeamList = (successCallback, failCallback) => {
     axios({
-        url: `${ window.CONSTANTS.URL.CONSOLE }/work/work/operator/get/list/work`,
-        method: 'POST',
+        url: `${ window.CONSTANTS.URL.CONSOLE }/work/team/get/list`,
+        method: 'GET',
         headers: {
             'Content-Type': 'application/json'
-        },
-        data: data
+        }
     }).then(response => {
         if(response.data) {
             successCallback(response.data);

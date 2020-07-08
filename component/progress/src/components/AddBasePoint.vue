@@ -1,25 +1,25 @@
 <template>
     <div v-if="isType()" id="basePointAddEditor" class="basepoint-add-container">
-      <div class="basepoint-add-title-container">
-        ADD BASEPOINT
-      </div>
-      <div class="basepoint-add-body-container">
-        <div class="basepoint-add-body-content-container">
-          <div class="basepoint-add-body-content-title">NAME</div>
-          <input id="basepointName" type="text" class="basepoint-add-body-content-message"
-              maxlength="30" @change="handleChangeName">
+        <div class="basepoint-add-title-container">
+            ADD BASEPOINT
         </div>
-      </div>
-      <div class="basepoint-add-button-container">
-        <div class="basepoint-add-ok-button"
-            @click="handleOkButton">
-          OK
+        <div class="basepoint-add-body-container">
+            <div class="basepoint-add-body-content-container">
+            <div class="basepoint-add-body-content-title">NAME</div>
+            <input id="basepointName" type="text" class="basepoint-add-body-content-message"
+                maxlength="30" @change="handleChangeName">
+            </div>
         </div>
-        <div class="basepoint-add-cancle-button"
-            @click="handleCancelButton">
-          CANCEL
+        <div class="basepoint-add-button-container">
+            <div class="basepoint-add-ok-button"
+                @click="handleOkButton">
+            OK
+            </div>
+            <div class="basepoint-add-cancle-button"
+                @click="handleCancelButton">
+            CANCEL
+            </div>
         </div>
-      </div>
     </div>
 </template>
 <script>

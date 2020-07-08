@@ -34,20 +34,10 @@ export default {
         isImageButton() {
             return this.type === window.CONSTANTS.TOP_BUTTON_TYPE.PLUS ||
                    this.type === window.CONSTANTS.TOP_BUTTON_TYPE.MINUS ||
-                   this.type === window.CONSTANTS.TOP_BUTTON_TYPE.FILTER ||
                    this.type === window.CONSTANTS.TOP_BUTTON_TYPE.WINDOW;
         },
         buttonText() {
             let text = '';
-            if (this.type === window.CONSTANTS.TOP_BUTTON_TYPE.SOUND_SET_UP) {
-                text = 'SOUND SET-UP';
-            } else if (this.type === window.CONSTANTS.TOP_BUTTON_TYPE.BROADCAST) {
-                text = 'BROADCAST';
-            } else if (this.type === window.CONSTANTS.TOP_BUTTON_TYPE.GROUP_SET_UP) {
-                text = 'GROUP SET-UP';
-            } else if (this.type === window.CONSTANTS.TOP_BUTTON_TYPE.SCHEDULED_BROADCAST) {
-                text = 'SCHEDULED BROADCAST';
-            }
             return text;
         },
         pressed() {
@@ -100,7 +90,9 @@ export default {
     background-image: url('../assets/imgs/icon-filter.svg');
 }
 .button-image.window {
-    background-image: url('../assets/imgs/icon-window.svg');
+    background-size: auto;
+    background-color: #ffffff;
+    background-image: url('../assets/imgs/legend.png');
 }
 .button-image.plus:active {
     background-color: white;
@@ -115,8 +107,7 @@ export default {
     background-image: url('../assets/imgs/icon-filter(active).svg');
 }
 .button-image.window:active {
-    background-color: white;
-    background-image: url('../assets/imgs/icon-window(active).svg');
+    background-color: rgb(85, 185, 250);
 }
 .text-button-panel {
     position: relative;

@@ -13,6 +13,8 @@ export default new Vuex.Store({
         pause: {},
         operator: {},
         equipment: {},
+        message: {},
+        team: {}
     },
     getters: {
         getBasePoint: (state) => (id) => {
@@ -63,6 +65,18 @@ export default new Vuex.Store({
         getEquipmentList: (state) => () => {
 			return _.values(state.equipment);
         },
+        getMessage: (state) => (id) => {
+            return state.message[id];
+        },
+        getMessageList: (state) => () => {
+			return _.values(state.message);
+        },
+        getTeam: (state) => (id) => {
+            return state.team[id];
+        },
+        getTeamList: (state) => () => {
+			return _.values(state.team);
+        }
     },
     mutations: {
         addBasePointList(state, payload) {
@@ -242,7 +256,7 @@ export default new Vuex.Store({
             }
         },
         removeEquipmentList(state) {
-            _.forEach(state.equipment, (operator, id) => {
+            _.forEach(state.equipment, (equipment, id) => {
                 delete state.equipment[id]
             })
             state.equipment = {};
@@ -250,6 +264,54 @@ export default new Vuex.Store({
         updateEquipment(state, payload) {
             if (_.has(state.equipment, payload.id)) {
                 state.equipment[payload.id] = payload;
+            }
+        },
+        addMessage(state, payload) {
+            state.message[payload.id] = payload;
+        },
+        addMessageList(state, payload) {
+            _.forEach(payload, message => {
+                state.message[message.id] = message;
+            });
+        },
+        removeMessage(state, id) {
+            if (_.has(state.message, id)) {
+                delete state.message[id];
+            }
+        },
+        removeMessageList(state) {
+            _.forEach(state.message, (message, id) => {
+                delete state.message[id]
+            })
+            state.message = {};
+        },
+        updateMessage(state, payload) {
+            if (_.has(state.message, payload.id)) {
+                state.message[payload.id] = payload;
+            }
+        },
+        addTeam(state, payload) {
+            state.team[payload.id] = payload;
+        },
+        addTeamList(state, payload) {
+            _.forEach(payload, team => {
+                state.team[team.id] = team;
+            });
+        },
+        removeTeam(state, id) {
+            if (_.has(state.team, id)) {
+                delete state.team[id];
+            }
+        },
+        removeTeamList(state) {
+            _.forEach(state.team, (team, id) => {
+                delete state.team[id]
+            })
+            state.message = {};
+        },
+        updateTeam(state, payload) {
+            if (_.has(state.team, payload.id)) {
+                state.team[payload.id] = payload;
             }
         },
     },

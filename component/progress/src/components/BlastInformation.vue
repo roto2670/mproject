@@ -258,7 +258,7 @@ export default {
             return this.blastInformation.detonator;
         },
         getDrillingDepth() {
-            return this.blastInformation.drilling_depth;
+            return this.blastInformation.drilling_depth.toFixed(1);
         },
         getBlastingDate() {
             let date = null;
@@ -275,13 +275,13 @@ export default {
             return time;
         },
         getStartPoint() {
-            return this.blastInformation.start_point;
+            return this.blastInformation.start_point.toFixed(1);
         },
         getFinishPoint() {
-            return this.blastInformation.finish_point;
+            return this.blastInformation.finish_point.toFixed(1);
         },
         getLength() {
-            return this.blastingLength;
+            return this.blastingLength.toFixed(1);
         },
     },
     created() {

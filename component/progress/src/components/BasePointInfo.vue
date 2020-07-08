@@ -34,19 +34,9 @@
             <div class="basepoint-info-body-tunnel-list-container">
             </div>
             -->
-            <!--
             <div class="basepoint-info-body-tunnel-button-container">
               <div class="basepoint-info-body-tunnel-button-add"
-                  @click="handleAddEastCavernButton">ADD EAST</div>
-            </div>
-            <div class="basepoint-info-body-tunnel-button-container">
-              <div class="basepoint-info-body-tunnel-button-add"
-                  @click="handleAddWestCavernButton">ADD WEST</div>
-            </div>
-            -->
-            <div class="basepoint-info-body-tunnel-button-container">
-              <div class="basepoint-info-body-tunnel-button-add"
-                  @click="handleAddWestCavernButton">ADD TUNNEL</div>
+                  @click="handleAddCavernButton">ADD TUNNEL</div>
             </div>
           </div>
         </div>
@@ -104,11 +94,8 @@ export default {
       handleAddCavernButton() {
           this.$emit('select-add-cavern-button', this.id);
       },
-      handleAddEastCavernButton() {
-          this.$emit('select-add-cavern-button', this.id, window.CONSTANTS.DIRECTION.EAST);
-      },
-      handleAddWestCavernButton() {
-          this.$emit('select-add-cavern-button', this.id, window.CONSTANTS.DIRECTION.WEST);
+      handleAddCavernButton() {
+          this.$emit('select-add-cavern-button', this.id);
       },
     },
     computed: {
