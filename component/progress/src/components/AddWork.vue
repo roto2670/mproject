@@ -52,14 +52,14 @@ export default {
         return {
             blastInfo: null,
             category : '0',
-            activity : '100',
+            activity : '101',
         }
     },
     methods: {
       _clearData() {
           this.blastInfo = null,
           this.category = '0',
-          this.activity = '100'
+          this.activity = '101'
       },
       isType() {
           this.blastInfo = this.$store.getters.getBlast(this.blastId);
@@ -75,7 +75,7 @@ export default {
       handleChangeCategory(e) {
           this.category = e.target.value;
           if (this.category == window.CONSTANTS.CATEGORY.MAIN_WORK) {
-              this.activity = '100'
+              this.activity = '101'
           } else if (this.category == window.CONSTANTS.CATEGORY.SUPPORTING) {
               this.activity = '200'
           } else {

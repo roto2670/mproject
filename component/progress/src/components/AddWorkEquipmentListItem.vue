@@ -10,14 +10,14 @@
             <div class="add-work-equipment-select-container">
                 <select class="add-work-equipment-select-box"
                     @change="handleChangeEquipment">
-                    <option disabled selected> - Select Equipment - </option>
+                    <option disabled selected>Select Equipment</option>
                     <option v-for="value in equipmentList" :value="value.id" :key="value.id">
                         {{ value.name }}
                     </option>
                 </select>
                 <select class="add-work-equipment-select-box"
                     @change="handleChangeOperator">
-                    <option disabled selected> - Select Operator - </option>
+                    <option disabled selected>Select Operator</option>
                     <option v-for="value in getOperatorList" :value="value.id" :key="value.id">
                         {{ value.name }}
                     </option>
@@ -113,17 +113,18 @@ export default {
     width: 100%;
     height: 100%;
     position: absolute;
-    opacity: 0.8;
+    opacity: 0.4;
     background-color: #000000;
 }
 .add-work-equipment-selectbox {
-    width: 30%;
-    height: 30%;
+    width: 400px;
+    height: 200px;
     position: absolute;
     background-color: #ffffff;
     top: 30%;
     left: 30%;
     text-align: center;
+    border-radius: 4px;
 }
 .add-work-equipment-title-container {
     width: 100%;
@@ -133,23 +134,28 @@ export default {
     width: 100%;
     font-size: 1.8em;
     padding: 0.5em 0.1em 0.5em 0.1em;
+    color: #595959;
+    font-size: 1.475em;
+    font-weight: 600;
+    text-align: center;
+    text-transform: none;
 }
 .add-work-equipment-select-container {
     width: 100%;
-    height: 55%;
+    height: 50%;
 }
 .add-work-equipment-select-box {
-    min-width: 60%;
+    min-width: 55%;
     max-width: 100%;
     padding: .375em .625em;
     margin: 0.5em;
     background: inherit;
-    color: inherit;
-    font-size: 1.125em;
+    color: #595959;
+    font-size: 1.0em;
 }
 .add-work-equipment-button-container {
     width: 100%;
-    height: 20%;
+    height: 25%;
 }
 .add-work-equipment-button {
     display: inline-block;
@@ -161,7 +167,7 @@ export default {
     cursor: pointer;
     width: 5em;
     height: 2em;
-    padding: 0.5em;
+    padding: 0.2em;
     margin: 0.4em;
 }
 .add-work-equipment-button.add {

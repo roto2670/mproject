@@ -120,7 +120,7 @@
                     <div id="detailInfo" class="detail-container" :class="{ close: isPauseClose }">
                         <div class="work-info-body-list-container">
                             <div class="work-info-body-list-title-container">
-                                Pause ( {{ getPauseTotalTime }} )
+                                Pause Total Time( {{ getPauseTotalTime }} )
                             </div>
                             <div class="work-info-body-sub-list-container">
                                 <div class="work-info-content-list-container">
@@ -142,7 +142,6 @@
                         <div id="detailInfo" class="detail-container" :class="{ close: isEquipClose }">
                             <div class="work-info-body-list-container">
                                 <div class="work-info-body-list-title-container">
-                                    Equipment List
                                 </div>
                                 <div class="work-info-body-sub-list-container">
                                     <div class="work-info-content-list-container">
@@ -648,7 +647,7 @@ export default {
     padding-bottom: 8px;
 }
 .work-info-body-list-title-container {
-    font-size: 24px;
+    font-size: 16px;
     width: 100%;
     margin-top: 0.2em;
     margin-bottom: 0.4em;
@@ -690,7 +689,7 @@ export default {
     width: 100%;
     height: 100%;
     margin: 5px;
-    padding: 5px;
+    padding: 2px;
     font-size: 16px;
     cursor: pointer;
     border-radius: 10px;

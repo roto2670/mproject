@@ -494,7 +494,7 @@ export default {
     width: 100%;
     height: 100%;
     margin: 5px;
-    padding: 5px;
+    padding: 2px;
     font-size: 16px;
     cursor: pointer;
     border-radius: 10px;
