@@ -856,6 +856,8 @@ export default {
             const data = {}
             data.id = this.currentMarker.getId();
             data.name = value.tunnelName;
+            data.section = value.tunnelSection;
+            data.part = value.tunnelPart;
             data.category = value.category;
             data.direction = value.tunnelDirection;
             data.length = value.tunnelLength;
