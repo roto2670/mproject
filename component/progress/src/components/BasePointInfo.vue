@@ -1,6 +1,16 @@
 <template>
     <div v-if="isType()">
       <div v-if="isEdit" id="basePointInfoEditor" class="basepoint-info-container">
+        <div class="basepoint-info-title-container" :title="getItemName">
+            {{ basePointInfo.name }}
+        </div>
+        <div class="basepoint-info-body-container">
+          <div class="basepoint-info-body-content-container">
+            <div class="basepoint-info-body-content-title">Name</div>
+            <input type="text" class="basepoint-info-body-content-message" :value="getItemName"
+                @change="handleChangeBasePointName">
+          </div>
+        </div>
         <div class="basepoint-info-button-container">
           <div class="basepoint-info-ok-button"
               @click="handleOkButton">
@@ -62,41 +72,59 @@ export default {
     data() {
         return {
             isEdit: false,
-            name: 'hi',
+            name: '',
             basePointInfo: null,
         }
     },
     methods: {
-      isType() {
-          if (this.type == window.CONSTANTS.TYPE.SELECT_BASEPOINT) {
-             this.basePointInfo = this.$store.getters.getBasePoint(this.id);
-             return true;
-          } else {
-              return false;
-          }
-      },
-      handleOkButton() {
-          const data = {};
-          data.name = this.name;
-          this.$emit('select-ok-button', data);
-      },
-      handleCancelButton() {
-          this.$emit('select-cancel-button', {});
-      },
-      handleCloseButton() {
-          this.$emit('select-close-button', {});
-      },
-      handleEditTunnelButton() {
-      },
-      handleRemoveTunnelButton() {
-          // this.$emit('select-remove-basepoint-button', this.id);
-      },
-      handleAddCavernButton() {
-          this.$emit('select-add-cavern-button', this.id);
-      },
-      handleAddCavernButton() {
-          this.$emit('select-add-cavern-button', this.id);
-      },
+        _clear() {
+            this.isEdit = false;
+            this.name = '';
+            this.basePointINfo = null;
+        },
+        isType() {
+            if (this.type == window.CONSTANTS.TYPE.SELECT_BASEPOINT) {
+                this.basePointInfo = this.$store.getters.getBasePoint(this.id);
+                return true;
+            } else {
+                return false;
+            }
+        },
+        handleOkButton() {
+            let data = {};
+            data.id = this.id;
+            data.name = this.name;
+            this.$emit('select-ok-button', data);
+            this.isEdit = false;
+            this.basePointInfo = this.$store.getters.getBasePoint(this.id);
+        },
+        handleCancelButton() {
+            this.isEdit = false;
+        },
+        handleCloseButton() {
+            this.$emit('select-close-button', {});
+            this._clear();
+        },
+        handleEditTunnelButton() {
+            this.isEdit = true;
+        },
+        handleRemoveTunnelButton() {
+            let data = {};
+            data.basepoint_id = this.id;
+            this.services.getTunnelListByBasePoint(data, (resData) => {
+                if (resData.length == 0) {
+                    this.$emit('select-remove-basepoint-button', this.id);
+                } else {
+                    this.sweetbox.fire("Deletion not possible because child data exists.");
+                }
+            });
+        },
+        handleAddCavernButton() {
+            this.$emit('select-add-cavern-button', this.id);
+        },
+        handleChangeBasePointName(e) {
+            this.name = e.target.value;
+        },
     },
     computed: {
         getItemName() {
@@ -171,8 +199,9 @@ export default {
     height: 2em;
     border-radius: 10px;
     border: 2px solid #dcdcdc;
-    background-color: #ffffff;
+    background-color: #fffff1;
     color: #1b94e2;
+    box-shadow: 2px 2px;
 }
 .basepoint-info-body-button-remove {
     display: inline-block;
@@ -184,8 +213,9 @@ export default {
     height: 2em;
     border-radius: 10px;
     border: 2px solid #dcdcdc;
-    background-color: #ffffff;
+    background-color: #fffff1;
     color: #1b94e2;
+    box-shadow: 2px 2px;
 }
 .basepoint-info-body-tunnel-container {
     text-align: center;
@@ -207,8 +237,9 @@ export default {
     height: 2em;
     border-radius: 10px;
     border: 2px solid #dcdcdc;
-    background-color: #ffffff;
+    background-color: #fffff1;
     color: #1b94e2;
+    box-shadow: 2px 2px;
 }
 .basepoint-info-button-container {
     width: 100%;
@@ -225,8 +256,9 @@ export default {
     height: 2em;
     border-radius: 10px;
     border: 2px solid rgb(220, 220, 220);
-    color: #666666;
-    background-color: #ffffff;
+    color: #1b94e2;
+    background-color: #fffff1;
+    box-shadow: 2px 2px;
 }
 .basepoint-info-cancle-button {
     display: inline-block;
@@ -238,8 +270,9 @@ export default {
     height: 2em;
     border-radius: 10px;
     border: 2px solid rgb(220, 220, 220);
-    color: #666666;
-    background-color: #ffffff;;
+    color: #1b94e2;
+    background-color: #fffff1;
+    box-shadow: 2px 2px;
 }
 .panel-close-button {
     position: absolute;

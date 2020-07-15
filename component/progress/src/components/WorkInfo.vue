@@ -108,7 +108,7 @@
                 <div class="work-info-body-button-container line">
                     <div class="work-info-body-button" :class="{ buttonDisabled: isStart }"
                         @click="handleEditButton">Edit</div>
-                    <div class="work-info-body-button" :class="{ buttonDisabled: isStart, buttonFinishDisabled: isFinish }"
+                    <div class="work-info-body-button" :class="{ buttonDisabled: isStart }"
                         @click="handleRemoveWork">Remove</div>
                 </div>
 
@@ -257,16 +257,19 @@ export default {
             }
         },
         handleRemoveWork() {
-            // TODO:
-            // if (!this.isStart) {
-            //     const data = {};
-            //     if (!!this.workInfo) {
-            //         data.id = this.workInfo.id;
-            //         this.$emit('select-remove-work-button', data);
-            //     } else {
-            //         this.sweetbox.fire("there is no work data for remove")
-            //     }
-            // }
+             if (!this.isStart) {
+                 const data = {};
+                 if (!!this.workInfo) {
+                     if (this.workInfo.typ == this.blastInfo.work_list[0].typ) {
+                        data.id = this.workInfo.id;
+                        this.$emit('select-remove-work-button', data);
+                     } else {
+                        this.sweetbox.fire("More recent work already exists than the data you want to delete. Please check the work data.")
+                     }
+                 } else {
+                     this.sweetbox.fire("there is no work data for remove")
+                 }
+             }
         },
         handleOkButton() {
             this.workInfo.start_time = this.startTime;
@@ -331,15 +334,19 @@ export default {
                             data.id = this.workInfo.id;
                             data.category = this.workInfo.category;
                             data.typ = this.workInfo.typ;
-                            data.message = this.$store.getters.getMessage(id).message;
                             data.blast_id = this.workInfo.blast_id;
-                            this.services.stopWork(data, (resData) => {
-                                this.workInfo = this.$store.getters.getWork(this.id);
-                                this.setState();
-                                console.log("success to stop work");
-                            }, (error) => {
-                                console.log("fail to stop work : ", error);
-                            });
+                            if (!!!id) {
+                                this.sweetbox.fire("No pause reason selected. Please select a reason message.");
+                            } else {
+                                data.message = this.$store.getters.getMessage(id).message;
+                                this.services.stopWork(data, (resData) => {
+                                    this.workInfo = this.$store.getters.getWork(this.id);
+                                    this.setState();
+                                    console.log("success to stop work");
+                                }, (error) => {
+                                    console.log("fail to stop work : ", error);
+                                });
+                            }
                         }}
                     )
                 } else if (this.workInfo.state == window.CONSTANTS.WORK_STATE.FINISH) {
