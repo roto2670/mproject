@@ -8,13 +8,12 @@ import sweetalert from 'sweetalert2';
 import '@/services/constant.js';
 import * as services from '@/services/services.js';
 
+export const EventBus = new Vue({});
+
 Vue.prototype.$http = axios;
 Vue.prototype.services = services;
 Vue.prototype.sweetbox = sweetalert;
 Vue.config.productionTip = false;
-
-export const EventBus = new Vue({});
-
 Vue.use(VueLodash);
 new Vue({
     store,
