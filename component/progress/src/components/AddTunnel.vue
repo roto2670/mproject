@@ -131,6 +131,8 @@ export default {
                 category: this.category,
                 tunnelId: this.tunnelId,
                 tunnelName: this.totalTunnelName,
+                tunnelSection: this.tunnelName,
+                tunnelPart: this.tunnelName2,
                 tunnelDirection: this.direction,
                 tunnelLength: this.tunnelLength
             }
