@@ -15,7 +15,9 @@ window.CONSTANTS = {
             109: 'main/probhole.svg',
             110: 'main/cleaning.svg',
             111: 'main/face_drilling.svg',
-            112: 'main/blasting.svg',
+            112: 'main/surveying_marking.svg',
+            113: 'main/charging.svg',
+            114: 'main/blasting.svg'
         },
         SUPPORTING: {
             200: 'support/support_concrete.svg',
@@ -150,7 +152,9 @@ window.CONSTANTS = {
         PROBHOLES: 109,
         BOTTOM_CLEANING: 110,
         FACE_DRILLING: 111,
-        BLASTING: 112,
+        SURVEYING_AND_MARKING: 112,
+        CHARGING: 113,
+        BLASTING: 114
     },
     SUPPORTING_WORK: {
         SHOTCRETE: 200,
@@ -188,7 +192,9 @@ window.CONSTANTS = {
         109: "PROBHOLES",
         110: "BOTTOM CLEANING",
         111: "FACE DRILLING",
-        112: "BLASTING",
+        112: "SURVEYING & MARKING",
+        113: "CHARGING",
+        114: "BLASTING",
         200: "SHOTCRETE",
         201: "ROCK BOLT MARKING",
         202: "ROCK BOLT DRILLING",
