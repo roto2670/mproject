@@ -414,36 +414,6 @@ export default {
             // TODO: right click?
             marker.on('contextmenu', () => {});
         },
-        _getCfactor(base, tunnel) {
-            let ret = base,
-                factor = 4;
-            if (tunnel.length >= 1200) {
-                ret += (factor * 12);
-            } else if (tunnel.length >= 1100) {
-                ret += (factor * 11);
-            } else if (tunnel.length >= 1000) {
-                ret += (factor * 10);
-            } else if (tunnel.length >= 900) {
-                ret += (factor * 9);
-            } else if (tunnel.length >= 800) {
-                ret += (factor * 8);
-            } else if (tunnel.length >= 700) {
-                ret += (facotr * 7);
-            } else if (tunnel.length >= 600) {
-                ret += (factor * 6);
-            } else if (tunnel.length >= 500) {
-                ret += (factor * 5);
-            } else if (tunnel.length >= 400) {
-                ret += (factor * 4);
-            } else if (tunnel.length >= 300) {
-                ret += (factor * 3);
-            } else if (tunnel.length >= 200) {
-                ret += (factor * 2);
-            } else if (tunnel.length >= 100) {
-                ret += (factor * 1);
-            }
-            return ret;
-        },
         _drawTunnel(tunnel){
             const xPosition = tunnel.x_loc,
                   yPosition = tunnel.y_loc,
@@ -478,8 +448,7 @@ export default {
             // TODO: right click?
             marker.on('contextmenu', () => {});
             let cFactor = 30;   // 100 : 34  , 200 : 38  , 300 : 42
-            cFactor = this._getCfactor(cFactor, tunnel);
-            let arrowPosition = parseFloat(((tunnel.width / 2) * 0.078).toFixed(1)),
+            let arrowPosition = parseFloat(((tunnel.length / 2) * 0.078).toFixed(1)),
                 arrowPl = "vertex-last",
                 textDxBase = parseInt(tunnel.width / 2) - cFactor,
                 textDx = {stops: [[4, textDxBase], [5, textDxBase * 2], [6, textDxBase * 4], [7, textDxBase * 8]]};
@@ -491,8 +460,15 @@ export default {
                 textDx = {stops: [[4, textDxBase], [5, textDxBase * 2], [6, textDxBase * 4], [7, textDxBase * 8]]};
             }
             // TODO: arrowMarker id
+            let arrowSetting = null,
+                basePointInfo = this.$store.getters.getBasePoint(tunnel.basepoint_id);
+            if (textDxBase > 0) {
+                arrowSetting = [[basePointInfo.x_loc, yPosition], [basePointInfo.x_loc + (arrowPosition * 2) - 1, yPosition]];
+            } else {
+                arrowSetting = [[basePointInfo.x_loc - (arrowPosition * 2) + 1, yPosition], [basePointInfo.x_loc, yPosition]];
+            }
             let _arrowMarker = new maptalks.LineString(
-                [[xPosition - arrowPosition, yPosition], [xPosition + arrowPosition - 0.5, yPosition]],
+                arrowSetting,
                 {
                     // arrowStyle: "classic",
                     arrowStyle: [0.5, 0.5],
