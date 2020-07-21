@@ -6,7 +6,6 @@
             @select-cancel-button="handleAddBasePointCancelButton"></AddBasePoint>
         <BasePointInfo :type="getCurrentType()" :id="currentTunnelId"
             @select-ok-button="handleBasePointInfoOkButton"
-            @select-cancel-button="handleBasePointInfoCancelButton"
             @select-close-button="handleBasePointInfoCloseButton"
             @select-add-cavern-button="handleAddCavern"
             @select-remove-basepoint-button="handleRemoveBasePoint"></BasePointInfo>
@@ -92,6 +91,7 @@ export default {
             zoomLevel: 0,
             basePointMarkers: {},  // {t_type: {bp_id: bp_marker}}
             tunnelMarkers: {},    // {t_type: {t_id: t_marker}}
+            arrowMarkers: {},
             blastMarkers: {},  // {b_id: b_marker, ..}
             blastIdWithTunnel: {},    // {t_id: [b_id, ..]}
             workIdWithBlast: {},    // {b_id: {0: [w_id, ..], 1: [w_id, ..], 2: [w_id, ..]}} 0(MainWork), 1(Supporting), 2(IdelTime)
@@ -488,6 +488,7 @@ export default {
                 }
             );
             this.tunnelLayers[typ].addGeometry([_arrowMarker]);
+            this.arrowMarkers[tunnel.id] = _arrowMarker;
 
         },
         _fixDrawTunnel(tunnel){
@@ -735,11 +736,12 @@ export default {
             });
         },
         handleBasePointInfoOkButton(data) {
-            this.handleClearSelectItem();
-            // TODO: call update api
-        },
-        handleBasePointInfoCancelButton() {
-            this.handleClearSelectItem();
+            this.services.updateBasePoint(data, (resData) => {
+                console.log("Success to update basepoint.")
+                this.setCurrentTunnelId(data.id);
+            }, (error) => {
+                console.log("Fail to update basepoint : ", error)
+            });
         },
         handleBasePointInfoCloseButton() {
             this.handleClearSelectItem();
@@ -1256,6 +1258,7 @@ export default {
         handleWorkRemoveButton(data) {
             this.services.removeWork(data, (resData) => {
                 console.log("Success to remove work : ")
+                this.clearAll();
             }, (error) => {
                 console.log("Failed to remove work")
             });
@@ -1632,9 +1635,9 @@ export default {
                         this.$store.commit('removeBasePoint', item);
                     }
                 } else if (data.kind === 'update') {
-                    let basePoint = this.$store.getters.getBasePoint(item.id);
+                    // let basePoint = this.$store.getters.getBasePoint(item.id);
                     // this._fixDrawTunnel(item);
-                    // this.$store.commit('updateTunnel', item);
+                    this.$store.commit('updateBasePoint', item);
                 }
             });
         },
@@ -1649,11 +1652,14 @@ export default {
                     this.$store.commit('addTunnel', item);
                 } else if (data.kind === 'remove') {
                     let tunnel = this.$store.getters.getTunnel(item),
-                        typ = window.CONSTANTS.TUNNEL_TYPE.CAVERN;
+                        typ = tunnel.category;
                     if (tunnel !== null || tunnel !== undefined) {
                         let tunnelMarker = this.tunnelMarkers[typ][item];
                         tunnelMarker.remove();
                         delete this.tunnelMarkers[typ][item];
+                        let arrowMarker = this.arrowMarkers[item];
+                        arrowMarker.remove()
+                        delete this.arrowMarkers[item];
                         this.$store.commit('removeTunnel', item);
                     }
                 } else if (data.kind === 'update') {
@@ -1728,10 +1734,19 @@ export default {
                     }
                     this.drawWork(blast);
                 } else if (data.kind === 'remove') {
+                    let workData = this.$store.getters.getWork(item),
+                        blast = this.$store.getters.getBlast(workData.blast_id),
+                        _marker = this.workLayer.getGeometryById(blast.id),
+                        _workIdWithBlast = this.workIdWithBlast[blast.id][workData.category];
                     this.$store.commit('removeWork', item)
                     if (item.id in this.pauseIdWithWork) {
                         delete this.pauseIdWithWork[item];
                     }
+                    _workIdWithBlast.splice(0, 1)
+                    if (_marker != null) {
+                        this.workLayer.removeGeometry([_marker]);
+                    }
+                    this.drawWork(blast)
                 } else if (data.kind === 'update') {
                     this.$store.commit('updateWork', item);
                 }

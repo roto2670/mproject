@@ -102,6 +102,25 @@ export const addBasePoint = (data, successCallback, failCallback) => {
     });
 }
 
+export const updateBasePoint = (data, successCallback, failCallback) => {
+    axios({
+        url: `${ window.CONSTANTS.URL.CONSOLE }/work/basepoint/update`,
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        data: data
+    }).then(response => {
+        if(response.data) {
+            successCallback(response.data);
+        } else {
+            failCallback(error);
+        }
+    }).catch(error => {
+        failCallback(error);
+    });
+}
+
 export const removeBasePoint = (data, successCallback, failCallback) => {
     axios({
         url: `${ window.CONSTANTS.URL.CONSOLE }/work/basepoint/remove`,

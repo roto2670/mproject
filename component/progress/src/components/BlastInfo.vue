@@ -334,8 +334,6 @@ export default {
         handleEditButton() {
             this.isEdit = true;
         },
-        handleRemoveBlastButton() {
-        },
         handleAddWorkButton() {
             if (!this.isFinish) {
                 this.$emit('select-add-work-button', this.id);

@@ -1,6 +1,57 @@
 <template>
     <div v-if="isType()">
         <div v-if="isEdit" id="tunnelInfoEditor" class="tunnel-info-container">
+            <div class="tunnel-info-title-container" :title="getItemName">
+                {{ tunnelInfo.tunnel_id }}
+            </div>
+            <div class="tunnel-info-body-container edit">
+                <div class="tunnel-add-body-content-container">
+                    <div class="tunnel-add-body-content-title">Category</div>
+                    <select id="category" class="tunnel-add-body-content-message"
+                        @change="handleChangeCategory">
+                        <option value=100 selected>Top Heading(TH)</option>
+                        <option value=101>Bench-01(B1)</option>
+                        <option value=102>Bench-02(B2)</option>
+                    </select>
+                </div>
+                <div class="tunnel-add-body-content-container">
+                    <div class="tunnel-add-body-content-title">Direction</div>
+                    <select id="direction" class="tunnel-add-body-content-message"
+                        @change="handleChangeDirection">
+                        <option v-for="(value, key) in getDirectionList" :value="key" :key="value"
+                            :selected="isDirectionSelect(key)">
+                            {{ value }}
+                        </option>
+                    </select>
+                </div>
+                <div class="tunnel-add-body-content-container">
+                    <div class="tunnel-add-body-content-title">Tunnel</div>
+                    <select id="tunnelName" class="tunnel-add-body-content-message"
+                        @change="handleChangeName">
+                        <option value='C1' selected>C1</option>
+                        <option value='C2'>C2</option>
+                        <option value='C3'>C3</option>
+                    </select>
+                    <select id="tunnelName2" class="tunnel-add-body-content-message sub"
+                        @change="handleChangeName2">
+                        <option value='A'>A</option>
+                        <option value='B'>B</option>
+                        <option value='C'>C</option>
+                        <option value='D'>D</option>
+                    </select>
+                </div>
+                <div class="tunnel-add-body-content-container">
+                    <div class="tunnel-add-body-content-title">Tunnel ID</div>
+                    <input id="tunnelId" type="text" class="tunnel-add-body-content-message default-cursor"
+                        :value="getTunnelId()" readonly>
+                </div>
+                <div class="tunnel-add-body-content-container">
+                    <div class="tunnel-add-body-content-title">Length (m)</div>
+                    <input id="tunnelLength" type="number" class="tunnel-add-body-content-message"
+                        step="0.1" :value="getTunnelLength()"
+                        @change="handleChangeLength">
+                </div>
+            </div>
             <div class="tunnel-info-button-container">
                 <div class="tunnel-info-ok-button"
                     @click="handleOkButton">
@@ -169,8 +220,9 @@ export default {
             data.name = this.name;
             data.width = this.length;
             data.prog_dir = this.direction;
-            this.$emit('select-ok-button', data);
+            // this.$emit('select-ok-button', data);
             this._clearData();
+            this.isEdit = false;
         },
         handleCancelButton() {
             this.isEdit = false;
@@ -180,12 +232,18 @@ export default {
             this._clearData();
         },
         handleEditTunnelButton() {
-            // TODO:
-            // this.isEdit = true;
+            this.isEdit = true;
         },
         handleRemoveTunnelButton() {
-            // TODO:
-            // this.$emit('select-remove-tunnel-button', this.id);
+            let data = {};
+            data.tunnel_id = this.id;
+            this.services.getBlastListByTunnel(data, (resData) => {
+                if (resData.length == 0) {
+                    this.$emit('select-remove-tunnel-button', this.id);
+                } else {
+                    this.sweetbox.fire("Deletion not possible because child data exists.");
+                }
+            })
         },
         handleAddBlastButton() {
             this.$emit('select-add-blast-button', this.id, window.CONSTANTS.TUNNEL_TYPE.CAVERN);
