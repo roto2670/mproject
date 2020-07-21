@@ -481,10 +481,10 @@ export default {
     border-radius: 10px;
     background-size: contain;
     background-color: white;
-    background-image: url('../../public/static/up-arrow.png');
+    background-image: url('../../public/static/location/imgs/up-arrow.png');
 }
 .button-image.down {
-    background-image: url('../../public/static/down-arrow.png');
+    background-image: url('../../public/static/location/imgs/down-arrow.png');
 }
 
 .work-info-equip-detail-container {

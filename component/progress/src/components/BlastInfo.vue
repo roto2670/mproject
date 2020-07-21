@@ -231,6 +231,10 @@
                                         @click="handleEditButton">
                                     EDIT
                                     </div>
+                                    <div class="blast-info-edit-button"
+                                        @click="handleRemoveButton">
+                                    REMOVE
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -333,6 +337,17 @@ export default {
         // },
         handleEditButton() {
             this.isEdit = true;
+        },
+        handleRemoveButton() {
+            let data = {};
+            data.blast_id = this.id;
+            this.services.getWorkListByBlast(data, (resData) => {
+                if (resData.length == 0) {
+                    this.$emit('select-remove-blast-button', this.id);
+                } else {
+                    this.sweetbox.fire("Deletion not possible because child data exists.");
+                }
+            });
         },
         handleAddWorkButton() {
             if (!this.isFinish) {

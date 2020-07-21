@@ -31,6 +31,7 @@
             @select-close-button="handleBlastInfoCloseButton"
             @select-ok-button="handleBlastInfoOkButton"
             @select-add-work-button="handleAddWork"
+            @select-remove-blast-button="handleRemoveBlast"
             @select-work-item="handleSelectWorkItem"></BlastInfo>
         <BlastInformation :type="getCurrentType()" :id="currentBlastId"
             @select-ok-button="handleBlastInfoOkButton"
@@ -1182,6 +1183,16 @@ export default {
                 this.setCurrentType(window.CONSTANTS.TYPE.ADD_WORK);
             }
         },
+        handleRemoveBlast(blastId) {
+            let data = {};
+            data.id = blastId;
+            this.services.removeBlast(data, (resData) => {
+                    console.log("success to remove blast.")
+                    this.clearAll();
+            }, (error) => {
+                console.log("fail to remove blast : ", error)
+            });
+        },
         handleWorkAddCancelButton() {
             this.currentMarker.updateSymbol({
                     markerLineColor: '#000000',
@@ -1684,8 +1695,9 @@ export default {
                     }
                     this.$store.commit('addBlast', item);
                 } else if (data.kind === 'remove') {
-                    var _marker = this.blastLayer.getGeometryById(item)
-                    _marker.remove();
+                    var blastMarker = this.blastMarkers[item];
+                    blastMarker.remove();
+                    this.blastLayers[window.CONSTANTS.TUNNEL_TYPE.CAVERN].removeGeometry(blastMarker)
                     this.$store.commit('removeBlast', item);
                 } else if (data.kind === 'update') {
                     this.$store.commit('updateBlast', item);
