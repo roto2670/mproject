@@ -3456,21 +3456,22 @@
                         let tunnel = this.$store.getters.getTunnel(item.id);
                         if (tunnel === null || tunnel === undefined) {
                             this._drawTunnel(item);
-                            this.blastIdWithTunnel[item.id] = [];
                         }
                         this.$store.commit('addTunnel', item);
                     } else if (data.kind === 'remove') {
                         let tunnel = this.$store.getters.getTunnel(item),
-                            typ = window.CONSTANTS.TUNNEL_TYPE.CAVERN;
+                            typ = tunnel.category;
                         if (tunnel !== null || tunnel !== undefined) {
                             let tunnelMarker = this.tunnelMarkers[typ][item];
                             tunnelMarker.remove();
                             delete this.tunnelMarkers[typ][item];
+                            let arrowMarker = this.arrowMarkers[item];
+                            arrowMarker.remove()
+                            delete this.arrowMarkers[item];
                             this.$store.commit('removeTunnel', item);
                         }
                     } else if (data.kind === 'update') {
-                        let tunnel = this.$store.getters.getTunnel(item.id);
-                        //this._fixDrawTunnel(item);
+                        this._fixDrawTunnel(item);
                         this.$store.commit('updateTunnel', item);
                     }
                 });
@@ -3486,15 +3487,25 @@
                                 1: [],  // Supporting
                                 2: []   // Idel Time
                             }
-                            this._drawBlast(item);
+                            this._drawBlast(item, true);
                         }
                         this.$store.commit('addBlast', item);
                     } else if (data.kind === 'remove') {
-                        var _marker = this.blastLayer.getGeometryById(item)
-                        _marker.remove();
+                        let blast = this.$store.getters.getBlast(item),
+                            tunnelId = blast.tunnel_id;
+                        this.blastIdWithTunnel[tunnelId] = this._.without(this.blastIdWithTunnel[tunnelId], item);
+                        var blastMarker = this.blastMarkers[item];
+                        blastMarker.remove();
+                        this.blastLayers[window.CONSTANTS.TUNNEL_TYPE.CAVERN].removeGeometry(blastMarker)
                         this.$store.commit('removeBlast', item);
                     } else if (data.kind === 'update') {
                         this.$store.commit('updateBlast', item);
+                        let workMarker = this.workLayer.getGeometryById(item.id);
+                        if (!!workMarker) {
+                            this.workLayer.removeGeometry([workMarker]);
+                        }
+                        this.drawWork(item);
+                        this.clearForBlastData(item);
                     }
                 });
             },
@@ -3507,6 +3518,7 @@
                     } else if (data.kind === 'remove') {
                         this.$store.commit('removeBlast', item);
                     } else if (data.kind === 'update') {
+                        this.fixDrawblast(item);
                         this.$store.commit('updateBlast', item);
                     }
                 });
@@ -3514,7 +3526,6 @@
             _handleUpdateWorkList(data) {
                 const list = data.v;
                 this._.forEach(list, item => {
-                    // TODO:
                     if (data.kind === 'add') {
                         this.$store.commit('addWork', item);
                         if (!(item.id in this.pauseIdWithWork)) {
@@ -3539,11 +3550,24 @@
                                 markerFill: this.colorMap[typ]
                             });
                         }
+                        if (this.workIdWithBlast[item.blast_id][item.category].length == 0) {
+                            this.workIdWithBlast[item.blast_id][item.category].push(item.id);
+                        } else {
+                            this.workIdWithBlast[item.blast_id][item.category].unshift(item.id);
+                        }
                         this.drawWork(blast);
                     } else if (data.kind === 'remove') {
+                        let workData = this.$store.getters.getWork(item),
+                            blast = this.$store.getters.getBlast(workData.blast_id),
+                            _marker = this.workLayer.getGeometryById(blast.id),
+                            _workIdWithBlast = this.workIdWithBlast[blast.id][workData.category];
                         this.$store.commit('removeWork', item)
                         if (item.id in this.pauseIdWithWork) {
                             delete this.pauseIdWithWork[item];
+                        }
+                        _workIdWithBlast.splice(0, 1)
+                        if (_marker != null) {
+                            this.workLayer.removeGeometry([_marker]);
                         }
                     } else if (data.kind === 'update') {
                         this.$store.commit('updateWork', item);
@@ -3808,9 +3832,18 @@
                 });
             },
             _fixDrawTunnel(tunnel){
+                const oldTunnelData = this.$store.getters.getTunnel(tunnel.id)
+                this.tunnelMarkers[oldTunnelData.category][tunnel.id].remove();
+                this.arrowMarkers[tunnel.id].remove();
                 var _marker = this.tunnelLayers[window.CONSTANTS.TUNNEL_TYPE.CAVERN].getGeometryById(tunnel.id)
                 this.tunnelLayers[window.CONSTANTS.TUNNEL_TYPE.CAVERN].removeGeometry([_marker])
                 this._drawTunnel(tunnel);
+            },
+            fixDrawblast(blast){
+                var _marker = this.blastMarkers[blast.id];
+                _marker.remove();
+                this.blastLayers[window.CONSTANTS.TUNNEL_TYPE.CAVERN].removeGeometry(_marker);
+                this._drawBlast(blast, true);
             },
             _getCfactor(base, tunnel) {
                 let ret = base,
@@ -3939,6 +3972,43 @@
                     }
                 });
             },
+            clearForBlastData(blast) {
+                let typ = window.CONSTANTS.TUNNEL_TYPE.BLAST;
+                const tunnelData = this.$store.getters.getTunnel(blast.tunnel_id);
+                if (blast.state === window.CONSTANTS.BLAST_STATE.FINISH) {
+                    if (tunnelData.category == window.CONSTANTS.TUNNEL_CATEGORY.TH) {
+                        typ = window.CONSTANTS.TUNNEL_TYPE.FINISH_TH;
+                    } else if (tunnelData.category == window.CONSTANTS.TUNNEL_CATEGORY.B1) {
+                        typ = window.CONSTANTS.TUNNEL_TYPE.FINISH_B1;
+                    } else {
+                        typ = window.CONSTANTS.TUNNEL_TYPE.FINISH_B2;
+                    }
+                } else {
+                    if (blast.work_list.length > 0) {
+                        if (blast.work_list[0].category == window.CONSTANTS.CATEGORY.MAIN_WORK) {
+                            typ = "main";
+                        } else if (blast.work_list[0].category == window.CONSTANTS.CATEGORY.SUPPORTING) {
+                            typ = "supporting";
+                        } else {
+                            typ = "idle";
+                        }
+                    }
+                }
+                this.blastMarkers[blast.id].updateSymbol({
+                        markerLineColor: this.colorMap[typ],
+                        // TODO:
+                        markerLineWidth: 1,
+                        markerFill: this.colorMap[typ],
+                        markerOpacity: 1
+                });
+                this.clearCurrentType();
+                this.clearCurrentTunnelId();
+                this.clearTunnelType();
+                this.clearCurrentBlastId();
+                this.clearBlastType();
+                this.clearCurrentWorkId();
+                this.clearLastBlastId();
+            },
             _drawBlast(blast, isUpdated) {
                 const tunnelData = this.$store.getters.getTunnel(blast.tunnel_id),
                       position = [blast.x_loc, blast.y_loc],
@@ -3996,6 +4066,10 @@
                 this.$store.commit('addBlast', blast);
                 this._handleBlastClickEvent(_marker)
                 this.blastLayers[window.CONSTANTS.TUNNEL_TYPE.CAVERN].addGeometry(_marker);
+                let workMarker = this.workLayer.getGeometryById(blast.id);
+                if (!!workMarker) {
+                    this.workLayer.removeGeometry([workMarker]);
+                }
                 this.drawWork(blast);
             },
             _handleBlastClickEvent(marker) {
@@ -4021,138 +4095,138 @@
             drawWork(blast) {
                 // TODO:
                 if (blast.state === window.CONSTANTS.BLAST_STATE.IN_PROGRESS) {
-                   let tmp = this.workIdWithBlast[blast.id][0],  // 0 is Main Work
-                       tmp1 = this.workIdWithBlast[blast.id][1],  // 1 is Supporting
-                       tmp2 = this.workIdWithBlast[blast.id][2],  // 2 is Idle
-                       latestWork = null,
-                       latestSupporting = null,
-                       latestIdle = null,
-                       latestTmpData = null,
-                       currentCategory = null,
+                    let tmp = this.workIdWithBlast[blast.id][0],  // 0 is Main Work
+                        tmp1 = this.workIdWithBlast[blast.id][1],  // 1 is Supporting
+                        tmp2 = this.workIdWithBlast[blast.id][2],  // 2 is Idle
+                        latestWork = null,
+                        latestSupporting = null,
+                        latestIdle = null,
+                        latestTmpData = null,
+                        currentCategory = null,
                         currentTyp = null,
                         currentWorkId = null;
 
-                   if (tmp.length > 0) {
-                       latestWork = this.$store.getters.getWork(tmp[0]);
-                       if (latestWork.state == window.CONSTANTS.WORK_STATE.IN_PROGRESS ||
-                           latestWork.state == window.CONSTANTS.WORK_STATE.STOP) {
-                           latestTmpData = latestWork;
-                           currentCategory = latestWork.category;
-                           currentTyp = latestWork.typ;
-                           currentWorkId = latestWork.id;
-                       } else {
-                           latestTmpData = latestWork;
-                           currentCategory = latestWork.category;
-                           currentTyp = latestWork.typ;
-                           currentWorkId = latestWork.id;
-                       }
-                   }
-                   if (tmp1.length > 0) {
-                       latestSupporting = this.$store.getters.getWork(tmp1[0]);
-                       if (latestSupporting.state == window.CONSTANTS.WORK_STATE.IN_PROGRESS ||
-                           latestSupporting.state == window.CONSTANTS.WORK_STATE.STOP) {
-                           currentCategory = latestSupporting.category;
-                           currentTyp = latestSupporting.typ;
-                           currentWorkId = latestSupporting.id;
-                       } else {
-                           if (latestTmpData != null) {
-                               if (latestTmpData.last_updated_time < latestSupporting.last_updated_time) {
-                                   latestTmpData = latestSupporting;
-                                   currentCategory = latestSupporting.category;
-                                   currentTyp = latestSupporting.typ;
-                                   currentWorkId = latestSupporting.id;
-                               }
-                           } else {
-                               latestTmpData = latestSupporting;
-                               currentCategory = latestSupporting.category;
-                               currentTyp = latestSupporting.typ;
-                               currentWorkId = latestSupporting.id;
-                           }
-                       }
-                   }
-                   if (tmp2.length > 0) {
-                       latestIdle = this.$store.getters.getWork(tmp2[0]);
-                       if (latestIdle.state == window.CONSTANTS.WORK_STATE.IN_PROGRESS ||
-                           latestIdle.state == window.CONSTANTS.WORK_STATE.STOP) {
-                           currentCategory = latestIdle.category;
-                           currentTyp = latestIdle.typ;
-                           currentWorkId = latestIdle.id;
-                       } else {
-                           if (latestTmpData != null) {
-                               if (latestTmpData.last_updated_time < latestIdle.last_updated_time) {
-                                   latestTmpData = latestIdle;
-                                   currentCategory = latestIdle.category;
-                                   currentTyp = latestIdle.typ;
-                                   currentWorkId = latestIdle.id;
-                               }
-                           } else {
-                               latestTmpData = latestIdle;
-                               currentCategory = latestIdle.category;
-                               currentTyp = latestIdle.typ;
-                               currentWorkId = latestIdle.id;
-                           }
-                       }
-                   }
-                   let fileUrl = '';
-                   if (currentCategory != null && currentTyp != null) {
-                       if (currentCategory == window.CONSTANTS.CATEGORY.MAIN_WORK) {
-                           fileUrl =`${ window.CONSTANTS.URL.BASE_IMG }${ window.CONSTANTS.URL.MAIN[currentTyp] }`;
-                       } else if (currentCategory == window.CONSTANTS.CATEGORY.SUPPORTING) {
+                    if (tmp.length > 0) {
+                        latestWork = this.$store.getters.getWork(tmp[0]);
+                        if (latestWork.state == window.CONSTANTS.WORK_STATE.IN_PROGRESS ||
+                            latestWork.state == window.CONSTANTS.WORK_STATE.STOP) {
+                            latestTmpData = latestWork;
+                            currentCategory = latestWork.category;
+                            currentTyp = latestWork.typ;
+                            currentWorkId = latestWork.id;
+                        } else {
+                            latestTmpData = latestWork;
+                            currentCategory = latestWork.category;
+                            currentTyp = latestWork.typ;
+                            currentWorkId = latestWork.id;
+                        }
+                    }
+                    if (tmp1.length > 0) {
+                        latestSupporting = this.$store.getters.getWork(tmp1[0]);
+                        if (latestSupporting.state == window.CONSTANTS.WORK_STATE.IN_PROGRESS ||
+                            latestSupporting.state == window.CONSTANTS.WORK_STATE.STOP) {
+                            currentCategory = latestSupporting.category;
+                            currentTyp = latestSupporting.typ;
+                            currentWorkId = latestSupporting.id;
+                        } else {
+                            if (latestTmpData != null) {
+                                if (latestTmpData.last_updated_time < latestSupporting.last_updated_time) {
+                                    latestTmpData = latestSupporting;
+                                    currentCategory = latestSupporting.category;
+                                    currentTyp = latestSupporting.typ;
+                                    currentWorkId = latestSupporting.id;
+                                }
+                            } else {
+                                latestTmpData = latestSupporting;
+                                currentCategory = latestSupporting.category;
+                                currentTyp = latestSupporting.typ;
+                                currentWorkId = latestSupporting.id;
+                            }
+                        }
+                    }
+                    if (tmp2.length > 0) {
+                        latestIdle = this.$store.getters.getWork(tmp2[0]);
+                        if (latestIdle.state == window.CONSTANTS.WORK_STATE.IN_PROGRESS ||
+                            latestIdle.state == window.CONSTANTS.WORK_STATE.STOP) {
+                            currentCategory = latestIdle.category;
+                            currentTyp = latestIdle.typ;
+                            currentWorkId = latestIdle.id;
+                        } else {
+                            if (latestTmpData != null) {
+                                if (latestTmpData.last_updated_time < latestIdle.last_updated_time) {
+                                    latestTmpData = latestIdle;
+                                    currentCategory = latestIdle.category;
+                                    currentTyp = latestIdle.typ;
+                                    currentWorkId = latestIdle.id;
+                                }
+                            } else {
+                                latestTmpData = latestIdle;
+                                currentCategory = latestIdle.category;
+                                currentTyp = latestIdle.typ;
+                                currentWorkId = latestIdle.id;
+                            }
+                        }
+                    }
+                    let fileUrl = '';
+                    if (currentCategory != null && currentTyp != null) {
+                        if (currentCategory == window.CONSTANTS.CATEGORY.MAIN_WORK) {
+                            fileUrl =`${ window.CONSTANTS.URL.BASE_IMG }${ window.CONSTANTS.URL.MAIN[currentTyp] }`;
+                        } else if (currentCategory == window.CONSTANTS.CATEGORY.SUPPORTING) {
                             fileUrl =`${ window.CONSTANTS.URL.BASE_IMG }${ window.CONSTANTS.URL.SUPPORTING[currentTyp] }`;
-                       } else {
+                        } else {
                             fileUrl =`${ window.CONSTANTS.URL.BASE_IMG }${ window.CONSTANTS.URL.IDLE[currentTyp] }`;
-                       }
-                   }
-                   if (fileUrl !== '') {
-                       let marker = new maptalks.Marker(
-                           [blast.x_loc, blast.y_loc + 0.05], {
-                               id: blast.id,  // TODO:
-                               symbol: {
-                                   'markerFile': fileUrl,
-                                   'markerWidth': {stops: [[4, 20], [5, 30], [6, 50], [7, 80]]},
-                                   'markerHeight': {stops: [[4, 20], [5, 30], [6, 50], [7, 80]]},
-                               }
-                           }
-                       )
-                       this.workLayer.addGeometry(marker);
-                       marker.on('click', (e) => {
-                           this.handleClearSelectItem();
-                           let _blastMarker = this.blastMarkers[blast.id];
-                           if (_blastMarker != null) {
-                               _blastMarker.updateSymbol({
-                                       markerLineColor: '#000000',
-                                       markerLineWidth: 1,
-                                       markerFill: this.colorMap['selected'],
-                                       markerOpacity: 1
-                               });
-                               this.closeMenu();
-                               this.setCurrentBlastId(_blastMarker.getId());
-                               this.setCurrentMarker(_blastMarker);
-                               this.setBlastType(_blastMarker.type);
-                               if (currentWorkId != null) {
-                                   // View the Current Work information
+                        }
+                    }
+                    if (fileUrl !== '') {
+                        let marker = new maptalks.Marker(
+                            [blast.x_loc, blast.y_loc + 0.05], {
+                                id: blast.id,  // TODO:
+                                symbol: {
+                                    'markerFile': fileUrl,
+                                    'markerWidth': {stops: [[4, 20], [5, 30], [6, 50], [7, 80]]},
+                                    'markerHeight': {stops: [[4, 20], [5, 30], [6, 50], [7, 80]]}
+                                }
+                            }
+                        )
+                        this.workLayer.addGeometry(marker);
+                        marker.on('click', (e) => {
+                            this.handleClearSelectItem();
+                            let _blastMarker = this.blastMarkers[blast.id];
+                            if (_blastMarker != null) {
+                                _blastMarker.updateSymbol({
+                                        markerLineColor: '#000000',
+                                        markerLineWidth: 1,
+                                        markerFill: this.colorMap['selected'],
+                                        markerOpacity: 1
+                                });
+                                this.closeMenu();
+                                this.setCurrentBlastId(_blastMarker.getId());
+                                this.setCurrentMarker(_blastMarker);
+                                this.setBlastType(_blastMarker.type);
+                                if (currentWorkId != null) {
+                                    // View the Current Work information
 
-                                   this.services.getWorkDataByWork({"work_id": currentWorkId}, (resData) => {
-                                       console.log("Success to get work Data list", resData);
-                                       this.workEquipmentList = [];
+                                    this.services.getWorkDataByWork({"work_id": currentWorkId}, (resData) => {
+                                        console.log("Success to get work Data list");
+                                        this.workEquipmentList = [];
 
-                                       this._.forEach(resData.equipment, workEquipment => {
-                                           this.workEquipmentList.push(workEquipment);
-                                       });
-                                       this.setCurrentWorkId(currentWorkId);
-                                       this.setCurrentType(window.CONSTANTS.TYPE.SELECT_WORK);
-                                   }, (error) => {
-                                       console.log("Failed to work data list.")
-                                   });
-                               } else {
-                                   // View the Blast information
-                                   this.setCurrentType(window.CONSTANTS.TYPE.SELECT_BLAST_INFORMATION);
-                               }
-                               e.domEvent.stopPropagation();
-                           }
-                       });
-                   }
-               }
+                                        this._.forEach(resData.equipment, workEquipment => {
+                                            this.workEquipmentList.push(workEquipment);
+                                        });
+                                        this.setCurrentWorkId(currentWorkId);
+                                        this.setCurrentType(window.CONSTANTS.TYPE.SELECT_WORK);
+                                    }, (error) => {
+                                        console.log("Failed to work data list.")
+                                    });
+                                } else {
+                                    // View the Blast information
+                                    this.setCurrentType(window.CONSTANTS.TYPE.SELECT_BLAST_INFORMATION);
+                                }
+                                e.domEvent.stopPropagation();
+                            }
+                        });
+                    }
+                }
             },
             handleClearSelectItem() {
                 if (this.currentMarker !== null) {
@@ -4277,6 +4351,9 @@
             },
             clearCurrentWorkId() {
                 this.currentWorkId = null;
+            },
+            clearLastBlastId() {
+                this.lastBlastId = '';
             },
             setCurrentTunnelId(id) {
                 this.currentTunnelId = id;

@@ -29,6 +29,16 @@ export default new Vuex.Store({
         getTunnelList: (state) => {
 			return _.values(state.tunnel);
         },
+        getTunnelListByBasePointId : (state, getters) => (basePointId) => {
+            let tunnelList = getters.getTunnelList,
+                ret = [];
+            _.forEach(tunnelList, tunnelData => {
+                if (tunnelData.basepoint_id == basePointId) {
+                    ret.push(tunnelData);
+                }
+            });
+            return ret;
+        },
         getBlast: (state) => (id) => {
             return state.blast[id];
         },

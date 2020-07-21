@@ -24,7 +24,9 @@ window.CONSTANTS = {
             109: 'main/probhole.svg',
             110: 'main/cleaning.svg',
             111: 'main/face_drilling.svg',
-            112: 'main/blasting.svg',
+            112: 'main/surveying_marking.svg',
+            113: 'main/charging.svg',
+            114: 'main/blasting.svg'
         },
         SUPPORTING: {
             200: 'support/support_concrete.svg',

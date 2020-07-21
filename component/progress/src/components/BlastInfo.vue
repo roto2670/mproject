@@ -95,18 +95,17 @@
                                     <div class="blast-info-body-content-title fold">Blasting Date</div>
                                     <input class="blast-info-body-content-message fold" type="date"
                                         @change="handleChangeBlastingDate"
-                                        :value="getBlastingDate">
+                                        :value="getBlastingDateEdit">
                                 </div>
                                 <div class="blast-info-body-content-container fold">
                                     <div class="blast-info-body-content-title fold">Blasting Time</div>
                                     <input class="blast-info-body-content-message fold" type="time"
                                         @change="handleChangeBlastingTime"
-                                        :value="getBlastingTime">
+                                        :value="getBlastingTimeEdit">
                                 </div>
                                 <div class="blast-info-body-content-container fold">
                                     <div class="blast-info-body-content-title fold">Start Point</div>
                                     <input class="blast-info-body-content-message fold" type="Number"
-                                        @change="handleChangeStartPoint"
                                         :value="getStartPointEdit" readonly>
                                 </div>
                                 <div class="blast-info-body-content-container fold">
@@ -118,7 +117,6 @@
                                 <div class="blast-info-body-content-container fold">
                                     <div class="blast-info-body-content-title fold">Drilling Length</div>
                                     <input class="blast-info-body-content-message fold" type="text"
-                                        @change="handleChangeDrillingDepth"
                                         :value="getLengthEdit" readonly>
                                 </div>
                                 <div class="blast-info-body-content-container fold">
@@ -285,6 +283,15 @@ export default {
             isCycleDetailClose: true,
             isBlastingDetailClose: true,
             blastingLength: 0,
+            explosive_bulk: 0,
+            explosive_cartridge: 0,
+            detonator: 0,
+            drilling_depth: 0,
+            blasting_time: null,
+            start_point: 0,
+            finish_point: 0,
+            team_id: 0,
+            team_nos: 0
         }
     },
     methods: {
@@ -300,13 +307,21 @@ export default {
             this.blastingLength = 0;
             this.isCycleDetailClose = true;
             this.isBlastingDetailClose = true;
+            this.explosive_bulk = 0;
+            this.explosive_cartridge = 0;
+            this.detonator = 0;
+            this.drilling_depth = 0;
+            this.blasting_time = null;
+            this.start_point = 0;
+            this.finish_point = 0;
+            this.team_id = 0;
+            this.team_nos= 0;
         },
         isType() {
             if (this.type == window.CONSTANTS.TYPE.SELECT_BLAST) {
                 this.blast = this.$store.getters.getBlast(this.id);
                 this.blastInformation = this.blast.blast_info;
                 this.tunnel = this.$store.getters.getTunnel(this.blast.tunnel_id);
-                this.blastingLength = this.blastInformation.blasting_length;
                 this.setState();
                 return true;
             } else {
@@ -321,22 +336,98 @@ export default {
             }
         },
         handleOkButton() {
-            this.$emit('select-ok-button', this.blastInformation);
-            this.isEdit = false;
+            let blastList = this.tunnel.blast_list,
+                index = blastList.findIndex(x => x.id === this.id),
+                changedTime = new Date(this.blasting_time).getTime() / 1000,
+                data = {};
+            data.explosive_bulk = this.explosive_bulk;
+            data.explosive_cartridge = this.explosive_cartridge;
+            data.detonator = this.detonator;
+            data.drilling_depth = this.drilling_depth;
+            data.start_point = this.start_point;
+            data.finish_point = this.finish_point;
+            data.blasting_length = this.blastingLength;
+            data.team_id = this.team_id;
+            data.team_nos = this.team_nos;
+            data.blast_id = this.id;
+            data.id = this.blastInformation.id;
+            if (blastList.length == 1) {
+                data.blasting_time = this.blasting_time;
+                this.$emit('select-ok-button', data, this.tunnel, this.blast);
+                this._clearData();
+                this.isEdit = false;
+            } else if (blastList.length > 1) {
+                if (index == 0) {
+                    const beforeStartTime = new Date(blastList[index + 1].blast_info.blasting_time).getTime() / 1000,
+                          beforeFinishTime = beforeStartTime + blastList[index + 1].accum_time;
+                    if (changedTime < beforeFinishTime) {
+                        this.sweetbox.fire("The time you are trying to change is less than the end time of the previous blasting. Please check the time again.");
+                    } else {
+                        data.blasting_time = this.blasting_time;
+                        this.$emit('select-ok-button', data, this.tunnel, this.blast);
+                        this._clearData();
+                        this.isEdit = false;
+                    }
+                } else if (index == blastList.length - 1) {
+                    const nextStartTime = new Date(blastList[index - 1].blast_info.blasting_time).getTime() / 1000;
+                    console.log(changedTime, nextStartTime)
+                    if(!!nextStartTime){
+                        if (changedTime > nextStartTime) {
+                            this.sweetbox.fire("The time you are trying to change is greater than the start time of the next blasting . Please check the time again.");
+                        } else {
+                            data.blasting_time = this.blasting_time;
+                            this.$emit('select-ok-button', data, this.tunnel, this.blast);
+                            this._clearData();
+                            this.isEdit = false;
+                        }
+                    } else {
+                        data.blasting_time = this.blasting_time;
+                        this.$emit('select-ok-button', data, this.tunnel, this.blast);
+                        this._clearData();
+                        this.isEdit = false;
+                    }
+                } else {
+                    const beforeStartTime = new Date(blastList[index + 1].blast_info.blasting_time).getTime() / 1000,
+                          beforeFinishTime = beforeStartTime + blastList[index + 1].accum_time,
+                          nextStartTime = new Date(blastList[index - 1].blast_info.blasting_time).getTime() / 1000;
+                    if (changedTime < beforeFinishTime) {
+                        this.sweetbox.fire("The time you are trying to change is less than the end time of the previous blasting. Please check the time again.");
+                    } else {
+                        if(!!nextStartTime){
+                            if (changedTime > nextStartTime) {
+                                this.sweetbox.fire("The time you are trying to change is greater than the start time of the next blasting . Please check the time again.");
+                            } else {
+                                data.blasting_time = this.blasting_time;
+                                this.$emit('select-ok-button', data, this.tunnel, this.blast);
+                                this._clearData();
+                                this.isEdit = false;
+                            }
+                        } else {
+                            data.blasting_time = this.blasting_time;
+                            this.$emit('select-ok-button', data, this.tunnel, this.blast);
+                            this._clearData();
+                            this.isEdit = false;
+                        }
+                    }
+                }
+            }
         },
         handleCancelButton() {
+            this._clearData();
             this.isEdit = false;
+            this.$emit('select-edit-blast-cancel-button');
         },
         handleCloseButton() {
-            this.$emit('select-close-button', {});
+            if (this.isEdit) {
+                this.handleCancelButton();
+            } else {
+                this.$emit('select-close-button', {});
+            }
             this._clearData();
         },
-        // handleInformationButton() {
-        //     this.$emit('select-information-button', this.id);
-        //     this._clearData();
-        // },
         handleEditButton() {
             this.isEdit = true;
+            this.$emit('select-edit-blast-button', this.tunnel, this.id);
         },
         handleRemoveButton() {
             let data = {};
@@ -369,34 +460,40 @@ export default {
             return this.blastInformation.team_id == value;
         },
         handleChangeExplosiveBulk(e) {
-            this.blastInformation.explosive_bulk = e.target.value;
+            this.explosive_bulk = e.target.value;
         },
         handleChangeExplosiveCartridge(e) {
-            this.blastInformation.explosive_cartridge = e.target.value;
+            this.explosive_cartridge = e.target.value;
         },
         handleChangeDetonator(e) {
-            this.blastInformation.detonator = e.target.value;
+            this.detonator = e.target.value;
         },
         handleChangeDrillingDepth(e) {
-            this.blastInformation.drilling_depth = e.target.value;
+            this.blastingLength = e.target.value;
         },
         handleChangeBlastingDate(e) {
             this.blastDate = e.target.value;
-            this.blastInformation.blasting_time = this.blastDate + " " + this.blastTime;
+            this.blasting_time = this.blastDate + " " + this.blastTime;
         },
         handleChangeBlastingTime(e) {
             this.blastTime = e.target.value;
-            this.blastInformation.blasting_time = this.blastDate + " " + this.blastTime;
-        },
-        handleChangeStartPoint(e) {
-            this.blastInformation.start_point = e.target.value;
-            this.blastInformation.blasting_length = this.blastInformation.finish_point - this.blastInformation.start_point;
-            this.blastingLength = this.blastInformation.blasting_length;
+            this.blasting_time = this.blastDate + " " + this.blastTime;
         },
         handleChangeFinishPoint(e) {
-            this.blastInformation.finish_point = e.target.value;
-            this.blastInformation.blasting_length = this.blastInformation.finish_point - this.blastInformation.start_point;
-            this.blastingLength = this.blastInformation.blasting_length;
+            let blastList = this.tunnel.blast_list,
+                _finish_point = parseInt(e.target.value),
+                index = blastList.findIndex(x => x.id === this.id);
+            if (_finish_point > this.start_point) {
+                if (index > 0) {
+                    this.sweetbox.fire("The length cannot be changed because more recent blasts exist. Please delete the latest blasts and change the length.");
+                } else {
+                    this.finish_point = _finish_point;
+                    this.blastingLength = this.finish_point - this.start_point;
+                    this.$emit('change-blast-length', this.tunnel, this.blastingLength, this.id);
+                }
+            } else {
+                this.sweetbox.fire("The length you want to change cannot be minus length. Please reset the finish point.");
+            }
         },
         handleChangeTeamId(e) {
             this.blastInformation.team_id = e.target.value;
@@ -499,57 +596,88 @@ export default {
             }
         },
         getExplosiveBulk() {
-            return this.blastInformation.explosive_bulk + ' kg';
+            this.explosive_bulk = this.blastInformation.explosive_bulk;
+            if (!!!this.explosive_bulk) {
+                this.explosive_bulk = 0;
+            }
+            return this.explosive_bulk + ' kg';
         },
         getExplosiveBulkEdit() {
-            return this.blastInformation.explosive_bulk;
+            return this.explosive_bulk;
         },
         getExplosiveCartridge() {
-            return this.blastInformation.explosive_cartridge + ' kg';
+            this.explosive_cartridge = this.blastInformation.explosive_cartridge;
+            if (!!!this.explosive_cartridge) {
+                this.explosive_cartridge = 0;
+            }
+            return this.explosive_cartridge + ' kg';
         },
         getExplosiveCartridgeEdit() {
-            return this.blastInformation.explosive_cartridge;
+            return this.explosive_cartridge;
         },
         getDetonator() {
-            return this.blastInformation.detonator + ' Nos';
+            this.detonator = this.blastInformation.detonator;
+            return this.detonator + ' Nos';
         },
         getDetonatorEdit() {
-            return this.blastInformation.detonator;
+            return this.detonator;
         },
         getDrillingDepth() {
-            return this.blastInformation.drilling_depth.toFixed(1) + 'm';
+            this.drilling_depth = this.blastInformation.drilling_depth;
+            return this.drilling_depth.toFixed(1) + 'm';
         },
         getDrillingDepthEdit() {
-            return this.blastInformation.drilling_depth.toFixed(1);
+            return this.drilling_depth.toFixed(1);
         },
         getBlastingDate() {
-            let date = null;
             if (this.blastInformation.blasting_time != null) {
-                date = this.blastInformation.blasting_time.split(' ')[0];
+                this.blastDate = this.blastInformation.blasting_time.split(' ')[0];
+            } else {
+                this.blastDate = this.blastInformation.blasting_time;
             }
-            return date;
+            if (this.blastDate !== null && this.blastTime != null) {
+                this.blasting_time = this.blastDate + " " + this.blastTime;
+            } else {
+                this.blasting_time = null;
+            }
+            return this.blastDate;
+        },
+        getBlastingDateEdit() {
+            return this.blastDate;
         },
         getBlastingTime() {
-            let time = null;
-            if (this.blastInformation.blasting_time != null) {
-                time = this.blastInformation.blasting_time.split(' ')[1];
-                time = time.substring(0,5);
+            if (this.blastInformation.blasting_time !== null) {
+                this.blastTime = this.blastInformation.blasting_time.split(' ')[1];
+                this.blastTime = this.blastTime.substring(0,5);
+            } else {
+                this.blastTime = this.blastInformation.blasting_time;
             }
-            return time;
+            if (this.blastDate !== null && this.blastTime != null) {
+                this.blasting_time = this.blastDate + " " + this.blastTime;
+            } else {
+                this.blasting_time = null;
+            }
+            return this.blastTime;
+        },
+        getBlastingTimeEdit(){
+            return this.blastTime;
         },
         getStartPoint() {
-            return this.blastInformation.start_point.toFixed(1) + "m";
+            this.start_point = this.blastInformation.start_point;
+            return this.start_point.toFixed(1) + "m";
         },
         getStartPointEdit() {
-            return this.blastInformation.start_point.toFixed(1);
+            return this.start_point.toFixed(1);
         },
         getFinishPoint() {
-            return this.blastInformation.finish_point.toFixed(1) + 'm';
+            this.finish_point = this.blastInformation.finish_point;
+            return this.finish_point.toFixed(1) + 'm';
         },
         getFinishPointEdit() {
-            return this.blastInformation.finish_point.toFixed(1);
+            return this.finish_point.toFixed(1);
         },
         getLength() {
+            this.blastingLength = this.finish_point - this.start_point;
             return this.blastingLength.toFixed(1) + 'm';
         },
         getLengthEdit() {

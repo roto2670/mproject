@@ -198,7 +198,7 @@ export const removeTunnel = (data, successCallback, failCallback) => {
 
 export const updateTunnel = (data, successCallback, failCallback) => {
     axios({
-        url: `${ window.CONSTANTS.URL.CONSOLE }/workprog/tunnel/update`,
+        url: `${ window.CONSTANTS.URL.CONSOLE }/work/tunnel/update`,
         method: 'POST',
         headers: {
             'Content-Type': 'application/json'
