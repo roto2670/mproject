@@ -141,6 +141,7 @@
                 blastLayers: {},  // {t_type : layer},
                 basePointMarkers: {},  // {t_type: {bp_id: bp_marker}}
                 tunnelMarkers: {},    // {t_type: {t_id: t_marker}}
+                arrowMarkers: {},
                 blastMarkers: {},  // {b_id: b_marker, ..}
                 blastIdWithTunnel: {},    // {t_id: [b_id, ..]}
                 workIdWithBlast: {},    // {b_id: {0: [w_id, ..], 1: [w_id, ..], 2: [w_id, ..]}} 0(MainWork), 1(Supporting), 2(IdelTime)
@@ -3825,7 +3826,7 @@
                 } else if (tunnel.length >= 800) {
                     ret += (factor * 8);
                 } else if (tunnel.length >= 700) {
-                    ret += (facotr * 7);
+                    ret += (factor * 7);
                 } else if (tunnel.length >= 600) {
                     ret += (factor * 6);
                 } else if (tunnel.length >= 500) {
@@ -3875,8 +3876,7 @@
                 // TODO: right click?
                 marker.on('contextmenu', () => {});
                 let cFactor = 30;   // 100 : 34  , 200 : 38  , 300 : 42
-                cFactor = this._getCfactor(cFactor, tunnel);
-                let arrowPosition = parseFloat(((tunnel.width / 2) * 0.078).toFixed(1)),
+                let arrowPosition = parseFloat(((tunnel.length / 2) * 0.078).toFixed(1)),
                     arrowPl = "vertex-last",
                     textDxBase = parseInt(tunnel.width / 2) - cFactor,
                     textDx = {stops: [[4, textDxBase], [5, textDxBase * 2], [6, textDxBase * 4], [7, textDxBase * 8]]};
@@ -3888,8 +3888,15 @@
                     textDx = {stops: [[4, textDxBase], [5, textDxBase * 2], [6, textDxBase * 4], [7, textDxBase * 8]]};
                 }
                 // TODO: arrowMarker id
+                let arrowSetting = null,
+                    basePointInfo = this.$store.getters.getBasePoint(tunnel.basepoint_id);
+                if (textDxBase > 0) {
+                    arrowSetting = [[basePointInfo.x_loc, yPosition], [basePointInfo.x_loc + (arrowPosition * 2) - 1, yPosition]];
+                } else {
+                    arrowSetting = [[basePointInfo.x_loc - (arrowPosition * 2) + 1, yPosition], [basePointInfo.x_loc, yPosition]];
+                }
                 let _arrowMarker = new maptalks.LineString(
-                    [[xPosition - arrowPosition, yPosition], [xPosition + arrowPosition - 0.5, yPosition]],
+                    arrowSetting,
                     {
                         // arrowStyle: "classic",
                         arrowStyle: [0.5, 0.5],
@@ -3909,6 +3916,7 @@
                     }
                 );
                 this.tunnelLayers[typ].addGeometry([_arrowMarker]);
+                this.arrowMarkers[tunnel.id] = _arrowMarker;
 
             },
             _handleTunnelClickEvent(marker) {
