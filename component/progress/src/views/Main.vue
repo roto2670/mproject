@@ -37,7 +37,7 @@
             @select-ok-button="handleBlastInfoOkButton"
             @select-close-button="handleBlastInfoCloseButton"></BlastInformation>
         <AddWork :type="getCurrentType()" :blastId="currentBlastId"
-            @select-cancel-button="handleWorkAddCancelButton"
+            @select-cancel-button="clearForBlastData"
             @select-ok-button="handleWorkAddOkButton"></AddWork>
         <WorkInfo :type="getCurrentType()" :blastId="currentBlastId"
             :id="currentWorkId" :pauseList="getPauseList()"
@@ -604,8 +604,40 @@ export default {
             this.lastBlastId = '';
         },
         clearAll() {
+            let currentMarkId = this.currentMarker.getId();
+            if (currentMarkId in this.blastMarkers) {
+                let typ = window.CONSTANTS.TUNNEL_TYPE.BLAST,
+                    blast = this.$store.getters.getBlast(currentMarkId);
+                if (blast.state === window.CONSTANTS.BLAST_STATE.FINISH) {
+                    if (tunnelData.category == window.CONSTANTS.TUNNEL_CATEGORY.TH) {
+                        typ = window.CONSTANTS.TUNNEL_TYPE.FINISH_TH;
+                    } else if (tunnelData.category == window.CONSTANTS.TUNNEL_CATEGORY.B1) {
+                        typ = window.CONSTANTS.TUNNEL_TYPE.FINISH_B1;
+                    } else {
+                        typ = window.CONSTANTS.TUNNEL_TYPE.FINISH_B2;
+                    }
+                } else {
+                    if (blast.work_list.length > 0) {
+                        if (blast.work_list[0].category == window.CONSTANTS.CATEGORY.MAIN_WORK) {
+                            typ = "main";
+                        } else if (blast.work_list[0].category == window.CONSTANTS.CATEGORY.SUPPORTING) {
+                            typ = "supporting";
+                        } else {
+                            typ = "idle";
+                        }
+                    }
+                }
+                this.blastMarkers[blast.id].updateSymbol({
+                        markerLineColor: this.colorMap[typ],
+                        // TODO:
+                        markerLineWidth: 1,
+                        markerFill: this.colorMap[typ],
+                        markerOpacity: 1
+                });
+            } else {
+                this.clearCurrentMarker();
+            }
             this.clearCurrentType();
-            this.clearCurrentMarker();
             this.clearCurrentTunnelId();
             this.clearTunnelType();
             this.clearCurrentBlastId();
@@ -972,6 +1004,7 @@ export default {
             return [_xPosition, _yPosition];
         },
         handleAddBlast(tunnelId, tunnelType) {
+            this.handleClearSelectItem();
             if (this.blastIdWithTunnel[tunnelId].length > 0) {
                 let latestBlast = this.$store.getters.getBlast(this.blastIdWithTunnel[tunnelId][this.blastIdWithTunnel[tunnelId].length - 1]);
                 if (latestBlast.state === window.CONSTANTS.BLAST_STATE.FINISH) {
@@ -1005,7 +1038,7 @@ export default {
             }
 
             this.setLastBlastId(lastBlastId);
-            let defaultBlastLength = 1,
+            let defaultBlastLength = 10,
                 position = this._getBlastPosition(tunnelData, lastBlastId, defaultBlastLength),
                 blastWidth = parseFloat((defaultBlastLength * window.CONSTANTS.TUNNEL_DEFAULT_SIZE.CAVERN_ROW.WIDTH).toFixed(4)),
                 blastHeight = tunnelData.height;
@@ -1193,15 +1226,41 @@ export default {
                 console.log("fail to remove blast : ", error)
             });
         },
-        handleWorkAddCancelButton() {
-            this.currentMarker.updateSymbol({
-                    markerLineColor: '#000000',
+        clearForBlastData(blast) {
+            let typ = window.CONSTANTS.TUNNEL_TYPE.BLAST;
+            if (blast.state === window.CONSTANTS.BLAST_STATE.FINISH) {
+                if (tunnelData.category == window.CONSTANTS.TUNNEL_CATEGORY.TH) {
+                    typ = window.CONSTANTS.TUNNEL_TYPE.FINISH_TH;
+                } else if (tunnelData.category == window.CONSTANTS.TUNNEL_CATEGORY.B1) {
+                    typ = window.CONSTANTS.TUNNEL_TYPE.FINISH_B1;
+                } else {
+                    typ = window.CONSTANTS.TUNNEL_TYPE.FINISH_B2;
+                }
+            } else {
+                if (blast.work_list.length > 0) {
+                    if (blast.work_list[0].category == window.CONSTANTS.CATEGORY.MAIN_WORK) {
+                        typ = "main";
+                    } else if (blast.work_list[0].category == window.CONSTANTS.CATEGORY.SUPPORTING) {
+                        typ = "supporting";
+                    } else {
+                        typ = "idle";
+                    }
+                }
+            }
+            this.blastMarkers[blast.id].updateSymbol({
+                    markerLineColor: this.colorMap[typ],
                     // TODO:
                     markerLineWidth: 1,
-                    markerFill: '#ff0000',
+                    markerFill: this.colorMap[typ],
                     markerOpacity: 1
             });
-            this.clearAll();
+            this.clearCurrentType();
+            this.clearCurrentTunnelId();
+            this.clearTunnelType();
+            this.clearCurrentBlastId();
+            this.clearBlastType();
+            this.clearCurrentWorkId();
+            this.clearLastBlastId();
         },
         handleWorkAddOkButton(value) {
             let data = {};
@@ -1219,6 +1278,7 @@ export default {
             }
             this.services.addWork(data, (resData) => {
                 console.log("success to add Work")
+                this.setCurrentBlastId(data.blast_id);
                 this.setCurrentWorkId(data.id);
                 this.setCurrentType(window.CONSTANTS.TYPE.SELECT_WORK);
                 if (!(data.id in this.pauseIdWithWork)) {
@@ -1230,8 +1290,8 @@ export default {
                 this.clearAll();
             });
         },
-        handleWorkInfoCloseButton() {
-            this.handleClearSelectItem();
+        handleWorkInfoCloseButton(blast) {
+            this.clearForBlastData(blast);
         },
         handleWorkInfoCancelButton() {
             this.currentMarker.updateSymbol({
@@ -1394,7 +1454,7 @@ export default {
                                 // View the Current Work information
 
                                 this.services.getWorkDataByWork({"work_id": currentWorkId}, (resData) => {
-                                    console.log("Success to get work Data list", resData);
+                                    console.log("Success to get work Data list");
                                     this.workEquipmentList = [];
 
                                     this._.forEach(resData.equipment, workEquipment => {
@@ -1701,6 +1761,7 @@ export default {
                     this.$store.commit('removeBlast', item);
                 } else if (data.kind === 'update') {
                     this.$store.commit('updateBlast', item);
+                    this.clearForBlastData(item)
                 }
             });
         },

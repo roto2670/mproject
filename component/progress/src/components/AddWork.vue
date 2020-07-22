@@ -95,7 +95,8 @@ export default {
           this._clearData();
       },
       handleCancelButton() {
-          this.$emit('select-cancel-button', {});
+          let blast = this.$store.getters.getBlast(this.blastId);
+          this.$emit('select-cancel-button', blast);
           this._clearData();
       }
     },
