@@ -608,32 +608,34 @@ export default {
             if (currentMarkId in this.blastMarkers) {
                 let typ = window.CONSTANTS.TUNNEL_TYPE.BLAST,
                     blast = this.$store.getters.getBlast(currentMarkId);
-                if (blast.state === window.CONSTANTS.BLAST_STATE.FINISH) {
-                    if (tunnelData.category == window.CONSTANTS.TUNNEL_CATEGORY.TH) {
-                        typ = window.CONSTANTS.TUNNEL_TYPE.FINISH_TH;
-                    } else if (tunnelData.category == window.CONSTANTS.TUNNEL_CATEGORY.B1) {
-                        typ = window.CONSTANTS.TUNNEL_TYPE.FINISH_B1;
-                    } else {
-                        typ = window.CONSTANTS.TUNNEL_TYPE.FINISH_B2;
-                    }
-                } else {
-                    if (blast.work_list.length > 0) {
-                        if (blast.work_list[0].category == window.CONSTANTS.CATEGORY.MAIN_WORK) {
-                            typ = "main";
-                        } else if (blast.work_list[0].category == window.CONSTANTS.CATEGORY.SUPPORTING) {
-                            typ = "supporting";
+                if (!!blast) {
+                    if (blast.state === window.CONSTANTS.BLAST_STATE.FINISH) {
+                        if (tunnelData.category == window.CONSTANTS.TUNNEL_CATEGORY.TH) {
+                            typ = window.CONSTANTS.TUNNEL_TYPE.FINISH_TH;
+                        } else if (tunnelData.category == window.CONSTANTS.TUNNEL_CATEGORY.B1) {
+                            typ = window.CONSTANTS.TUNNEL_TYPE.FINISH_B1;
                         } else {
-                            typ = "idle";
+                            typ = window.CONSTANTS.TUNNEL_TYPE.FINISH_B2;
+                        }
+                    } else {
+                        if (blast.work_list.length > 0) {
+                            if (blast.work_list[0].category == window.CONSTANTS.CATEGORY.MAIN_WORK) {
+                                typ = "main";
+                            } else if (blast.work_list[0].category == window.CONSTANTS.CATEGORY.SUPPORTING) {
+                                typ = "supporting";
+                            } else {
+                                typ = "idle";
+                            }
                         }
                     }
+                    this.blastMarkers[blast.id].updateSymbol({
+                            markerLineColor: this.colorMap[typ],
+                            // TODO:
+                            markerLineWidth: 1,
+                            markerFill: this.colorMap[typ],
+                            markerOpacity: 1
+                    });
                 }
-                this.blastMarkers[blast.id].updateSymbol({
-                        markerLineColor: this.colorMap[typ],
-                        // TODO:
-                        markerLineWidth: 1,
-                        markerFill: this.colorMap[typ],
-                        markerOpacity: 1
-                });
             } else {
                 this.clearCurrentMarker();
             }
@@ -1220,7 +1222,7 @@ export default {
             let data = {};
             data.id = blastId;
             this.services.removeBlast(data, (resData) => {
-                    console.log("success to remove blast.")
+                    console.log("success to remove blast.");
                     this.clearAll();
             }, (error) => {
                 console.log("fail to remove blast : ", error)
@@ -1755,6 +1757,9 @@ export default {
                     }
                     this.$store.commit('addBlast', item);
                 } else if (data.kind === 'remove') {
+                    let blast = this.$store.getters.getBlast(item),
+                        tunnelId = blast.tunnel_id;
+                    this.blastIdWithTunnel[tunnelId] = this._.without(this.blastIdWithTunnel[tunnelId], item);
                     var blastMarker = this.blastMarkers[item];
                     blastMarker.remove();
                     this.blastLayers[window.CONSTANTS.TUNNEL_TYPE.CAVERN].removeGeometry(blastMarker)
