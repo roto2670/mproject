@@ -558,7 +558,6 @@ export default {
         getTeam() {
             let teamId = this.blastInformation.team_id,
                 teamInfo = this.$store.getters.getTeam(teamId);
-            console.log("team id : ", this.teamId)
             if (teamInfo) {
                 return teamInfo.name;
             } else {

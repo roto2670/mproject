@@ -281,7 +281,8 @@ export default {
             this.isEdit = false;
         },
         handleCloseButton() {
-            this.$emit('select-close-button', {});
+            let blast = this.$store.getters.getBlast(this.blastId);
+            this.$emit('select-close-button', blast);
             this._clearData();
         },
         handleChangeWorkStartTime (e) {
@@ -464,7 +465,7 @@ export default {
             }
             return finishTime;
         },
-        getStartTime() {
+        getTime() {
             let startTime = 'Not Started';
             if (this.workInfo.work_history_list != undefined &&
                 this.workInfo.work_history_list.length > 0) {

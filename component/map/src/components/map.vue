@@ -243,7 +243,7 @@
                             this.blastLayers[value].setZIndex(1);
 
                             this.basePointLayers[value] = new maptalks.VectorLayer('b' + value).addTo(this.map);
-                            this.basePointLayers[value].setZIndex(1);
+                            this.basePointLayers[value].setZIndex(0);
                             this.basePointMarkers[value] = {};
                         });
                         this._getActivityList();

@@ -232,9 +232,9 @@ export default {
         getFinishPoint() {
             if (!this.isChangeFinishPoint) {
                 if (this.lastBlast != null) {
-                    this.finishPoint = this.lastBlast.blast_info.finish_point + 1;
+                    this.finishPoint = this.lastBlast.blast_info.finish_point + 10;
                 } else {
-                    this.finishPoint = 1;
+                    this.finishPoint = 10;
                 }
             }
             return this.finishPoint;
@@ -244,7 +244,7 @@ export default {
             return ret;
         },
         getMinFinishPoint() {
-            let ret = this.startPoint + 1;
+            let ret = this.startPoint + 10;
             return ret;
         },
         getBlastingLength() {
