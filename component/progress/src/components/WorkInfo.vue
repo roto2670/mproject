@@ -28,19 +28,24 @@
                         :value="getWorkState" maxlength="30" readonly/>
                 </div>
                 <div class="work-info-body-content-container">
+                    <div class="work-info-body-content-title">Start Date</div>
+                    <input id="workStartTime" type="date" class="work-info-body-content-message"
+                        :value="getStartDate" @change="handleChangeWorkStartDate" />
+                </div>
+                <div class="work-info-body-content-container">
                     <div class="work-info-body-content-title">Start Time</div>
-                    <input id="workStartTime" type="datetime-local" class="work-info-body-content-message"
+                    <input id="workStartTime" type="time" class="work-info-body-content-message"
                         :value="getStartTime" @change="handleChangeWorkStartTime" />
                 </div>
                 <div class="work-info-body-content-container">
-                    <div class="work-info-body-content-title">Finish Time</div>
-                    <input id="workFinishTime" type="datetime-local" class="work-info-body-content-message"
-                        :value="getFinishTime" @change="handleChangeWorkFinishTime" />
+                    <div class="work-info-body-content-title">Finish Date</div>
+                    <input id="workFinishTime" type="date" class="work-info-body-content-message"
+                        :value="getFinishDate" @change="handleChangeWorkFinishDate" />
                 </div>
                 <div class="work-info-body-content-container">
-                    <div class="work-info-body-content-title">Total Duration</div>
-                    <input id="workStartTime" type="text" class="work-info-body-content-message"
-                        :value="getTotalTime" readonly>
+                    <div class="work-info-body-content-title">Finish Time</div>
+                    <input id="workFinishTime" type="time" class="work-info-body-content-message"
+                        :value="getFinishTime" @change="handleChangeWorkFinishTime" />
                 </div>
             </div>
             <div class="work-info-button-container">
@@ -206,9 +211,16 @@ export default {
             isFinish : false,
             startTime: null,
             finishTime: null,
+            startTimestamp: null,
+            finishTimestamp: null,
+            startDate: null,
+            finishDate: null,
+            totalDuration: null,
             workInfo: null,
             blastInfo: null,
             tunnelInfo: null,
+            startTimeCheckState: false,
+            finishTimeCheckState: false,
             isPauseClose: true,
             isEquipClose: true,
             isOpenAddWorkEquipment: false
@@ -221,8 +233,15 @@ export default {
             this.isFinish = false;
             this.startTime = null;
             this.finishTime = null;
+            this.startDate = null;
+            this.finishDate = null;
+            this.startTimestamp = null;
+            this.finishTimestamp = null;
+            this.totalDuration = null;
+            this.startTimeCheckState = false;
+            this.finishTimeCheckState = false;
             this.workInfo = null;
-            this.blastInfo = null;
+            this.blastInfo = null
             this.tunnelInfo = null;
             this.isPauseClose = true;
             this.isEquipClose = true;
@@ -262,6 +281,7 @@ export default {
                  if (!!this.workInfo) {
                      if (this.workInfo.typ == this.blastInfo.work_list[0].typ) {
                         data.id = this.workInfo.id;
+                        this._clearData();
                         this.$emit('select-remove-work-button', data);
                      } else {
                         this.sweetbox.fire("More recent work already exists than the data you want to delete. Please check the work data.")
@@ -271,13 +291,134 @@ export default {
                  }
              }
         },
+        _startTimeCheck(blast) {
+            if (!!this.startTimestamp)  {
+                const work_list = blast.work_list,
+                      index = work_list.findIndex(x => x.id === this.id);
+                if (work_list.length == 1) {
+                    if (!!blast.blast_info.blasting_time) {
+                        const blasting_time = new Date(blast.blast_info.blasting_time).getTime() / 1000;
+                        if (blasting_time > this.startTimestamp) {
+                            this.sweetbox.fire("The time you want to change cannot be less than the blast time. Please reset the time.");
+                        } else {
+                            this.workInfo.start_time = this.startTimestamp;
+                            this.startTimeCheckState = true;
+                        }
+                    } else {
+                        this.sweetbox.fire("Blast time is not set. Please set the Blast time first and try changing it again.");
+                    }
+                } else if (work_list.length > 1) {
+                    if (index == work_list.length - 1) {
+                        if (!!blast.blast_info.blasting_time) {
+                            const blasting_time = new Date(blast.blast_info.blasting_time).getTime() / 1000;
+                            if (blasting_time > this.startTimestamp) {
+                                this.sweetbox.fire("The time you want to change cannot be less than the blast time. Please reset the time.");
+                            } else {
+                                this.workInfo.start_time = this.startTimestamp;
+                                this.startTimeCheckState = true;
+                            }
+                        } else {
+                            this.sweetbox.fire("Blast time is not set. Please set the Blast time first and try changing it again.");
+                        }
+                    } else {
+                        let beforeWorkFinishTime = new Date(work_list[index + 1].work_history_list[0].timestamp).getTime() / 1000;
+                        if (beforeWorkFinishTime > this.startTimestamp) {
+                            this.sweetbox.fire("The start time you want to change is less than the end time of the previous work. Please check the time again.");
+                        } else {
+                            this.workInfo.start_time = this.startTimestamp;
+                            this.startTimeCheckState = true;
+                        }
+                    }
+                }
+            } else {
+                this.startTimeCheckState = true;
+            }
+        },
+        _finishTimeCheck(blast) {
+            if (!!this.finishTimestamp) {
+                const work_list = blast.work_list,
+                      tunnelInfo = this.tunnelInfo,
+                      blast_list = tunnelInfo.blast_list,
+                      blastIndex = blast_list.findIndex(x => x.id === this.blastId),
+                      workIndex = work_list.findIndex(x => x.id === this.id)
+                if (blast_list.length == 1) {
+                    if (workIndex == 0) {
+                        this.workInfo.finish_time = this.finishTimestamp;
+                        this.finishTimeCheckState = true;
+                    } else if (workIndex > 0) {
+                        let nextWorkStartTime = null;
+                        if (work_list[workIndex - 1].work_history_list.length == 1) {
+                            nextWorkStartTime = new Date(work_list[workIndex - 1].work_history_list[0].timestamp).getTime() / 1000;
+                        } else if (work_list[workIndex - 1].work_history_list.length == 2) {
+                            nextWorkStartTime = new Date(work_list[workIndex - 1].work_history_list[1].timestamp).getTime() / 1000;
+                        }
+                        if (nextWorkStartTime > this.finishTimestamp) {
+                            this.sweetbox.fire("The finish time you are trying to change cannot be greater than the start time for the next work. Please change the time again.");
+                        } else {
+                            this.workInfo.finish_time = this.finishTimestamp;
+                            this.finishTimeCheckState = true;
+                        }
+                    }
+                } else {
+                    if (blastIndex == 0) {
+                        if (workIndex == 0) {
+                            this.workInfo.finish_time = this.finishTimestamp;
+                            this.finishTimeCheckState = true;
+                        } else if (workIndex > 0) {
+                            let nextWorkStartTime = null;
+                            if (work_list[workIndex - 1].work_history_list.length == 1) {
+                                nextWorkStartTime = new Date(work_list[workIndex - 1].work_history_list[0].timestamp).getTime() / 1000;
+                            } else if (work_list[workIndex - 1].work_history_list.length == 2) {
+                                nextWorkStartTime = new Date(work_list[workIndex - 1].work_history_list[1].timestamp).getTime() / 1000;
+                            }
+                            if (nextWorkStartTime < this.finishTimestamp) {
+                                this.sweetbox.fire("The finish time you are trying to change cannot be greater than the start time for the next work. Please change the time again.");
+                            } else {
+                                this.workInfo.finish_time = this.finishTimestamp;
+                                this.finishTimeCheckState = true;
+                            }
+                        }
+                    } else if (blastIndex > 0) {
+                        if (workIndex == 0) {
+                            let nextBlastingTime = new Date(blast_list[blastIndex - 1].blast_info.blasting_time).getTime() / 1000;
+                            if (nextBlastingTime < this.finishTimestamp) {
+                                this.sweetbox.fire("The work finish time you are trying to change cannot be greater than the following blast time. Please check the time again.");
+                            } else {
+                                this.workInfo.finish_time = this.finishTimestamp;
+                                this.finishTimeCheckState = true;
+                            }
+                        } else if (workIndex > 0) {
+                            let nextWorkStartTime = null;
+                            if (work_list[workIndex - 1].work_history_list.length == 1) {
+                                nextWorkStartTime = new Date(work_list[workIndex - 1].work_history_list[0].timestamp).getTime() / 1000;
+                            } else if (work_list[workIndex - 1].work_history_list.length == 2) {
+                                nextWorkStartTime = new Date(work_list[workIndex - 1].work_history_list[1].timestamp).getTime() / 1000;
+                            }
+                            if (nextWorkStartTime > this.finishTimestamp) {
+                                this.sweetbox.fire("The finish time you are trying to change cannot be greater than the start time for the next work. Please change the time again.");
+                            } else {
+                                this.workInfo.finish_time = this.finishTimestamp;
+                                this.finishTimeCheckState = true;
+                            }
+                        }
+                    }
+                }
+            } else {
+                this.finishTimeCheckState = true;
+            }
+        },
         handleOkButton() {
-            this.workInfo.start_time = this.startTime;
-            this.workInfo.finish_time = this.finishTime;
-            this.$emit('select-ok-button', this.workInfo);
-            this._clearData();
+            let blast = this.blastInfo;
+            this._startTimeCheck(blast);
+            this._finishTimeCheck(blast);
+            if (this.startTimeCheckState && this.finishTimeCheckState) {
+                this.$emit('select-ok-button', this.workInfo);
+                this.isEdit = false;
+                this._clearData();
+            }
         },
         handleCancelButton() {
+            this._clearData();
             this.isEdit = false;
         },
         handleCloseButton() {
@@ -286,12 +427,20 @@ export default {
             this._clearData();
         },
         handleChangeWorkStartTime (e) {
-            var startTime = new Date(e.target.value).getTime();
-            this.startTime = startTime/1000
+            this.startTime = e.target.value
+            this.startTimestamp = new Date(this.startDate + "T" + this.startTime).getTime()/1000
+        },
+        handleChangeWorkStartDate (e) {
+            this.startDate = e.target.value
+            this.startTimestamp = new Date(this.startDate + "T" + this.startTime).getTime()/1000
         },
         handleChangeWorkFinishTime (e) {
-            var finishTime = new Date(e.target.value).getTime();
-            this.finishTime = finishTime/1000;
+            this.finishTime = e.target.value
+            this.finishTimestamp = new Date(this.finishDate + "T" + this.finishTime).getTime()/1000
+        },
+        handleChangeWorkFinishDate (e) {
+            this.finishDate = e.target.value
+            this.finishTimestamp = new Date(this.finishDate + "T" + this.finishTime).getTime()/1000
         },
         handleStartWork() {
             if (!this.isStart && !this.isFinish) {
@@ -451,13 +600,25 @@ export default {
                     finishTime = this.workInfo.work_history_list[0].timestamp;
                 }
             }
-            return finishTime;
+            this.finishTime = finishTime.substring(11,19);
+            return finishTime.substring(11,19);
+        },
+        getFinishDate() {
+            let finishDate = '';
+            if (this.workInfo.state == window.CONSTANTS.WORK_STATE.FINISH) {
+                if (this.workInfo.work_history_list.length > 0) {
+                    finishDate = this.workInfo.work_history_list[0].timestamp;
+                }
+            }
+            this.finishDate = finishDate.substring(0,10);
+            return finishDate.substring(0,10);
         },
         getFinishTimeStr() {
             let finishTime = '';
             if (this.workInfo.state == window.CONSTANTS.WORK_STATE.FINISH) {
                 if (this.workInfo.work_history_list.length > 0) {
                     finishTime = this.workInfo.work_history_list[0].timestamp.substring(0, 16);
+                    this.finishTimestamp = new Date(this.workInfo.work_history_list[0].timestamp).getTime()/1000
                     finishTime = finishTime.replace("T", ". ");
                     finishTime = finishTime.replace("-", ". ");
                     finishTime = finishTime.replace("-", ". ");
@@ -473,11 +634,36 @@ export default {
             }
             return startTime;
         },
+        getStartDate() {
+            let startDate = '';
+            if (this.workInfo.state == window.CONSTANTS.WORK_STATE.FINISH) {
+                if (this.workInfo.work_history_list.length == 1) {
+                    startDate = this.workInfo.work_history_list[0].timestamp;
+                } else if (this.workInfo.work_history_list.length == 2) {
+                    startDate = this.workInfo.work_history_list[1].timestamp;
+                }
+            }
+            this.startDate = startDate.substring(0,10);
+            return startDate.substring(0,10);
+        },
+        getStartTime() {
+            let startTime = '';
+            if (this.workInfo.state == window.CONSTANTS.WORK_STATE.FINISH) {
+                if (this.workInfo.work_history_list.length == 1) {
+                    startTime = this.workInfo.work_history_list[0].timestamp;
+                } else if (this.workInfo.work_history_list.length == 2) {
+                    startTime = this.workInfo.work_history_list[1].timestamp;
+                }
+            }
+            this.startTime = startTime.substring(11,19)
+            return startTime.substring(11,19);
+        },
         getStartTimeStr() {
             let startTime = 'Not Started';
             if (this.workInfo.work_history_list != undefined &&
                 this.workInfo.work_history_list.length > 0) {
                 startTime = this.workInfo.work_history_list[this.workInfo.work_history_list.length - 1].timestamp.substring(0, 16);
+                this.startTimestamp = new Date(this.workInfo.work_history_list[0].timestamp).getTime()/1000
                 startTime = startTime.replace("T", ". ");
                 startTime = startTime.replace("-", ". ");
                 startTime = startTime.replace("-", ". ");
@@ -486,7 +672,10 @@ export default {
         },
         getTotalTime() {
             let tmpTime = new Date(0);
-            tmpTime.setSeconds(this.workInfo.accum_time);
+            if (!!!this.totalDuration) {
+                this.totalDuration = this.workInfo.accum_time;
+            }
+            tmpTime.setSeconds(this.totalDuration);
             // OLD format
             // return tmpTime.toISOString().substr(11,8);
             let tList = tmpTime.toISOString().substr(9,7).split('T');
@@ -559,7 +748,7 @@ export default {
 .work-info-body-content-message {
     width: 70%;
     height: 2.4em;
-    font-size: 15px;
+    font-size: 14px;
     border-radius: 5px;
     border: 1px solid rgb(220, 220, 220);
     color: #1b94e2;

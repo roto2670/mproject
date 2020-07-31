@@ -8,6 +8,7 @@
                 <div class="tunnel-add-body-content-container">
                     <div class="tunnel-add-body-content-title">Category</div>
                     <select id="category" class="tunnel-add-body-content-message"
+                        :value="getCategory"
                         @change="handleChangeCategory">
                         <option value=100 selected>Top Heading(TH)</option>
                         <option value=101>Bench-01(B1)</option>
@@ -17,6 +18,7 @@
                 <div class="tunnel-add-body-content-container">
                     <div class="tunnel-add-body-content-title">Direction</div>
                     <select id="direction" class="tunnel-add-body-content-message"
+                        :value="getDirection"
                         @change="handleChangeDirection">
                         <option v-for="(value, key) in getDirectionList" :value="key" :key="value"
                             :selected="isDirectionSelect(key)">
@@ -27,12 +29,14 @@
                 <div class="tunnel-add-body-content-container">
                     <div class="tunnel-add-body-content-title">Tunnel</div>
                     <select id="tunnelName" class="tunnel-add-body-content-message"
+                        :value="getSection"
                         @change="handleChangeName">
                         <option value='C1' selected>C1</option>
                         <option value='C2'>C2</option>
                         <option value='C3'>C3</option>
                     </select>
                     <select id="tunnelName2" class="tunnel-add-body-content-message sub"
+                        :value="getPart"
                         @change="handleChangeName2">
                         <option value='A'>A</option>
                         <option value='B'>B</option>
@@ -43,12 +47,12 @@
                 <div class="tunnel-add-body-content-container">
                     <div class="tunnel-add-body-content-title">Tunnel ID</div>
                     <input id="tunnelId" type="text" class="tunnel-add-body-content-message default-cursor"
-                        :value="getTunnelId()" readonly>
+                        :value="getTunnelId" readonly>
                 </div>
                 <div class="tunnel-add-body-content-container">
                     <div class="tunnel-add-body-content-title">Length (m)</div>
                     <input id="tunnelLength" type="number" class="tunnel-add-body-content-message"
-                        step="0.1" :value="getTunnelLength()"
+                        step="0.1" :value="getTunnelLength"
                         @change="handleChangeLength">
                 </div>
             </div>
@@ -174,7 +178,19 @@ export default {
             bLengthMin: 0,
             cycleMax: 0,
             bLengthMax: 0,
-            isClose: true
+            isClose: true,
+            category: '',
+            direction: '',
+            tunnelLength: '',
+            tunnelId: '',
+            section: '',
+            part: '',
+            tunnelName: '',
+            tunnelName2: '',
+            totalTunnelName: '',
+            thList: {0: "EAST", 1: "WEST"},
+            bhList: {2: "East Side - EAST", 3: "East Side - WEST",
+                     4: "West Side - EAST", 5: "West Side - WEST"}
         }
     },
     methods: {
@@ -190,6 +206,14 @@ export default {
             this.cycleMax = 0;
             this.bLengthMax = 0;
             this.isClose = true;
+            this.category = '';
+            this.direction = '';
+            this.section = '';
+            this.part = '';
+            this.tunnelName = '',
+            this.tunnelName2 = '',
+            this.totalTunnelName = '',
+            this.tunnelLength = '';
         },
         _setCycleMin(blast) {
             if (this.cycleMin == 0 || this.cycleMin >= blast.accum_time) {
@@ -211,21 +235,29 @@ export default {
                 return false;
             }
         },
+        isDirectionSelect(value) {
+            return this.direction == value;
+        },
         isStarted() {
             return this.tunnelInfo.initial_b_time != 'None';
         },
         handleOkButton() {
             const data = {};
-            data._id = this.id;
-            data.name = this.name;
-            data.width = this.length;
-            data.prog_dir = this.direction;
-            // this.$emit('select-ok-button', data);
+            data.id = this.id;
+            data.category = this.category;
+            data.tunnelId = this.tunnelId;
+            data.tunnelName = this.totalTunnelName;
+            data.tunnelSection = this.section;
+            data.tunnelPart = this.part;
+            data.tunnelDirection = this.direction;
+            data.tunnelLength = this.tunnelLength
+            this.$emit('select-ok-button', data);
             this._clearData();
             this.isEdit = false;
         },
         handleCancelButton() {
-            this.isEdit = false;
+            this._clearData()
+            this.$emit('select-edit-cancel-button')
         },
         handleCloseButton() {
             this.$emit('select-close-button', {});
@@ -233,6 +265,7 @@ export default {
         },
         handleEditTunnelButton() {
             this.isEdit = true;
+            this.$emit('select-add-cavern-button', this.tunnelInfo.basepoint_id, this.id);
         },
         handleRemoveTunnelButton() {
             let data = {};
@@ -252,15 +285,159 @@ export default {
         handleProgressDetail() {
             this.isClose = !this.isClose;
         },
+        handleChangeCategory(e) {
+            this.category = e.target.value;
+            if (this.category == 100) { // TH
+                if (this.tunnelInfo.direction == window.CONSTANTS.DIRECTION.EAST ||
+                    this.tunnelInfo.direction == window.CONSTANTS.DIRECTION.EAST_SIDE_EAST ||
+                    this.tunnelInfo.direction == window.CONSTANTS.DIRECTION.WEST_SIDE_EAST) {
+                    this.direction = window.CONSTANTS.DIRECTION.EAST;
+                } else {
+                    this.direction = window.CONSTANTS.DIRECTION.WEST;
+                }
+            } else {
+                if (this.tunnelInfo.direction == window.CONSTANTS.DIRECTION.EAST ||
+                    this.tunnelInfo.direction == window.CONSTANTS.DIRECTION.EAST_SIDE_EAST ||
+                    this.tunnelInfo.direction == window.CONSTANTS.DIRECTION.WEST_SIDE_EAST) {
+                    this.direction = window.CONSTANTS.DIRECTION.EAST_SIDE_EAST;
+                } else {
+                    this.direction = window.CONSTANTS.DIRECTION.EAST_SIDE_WEST;
+                }
+            }
+            this.$emit('change-tunnel-direction', this.direction, this.tunnelLength);
+            this._setTunnelId();
+        },
+        _getCategoryName(categoryId) {
+            if (categoryId == window.CONSTANTS.TUNNEL_CATEGORY.TH) {
+                return "TH";
+            } else if (categoryId == window.CONSTANTS.TUNNEL_CATEGORY.B1) {
+                return "B1";
+            } else {
+                return "B2";
+            }
+        },
+        _getDirectionName(directionId) {
+            if (directionId == window.CONSTANTS.DIRECTION.EAST ||
+                directionId == window.CONSTANTS.DIRECTION.EAST_SIDE_EAST ||
+                directionId == window.CONSTANTS.DIRECTION.WEST_SIDE_EAST) {
+                return "E";
+            } else {
+                return "W";
+            }
+        },
+        _setTunnelId() {
+            this.totalTunnelName = this.tunnelName + this.tunnelName2;
+            this.tunnelId = this.totalTunnelName + this._getCategoryName(this.category) + this._getDirectionName(this.direction);
+        },
+        handleChangeDirection(e) {
+            let tunnelList = this.$store.getters.getTunnelListByBasePointId(this.tunnelInfo.basepoint_id),
+                tunnelID = this.id,
+                changeDirection = null,
+                otherDirection = null,
+                otherTunnel = tunnelList.find(function(item) {
+                    return item.id !== tunnelID
+                });
+            this.direction = e.target.value;
+            if (this.direction == "1" || this.direction == "3" || this.direction == "5") {
+                changeDirection = "WEST";
+            } else {
+                changeDirection = "EAST";
+            }
+            if (otherTunnel.direction == 1 || otherTunnel.direction == 3 || otherTunnel.direction == 5) {
+                otherDirection = "WEST";
+            } else {
+                otherDirection = "EAST";
+            }
+            if (!!!otherTunnel){
+                this._setTunnelId();
+                this.$emit('change-tunnel-direction', this.direction, this.tunnelLength);
+            } else {
+                if(changeDirection !== otherDirection){
+                    this._setTunnelId();
+                    this.$emit('change-tunnel-direction', this.direction, this.tunnelLength, this.id);
+                } else {
+                    this.sweetbox.fire("Another tunnel from the same base point exists in the direction you want to change. Please reset it.");
+                }
+            }
+        },
+        handleChangeLength(e) {
+            let blastList = this.$store.getters.getTunnel(this.id).blast_list,
+                blastingLength = 0;
+            this._.forEach(blastList, blastData => {
+                blastingLength += blastData.blast_info.blasting_length
+            });
+            if (parseFloat(blastingLength) > parseFloat(e.target.value)) {
+                this.sweetbox.fire("The length you are trying to change is shorter than the total length of blasting. Please reset it.");
+            } else {
+                this.tunnelLength = parseFloat(e.target.value);
+                this.$emit('change-tunnel-length', this.tunnelLength, this.direction);
+            }
+        },
+        handleChangeName(e) {
+            this.tunnelName = e.target.value;
+            this.section = this.tunnelName;
+            this._setTunnelId();
+        },
+        handleChangeName2(e) {
+            this.tunnelName2 = e.target.value;
+            this.part = this.tunnelName2;
+            this._setTunnelId();
+        },
     },
     computed: {
+        getDirectionList() {
+            if (this.category == 100) {
+                return this.thList;
+            } else {
+                return this.bhList;
+            }
+        },
+        getSection() {
+            if (!this.section) {
+                this.section = this.tunnelInfo.section;
+            }
+            return this.section;
+        },
+        getPart() {
+            if (!this.part) {
+                this.part = this.tunnelInfo.part;
+            }
+            return this.part;
+        },
         getItemName() {
             return `${ this.tunnelInfo.tunnel_id }`;
         },
+        getCategory() {
+            if (!this.category) {
+                this.category = this.tunnelInfo.category;
+            }
+            return this.category;
+        },
+        getDirection() {
+            if (!this.direction) {
+                this.direction = this.tunnelInfo.direction;
+            }
+            return this.direction;
+        },
+        getTunnelId() {
+            if (!!this.totalTunnelName) {
+                this.tunnelId = this.totalTunnelName + this._getCategoryName(this.category) + this._getDirectionName(this.direction);
+            } else {
+                this.totalTunnelName = this.section + this.part;
+                this.tunnelId = this.tunnelInfo.tunnel_id;
+            }
+            return this.tunnelId;
+        },
+        getTunnelLength() {
+            if (!this.tunnelLength) {
+                this.tunnelLength = this.tunnelInfo.length.toFixed(1);
+            }
+            return this.tunnelLength;
+        },
         getLength() {
             let curLength = this.tunnelInfo.b_accum_length,
-                totalLength = this.tunnelInfo.length,
-                percent = (curLength / totalLength) * 100;
+            totalLength = this.tunnelInfo.length,
+            percent = (curLength / totalLength) * 100;
             return curLength.toFixed(1) + "m / " + totalLength.toFixed(1) + "m ( " + percent.toFixed(1) + " % )";
         },
         getStartTime() {
