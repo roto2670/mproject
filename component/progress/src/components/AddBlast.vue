@@ -111,6 +111,9 @@ export default {
         return {
             tunnelInfo: null,
             lastBlast: null,
+            dateCheck: false,
+            timeCheck: false,
+            finishPointCheck: false,
             explosiveBulk: 0,
             explosiveCartridge: 0,
             detonator: 0,
@@ -129,6 +132,9 @@ export default {
       _clearData() {
           this.tunnelInfo = null;
           this.lastBlast = null;
+          this.timeCheck = false;
+          this.dateCheck = false;
+          this.finishPointCheck = false;
           this.explosiveBulk = 0;
           this.explosiveCartridge = 0;
           this.detonator = 0;
@@ -183,22 +189,51 @@ export default {
       handleChangeChargingTeamNos(e) {
           this.teamNos = e.target.value;
       },
-      handleOkButton() {
-          let data = {
-              explosive_bulk: this.explosiveBulk,
-              explosive_cartridge: this.explosiveCartridge,
-              detonator: this.detonator,
-              drilling_depth: this.drillingDepth,
-              blasting_date: this.blastingDate,
-              blasting_time: this.blastingTime,
-              start_point: this.startPoint,
-              finish_point: this.finishPoint,
-              blasting_length: this.blastingLength,
-              team_id: this.teamId,
-              team_nos: this.teamNos
+      _timeCheck() {
+          if (!!this.blastingTime) {
+              this.timeCheck = true;
+          } else {
+              this.sweetbox.fire("Time is required. Please enter a Time.");
+              this.timeCheck = false;
           }
-          this.$emit('select-ok-button', this.tunnelId, data);
-          this._clearData();
+      },
+      _dateCheck() {
+          if (!!this.blastingDate) {
+              this.dateCheck = true;
+          } else {
+              this.dateCheck = false;
+              this.sweetbox.fire("Date is required. Please enter Date.");
+          }
+      },
+      _finishPointCheck(){
+          if (!!this.finishPoint) {
+              this.finishPointCheck = true;
+          } else {
+              this.sweetbox.fire("Finish point not entered. Please check the Finish point.");
+              this.finishPointCheck = false;
+          }
+      },
+      handleOkButton() {
+          this._dateCheck();
+          this._timeCheck();
+          this._finishPointCheck();
+          if (!!this.timeCheck && !!this.dateCheck && !!this.finishPointCheck) {
+              let data = {
+                  explosive_bulk: this.explosiveBulk,
+                  explosive_cartridge: this.explosiveCartridge,
+                  detonator: this.detonator,
+                  drilling_depth: this.drillingDepth,
+                  blasting_date: this.blastingDate,
+                  blasting_time: this.blastingTime,
+                  start_point: this.startPoint,
+                  finish_point: this.finishPoint,
+                  blasting_length: this.blastingLength,
+                  team_id: this.teamId,
+                  team_nos: this.teamNos
+              }
+              this.$emit('select-ok-button', this.tunnelId, data);
+              this._clearData();
+          }
       },
       handleCancelButton() {
           this.$emit('select-cancel-button', {});

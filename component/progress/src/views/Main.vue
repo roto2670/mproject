@@ -1155,16 +1155,7 @@ export default {
         },
         handleAddBlast(tunnelId, tunnelType) {
             this.handleClearSelectItem();
-            if (this.blastIdWithTunnel[tunnelId].length > 0) {
-                let latestBlast = this.$store.getters.getBlast(this.blastIdWithTunnel[tunnelId][this.blastIdWithTunnel[tunnelId].length - 1]);
-                if (latestBlast.state === window.CONSTANTS.BLAST_STATE.FINISH) {
-                    this._handleAddBlast(tunnelId, tunnelType);
-                } else {
-                    this.sweetbox.fire("The operation was not finished.");
-                }
-            } else {
-                this._handleAddBlast(tunnelId, tunnelType);
-            }
+            this._handleAddBlast(tunnelId, tunnelType);
         },
         _handleChangeLengthBlast(tunnelId, lastBlastId, blastLength) {
             const tunnelData = this.$store.getters.getTunnel(tunnelId);
@@ -1431,24 +1422,41 @@ export default {
             data.accum_time = 0;
             data.p_accum_time = 0;
             data.blast_id = value.blastId;
+            if ('is_data_build' in value) {
+                data.is_data_build = value.is_data_build;
+                data.start_time = value.start_time;
+                data.finish_time = value.finish_time;
+            }
             if (this.workIdWithBlast[value.blastId][value.category].length == 0) {
                 this.workIdWithBlast[value.blastId][value.category].push(data.id); // TODO:
             } else {
                 this.workIdWithBlast[value.blastId][value.category].unshift(data.id); // TODO:
             }
-            this.services.addWork(data, (resData) => {
-                console.log("success to add Work")
-                this.setCurrentBlastId(data.blast_id);
-                this.setCurrentWorkId(data.id);
-                this.setCurrentType(window.CONSTANTS.TYPE.SELECT_WORK);
-                if (!(data.id in this.pauseIdWithWork)) {
-                    this.pauseIdWithWork[data.id] = [];
-                }
-            }, (error) => {
-                console.error("Failed to add work.", error);
-                this.workIdWithBlast[value.blastId][value.category] = this._.without(this.workIdWithBlast[data.blastId][value.category], data.id);
+            if (!!!data.is_data_build) {
+                this.services.addWork(data, (resData) => {
+                    console.log("success to add Work")
+                    this.setCurrentBlastId(data.blast_id);
+                    this.setCurrentWorkId(data.id);
+                    this.setCurrentType(window.CONSTANTS.TYPE.SELECT_WORK);
+                    if (!(data.id in this.pauseIdWithWork)) {
+                        this.pauseIdWithWork[data.id] = [];
+                    }
+                }, (error) => {
+                    console.error("Failed to add work.", error);
+                    this.workIdWithBlast[value.blastId][value.category] = this._.without(this.workIdWithBlast[data.blastId][value.category], data.id);
+                });
                 this.clearAll();
-            });
+            } else {
+                data.state = window.CONSTANTS.WORK_STATE.FINISH;
+                data.accum_time = data.finish_time - data.start_time;
+                this.services.addCompletedWork(data, (resData) => {
+                    console.log("success to add completed work")
+                }, (error) => {
+                    console.error("Failed to add work.", error);
+                    this.workIdWithBlast[value.blastId][value.category] = this._.without(this.workIdWithBlast[data.blastId][value.category], data.id);
+                });
+                this.clearAll();
+            }
         },
         handleWorkInfoCloseButton(blast) {
             this.clearForBlastData(blast);

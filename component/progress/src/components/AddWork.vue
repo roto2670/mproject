@@ -1,6 +1,9 @@
 <template>
     <div v-if="isType()" id="workAddEditor" class="work-add-container">
-        <div class="work-add-title-container">
+        <div v-if="isDataBuild" class="work-add-title-container">
+            ADD COMPLETED ACTIVITY
+        </div>
+        <div v-else class="work-add-title-container">
             ADD ACTIVITY
         </div>
         <div class="work-add-body-container">
@@ -20,6 +23,26 @@
                         <option v-for="(value, key) in activityList" :value="value" :key="key"
                             :disabled="isMainWorkDisabled(value)">{{ key }}</option>
                     </select>
+                </div>
+                <div v-if="isDataBuild" class="work-add-body-content-container">
+                    <div class="work-add-body-content-title">Start Date</div>
+                    <input id="workStartTime" type="date" class="work-add-body-content-message"
+                        @change="handleChangeWorkStartDate" />
+                </div>
+                <div v-if="isDataBuild" class="work-add-body-content-container">
+                    <div class="work-add-body-content-title">Start Time</div>
+                    <input id="workStartTime" type="time" class="work-add-body-content-message"
+                        @change="handleChangeWorkStartTime" />
+                </div>
+                <div v-if="isDataBuild" class="work-add-body-content-container">
+                    <div class="work-add-body-content-title">Finish Date</div>
+                    <input id="workStartTime" type="date" class="work-add-body-content-message"
+                        @change="handleChangeWorkFinishDate" />
+                </div>
+                <div v-if="isDataBuild" class="work-add-body-content-container">
+                    <div class="work-add-body-content-title">Finish Time</div>
+                    <input id="workStartTime" type="time" class="work-add-body-content-message"
+                        @change="handleChangeWorkFinishTime" />
                 </div>
         </div>
         <div class="work-add-button-container">
@@ -50,55 +73,163 @@ export default {
     },
     data() {
         return {
+            isDataBuild: false,
             blastInfo: null,
-            category : '0',
-            activity : '101',
+            category: '0',
+            activity: '101',
+            tunnelInfo: null,
+            startTime: null,
+            startDate: null,
+            finishTime: null,
+            finishDate: null,
+            startTimeStamp: null,
+            finishTimeStamp: null,
+            startTimeCheckState: false,
+            finishTimeCheckState: false
         }
     },
     methods: {
-      _clearData() {
-          this.blastInfo = null,
-          this.category = '0',
-          this.activity = '101'
-      },
-      isType() {
-          this.blastInfo = this.$store.getters.getBlast(this.blastId);
-          return this.type == window.CONSTANTS.TYPE.ADD_WORK;
-      },
-      isMainWorkDisabled(key) {
-          if (this.category == '0') {
-              return false;
-          } else {
-              return false;
-          }
-      },
-      handleChangeCategory(e) {
-          this.category = e.target.value;
-          if (this.category == window.CONSTANTS.CATEGORY.MAIN_WORK) {
-              this.activity = '101'
-          } else if (this.category == window.CONSTANTS.CATEGORY.SUPPORTING) {
-              this.activity = '200'
-          } else {
-              this.activity = '300'
-          }
-      },
-      handleChangeActivity(e) {
-          this.activity = e.target.value;
-      },
-      handleOkButton() {
-          let data = {
-              blastId: this.blastId,
-              activity: this.activity,
-              category: this.category
-          }
-          this.$emit('select-ok-button', data);
-          this._clearData();
-      },
-      handleCancelButton() {
-          let blast = this.$store.getters.getBlast(this.blastId);
-          this.$emit('select-cancel-button', blast);
-          this._clearData();
-      }
+        _clearData() {
+            this.isDataBuild = false
+            this.blastInfo = null,
+            this.category = '0',
+            this.activity = '101'
+            this.tunnelInfo = null;
+            this.startTime = null;
+            this.startDate = null;
+            this.finishTime = null;
+            this.finishDate = null;
+            this.startTimeStamp = null;
+            this.finishTimeStamp = null;
+            this.startTimeCheckState = false;
+            this.finishTimeCheckState = false;
+        },
+        isType() {
+            if (this.type == window.CONSTANTS.TYPE.ADD_WORK) {
+                this._clearData();
+                this.blastInfo = this.$store.getters.getBlast(this.blastId);
+                this.tunnelInfo = this.$store.getters.getTunnel(this.blastInfo.tunnel_id);
+                let blast_list = this.tunnelInfo.blast_list,
+                    blastIndex = blast_list.findIndex(x => x.id === this.blastId);
+                if (blastIndex > 0 &&
+                    !!this.blastInfo.blast_info.blasting_time &&
+                    !!this.blastInfo.blast_info.blasting_length) {
+                    this.isDataBuild = true;
+                }
+                return true;
+            } else {
+                return false;
+            }
+        },
+        isMainWorkDisabled(key) {
+            if (this.category == '0') {
+                return false;
+            } else {
+                return false;
+            }
+        },
+        handleChangeCategory(e) {
+            this.category = e.target.value;
+            if (this.category == window.CONSTANTS.CATEGORY.MAIN_WORK) {
+                this.activity = '101'
+            } else if (this.category == window.CONSTANTS.CATEGORY.SUPPORTING) {
+                this.activity = '200'
+            } else {
+                this.activity = '300'
+            }
+        },
+        handleChangeActivity(e) {
+            this.activity = e.target.value;
+        },
+        handleChangeWorkStartTime (e) {
+            this.startTime = e.target.value
+            this.startTimestamp = new Date(this.startDate + "T" + this.startTime).getTime()/1000
+        },
+        handleChangeWorkStartDate (e) {
+            this.startDate = e.target.value
+            this.startTimestamp = new Date(this.startDate + "T" + this.startTime).getTime()/1000
+        },
+        handleChangeWorkFinishTime (e) {
+            this.finishTime = e.target.value
+            this.finishTimestamp = new Date(this.finishDate + "T" + this.finishTime).getTime()/1000
+        },
+        handleChangeWorkFinishDate (e) {
+            this.finishDate = e.target.value
+            this.finishTimestamp = new Date(this.finishDate + "T" + this.finishTime).getTime()/1000
+        },
+        _startTimeCheck(blast) {
+            if (!!this.startTimestamp)  {
+                const work_list = blast.work_list;
+                if (work_list.length == 0) {
+                    if (!!blast.blast_info.blasting_time) {
+                        const blasting_time = new Date(blast.blast_info.blasting_time).getTime() / 1000;
+                        if (blasting_time > this.startTimestamp) {
+                            this.sweetbox.fire("The start time you want to change cannot be less than the blast time. Please reset the time.");
+                        } else {
+                            this.startTimeCheckState = true;
+                        }
+                    } else {
+                        this.sweetbox.fire("Blast time is not set. Please set the Blast time first and try changing it again.");
+                    }
+                } else if (work_list.length > 0) {
+                    let beforeWorkFinishTime = new Date(work_list[work_list.length - 1].work_history_list[0].timestamp).getTime()/1000;
+                    if (this.StartTimestamp > beforeWorkFinishTime) {
+                        this.startTimeCheckState = true;
+                    } else {
+                        this.sweetbox.fire("The start time you are trying to enter is less than the finish time of the previous work.  Please check the time again.");
+                    }
+                }
+            } else {
+                this.sweetbox.fire("Start time not entered. Please check again.");
+            }
+        },
+        _finishTimeCheck(blast) {
+            if (!!this.finishTimestamp) {
+                let blast_list = this.tunnelInfo.blast_list,
+                    blastIndex = blast_list.findIndex(x => x.id === this.blastId),
+                    work_list = blast.work_list,
+                    nextBlastingTime = new Date(blast_list[blastIndex - 1].blast_info.blasting_time).getTime()/1000
+                if (this.finishTimestamp > nextBlastingTime) {
+                    this.sweetbox.fire("The finish time you are trying to change cannot be greater than the next blast time. Please check the time again.");
+                } else {
+                    this.finishTimeCheckState = true;
+                }
+            } else {
+                this.sweetbox.fire("Finish time not entered. Please check again.");
+            }
+        },
+        handleOkButton() {
+            let data = {
+                blastId: this.blastId,
+                activity: this.activity,
+                category: this.category
+            }
+            if (!!this.isDataBuild) {
+                let blast = this.blastInfo;
+                data.start_time = this.startTimestamp;
+                data.finish_time = this.finishTimestamp;
+                data.is_data_build = this.isDataBuild;
+                this._startTimeCheck(blast);
+                this._finishTimeCheck(blast);
+                if (this.startTimeCheckState && this.finishTimeCheckState) {
+                    this.$emit('select-ok-button', data);
+                    this.isDataBuild = false;
+                    this._clearData();
+                }
+            } else {
+                this.$emit('select-ok-button', data);
+                this.isDataBuild = false;
+                this._clearData();
+            }
+        },
+        handleCancelButton() {
+            let blast = this.$store.getters.getBlast(this.blastId);
+            this.$emit('select-cancel-button', blast);
+            if (!!this.isDataBuild) {
+                this.isDataBuild = false;
+            }
+            this._clearData();
+        }
     },
     computed: {
         activityList() {
