@@ -33,6 +33,7 @@
             :supportingIdList="getSupportingList()"
             :idleIdList="getIdleList()"
             @select-close-button="handleBlastInfoCloseButton"
+            @select-edit-close-button="handleBlastEditClose"
             @select-ok-button="handleBlastInfoOkButton"
             @select-add-work-button="handleAddWork"
             @select-remove-blast-button="handleRemoveBlast"
@@ -46,7 +47,7 @@
         <AddWork :type="getCurrentType()" :blastId="currentBlastId"
             @select-cancel-button="clearForBlastData"
             @select-ok-button="handleWorkAddOkButton"></AddWork>
-        <WorkInfo :type="getCurrentType()" :blastId="currentBlastId"
+        <WorkInfo ref="workInfoView" :type="getCurrentType()" :blastId="currentBlastId"
             :id="currentWorkId" :pauseList="getPauseList()"
             :operatorList="getOperatorList()" :equipmentList="getEquipmentList()"
             :workEquipmentList="workEquipmentList"
@@ -460,7 +461,7 @@ export default {
             // TODO: right click?
             marker.on('contextmenu', () => {});
             let cFactor = 30;   // 100 : 34  , 200 : 38  , 300 : 42
-            let arrowPosition = parseFloat(((tunnel.length / 2) * 0.078).toFixed(1)),
+            let arrowPosition = parseFloat(((tunnel.length / 2) * 0.0685).toFixed(1)),
                 arrowPl = "vertex-last",
                 textDxBase = parseInt(tunnel.width / 2) - cFactor,
                 textDx = {stops: [[4, textDxBase], [5, textDxBase * 2], [6, textDxBase * 4], [7, textDxBase * 8]]};
@@ -881,8 +882,44 @@ export default {
         handleEditBlastCancel() {
             this.extraLayers.removeGeometry(this.currentMarker)
             this.currentMarker.remove();
-            this.clearAll();
+            let currentMarkId = this.currentMarker.getId();
+            if (currentMarkId in this.blastMarkers) {
+                let typ = window.CONSTANTS.TUNNEL_TYPE.BLAST,
+                    blast = this.$store.getters.getBlast(currentMarkId);
+                if (!!blast) {
+                    let tunnelData = this.$store.getters.getTunnel(blast.tunnel_id);
+                    if (blast.state === window.CONSTANTS.BLAST_STATE.FINISH) {
+                        if (tunnelData.category == window.CONSTANTS.TUNNEL_CATEGORY.TH) {
+                            typ = window.CONSTANTS.TUNNEL_TYPE.FINISH_TH;
+                        } else if (tunnelData.category == window.CONSTANTS.TUNNEL_CATEGORY.B1) {
+                            typ = window.CONSTANTS.TUNNEL_TYPE.FINISH_B1;
+                        } else {
+                            typ = window.CONSTANTS.TUNNEL_TYPE.FINISH_B2;
+                        }
+                    } else {
+                        if (blast.work_list.length > 0) {
+                            if (blast.work_list[0].category == window.CONSTANTS.CATEGORY.MAIN_WORK) {
+                                typ = "main";
+                            } else if (blast.work_list[0].category == window.CONSTANTS.CATEGORY.SUPPORTING) {
+                                typ = "supporting";
+                            } else {
+                                typ = "idle";
+                            }
+                        }
+                    }
+                    this.blastMarkers[blast.id].updateSymbol({
+                            markerLineColor: this.colorMap[typ],
+                            // TODO:
+                            markerLineWidth: 1,
+                            markerFill: this.colorMap[typ],
+                            markerOpacity: 1
+                    });
+                }
+            } else {
+                this.clearCurrentMarker();
+            }
             this.hidingMarker.show();
+            this.setCurrentMarker(this.hidingMarker);
         },
         handleEditBlast(tunnelData, selectBlastID) {
             this.handleClearSelectItemWithoutClear();
@@ -975,9 +1012,11 @@ export default {
             this.setCurrentMarker(marker);
             this.handleChangeDirectionCavern(direction, defaultLength)
         },
-        handleEditExDataClear() {
+        handleEditExDataClear(tunnelId) {
             this.currentMarker.remove();
-            this.clearAll()
+            let tunnelData = this.$store.getters.getTunnel(tunnelId)
+            this.clearCurrentMarker();
+            this.setCurrentMarker(this.tunnelMarkers[tunnelData.category][tunnelId])
         },
         handleChangeDirectionCavern(direction, length) {
             let basePointInfo = this.$store.getters.getBasePoint(this.currentMarker.basepointId),
@@ -1093,7 +1132,7 @@ export default {
             data.height = this.currentMarker.defaultHeight;
             this.services.updateTunnel(data, (resData) => {
                 console.log("success to update tunnel")
-                this.handleEditExDataClear();
+                this.handleEditExDataClear(data.id);
             }, (error) => {
                 console.log("fail to update tunnel : ", error)
             });
@@ -1256,10 +1295,15 @@ export default {
             this.services.updateBlastInfo(data, (resData) => {
                 console.log("success to update blast info")
                 this.hidingMarker.show();
-                this.handleEditExDataClear();
+                this.handleEditExDataClear(tunnelData.id);
             }, (error) => {
                 console.log("fail to update blast info : ", error)
             });
+        },
+        handleBlastEditClose() {
+            this.extraLayers.removeGeometry(this.currentMarker)
+            this.currentMarker.remove();
+            this.hidingMarker.show();
         },
         handleBlastInfoCloseButton() {
             this.handleClearSelectItem();
@@ -2020,6 +2064,8 @@ export default {
                     this.pauseIdWithWork[pause.work_id] = this._.without(this.pauseIdWithWork[pause.work_id], item);
                     this.$store.commit('removePause', item);
                 } else if (data.kind === 'update') {
+                    this.$store.commit('updatePause', item);
+                    this.$refs.workInfoView.refreshPauseList();
                 }
             });
         },

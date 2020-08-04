@@ -257,7 +257,7 @@ export default {
         },
         handleCancelButton() {
             this._clearData()
-            this.$emit('select-edit-cancel-button')
+            this.$emit('select-edit-cancel-button', this.id)
         },
         handleCloseButton() {
             this.$emit('select-close-button', {});

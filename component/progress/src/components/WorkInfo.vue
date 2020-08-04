@@ -123,7 +123,7 @@
                         <div class="button-image position" :class="{ down : isPauseClose }"></div>
                     </div>
                     <div id="detailInfo" class="detail-container" :class="{ close: isPauseClose }">
-                        <div class="work-info-body-list-container">
+                        <div v-if="isView" class="work-info-body-list-container">
                             <div class="work-info-body-list-title-container">
                                 Pause Total Time( {{ getPauseTotalTime }} )
                             </div>
@@ -223,7 +223,9 @@ export default {
             finishTimeCheckState: false,
             isPauseClose: true,
             isEquipClose: true,
-            isOpenAddWorkEquipment: false
+            isOpenAddWorkEquipment: false,
+            isView: false,
+            refState: false
         }
     },
     methods: {
@@ -246,6 +248,8 @@ export default {
             this.isPauseClose = true;
             this.isEquipClose = true;
             this.isOpenAddWorkEquipment = false;
+            this.isView = false;
+            this.refState = false;
         },
         isType() {
             if (this.type == window.CONSTANTS.TYPE.SELECT_WORK) {
@@ -463,6 +467,15 @@ export default {
                     });
                 }
             }
+            this.refState = this.isPauseClose;
+            if (!!!this.isPauseClose) {
+                this.handlePauseDetail();
+            }
+        },
+        refreshPauseList() {
+            if (!!!this.refState) {
+                this.handlePauseDetail();
+            }
         },
         handleStopWork() {
             if (this.isStart && !this.isFinish) {
@@ -508,34 +521,53 @@ export default {
         },
         handleFinishWork() {
             if (!this.isFinish) {
-                if (this.workInfo.state == window.CONSTANTS.WORK_STATE.IN_PROGRESS) {
-                    // TODO: not stop then can't finish?
-                    let data = {};
-                    data.id = this.workInfo.id;
-                    data.category = this.workInfo.category;
-                    data.typ = this.workInfo.typ;
-                    data.blast_id = this.workInfo.blast_id;
-                    this.services.finishWork(data, (resData) => {
-                        this.workInfo = this.$store.getters.getWork(this.id);
-                        console.log("success to finish work");
-                    }, (error) => {
-                        console.log("fail to finish work : ", error);
-                    });
-                } else if (this.workInfo.state == window.CONSTANTS.WORK_STATE.FINISH) {
-                    this.sweetbox.fire("Already Finish.");
-                } else {
-                    let data = {};
-                    data.id = this.workInfo.id;
-                    data.category = this.workInfo.category;
-                    data.typ = this.workInfo.typ;
-                    data.blast_id = this.workInfo.blast_id;
-                    this.services.finishWork(data, (resData) => {
-                        this.workInfo = this.$store.getters.getWork(this.id);
-                        console.log("success to finish work");
-                    }, (error) => {
-                        console.log("fail to finish work : ", error);
-                    });
-                }
+                let workInfo = this.workInfo,
+                    finishWork = this.services.finishWork;
+                this.sweetbox.fire({
+                    title: 'Are you sure you want to finish?',
+                    text: "The finish button was clicked. If you want to finish, click Yes or NO.",
+                    type: 'warning',
+                    showCancelButton: true,
+                    confirmButtonColor: '#3085d6',
+                    cancelButtonColor: '#d33',
+                    confirmButtonText: 'Yes, finish!',
+                    cancelButtonText: 'No, cancel!',
+                    confirmButtonClass: 'btn btn-success',
+                    cancelButtonClass: 'btn btn-danger',
+                    buttonsStyling: true
+                }).then(function(isConfirm) {
+                    if (isConfirm.value === true) {
+                        if (workInfo.state == window.CONSTANTS.WORK_STATE.IN_PROGRESS) {
+                            let data = {};
+                            data.id = workInfo.id;
+                            data.category = workInfo.category;
+                            data.typ = workInfo.typ;
+                            data.blast_id = workInfo.blast_id;
+                            finishWork(data, (resData) => {
+                                console.log("success to finish work");
+                            }, (error) => {
+                                console.log("fail to finish work : ", error);
+                            });
+                        } else if (this.workInfo.state == window.CONSTANTS.WORK_STATE.FINISH) {
+                            this.sweetbox.fire("Already Finish.");
+                        } else {
+                            let data = {};
+                            data.id = workInfo.id;
+                            data.category = workInfo.category;
+                            data.typ = workInfo.typ;
+                            data.blast_id = workInfo.blast_id;
+                            finishWork(data, (resData) => {
+                                console.log("success to finish work");
+                            }, (error) => {
+                                console.log("fail to finish work : ", error);
+                            });
+                        }
+                    }
+                })
+            }
+            this.refState = this.isPauseClose;
+            if (!!!this.isPauseClose) {
+                this.handlePauseDetail();
             }
         },
         handleAddEquipmentButton() {
@@ -554,6 +586,7 @@ export default {
         },
         handlePauseDetail() {
             this.isPauseClose = !this.isPauseClose;
+            this.isView = !this.isView;
         },
         handleEquipDetail() {
             this.isEquipClose = !this.isEquipClose;
