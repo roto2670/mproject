@@ -106,7 +106,11 @@ export default {
         },
         isType() {
             if (this.type == window.CONSTANTS.TYPE.ADD_WORK) {
-                this._clearData();
+                if (!!this.blastInfo) {
+                    if (this.blastId !== this.blastInfo.id) {
+                        this._clearData();
+                    }
+                }
                 this.blastInfo = this.$store.getters.getBlast(this.blastId);
                 this.tunnelInfo = this.$store.getters.getTunnel(this.blastInfo.tunnel_id);
                 let blast_list = this.tunnelInfo.blast_list,
