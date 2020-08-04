@@ -459,6 +459,25 @@ export const addWork = (data, successCallback, failCallback) => {
     });
 }
 
+export const addCompletedWork = (data, successCallback, failCallback) => {
+    axios({
+        url: `${ window.CONSTANTS.URL.CONSOLE }/work/work/add/completed`,
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        data: data
+    }).then(response => {
+        if(response.data) {
+            successCallback(response.data);
+        } else {
+            failCallback(error);
+        }
+    }).catch(error => {
+        failCallback(error);
+    });
+}
+
 export const updateWork = (data, successCallback, failCallback) => {
     axios({
         url: `${ window.CONSTANTS.URL.CONSOLE }/work/work/update`,
