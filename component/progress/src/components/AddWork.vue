@@ -173,7 +173,7 @@ export default {
                     }
                 } else if (work_list.length > 0) {
                     let beforeWorkFinishTime = new Date(work_list[work_list.length - 1].work_history_list[0].timestamp).getTime()/1000;
-                    if (this.StartTimestamp > beforeWorkFinishTime) {
+                    if (this.startTimestamp > beforeWorkFinishTime) {
                         this.startTimeCheckState = true;
                     } else {
                         this.sweetbox.fire("The start time you are trying to enter is less than the finish time of the previous work.  Please check the time again.");
