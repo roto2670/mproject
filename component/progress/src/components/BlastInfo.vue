@@ -104,41 +104,41 @@
                                         :value="getBlastingTimeEdit">
                                 </div>
                                 <div class="blast-info-body-content-container fold">
-                                    <div class="blast-info-body-content-title fold">Start Point</div>
+                                    <div class="blast-info-body-content-title fold">Start Point (m)</div>
                                     <input class="blast-info-body-content-message fold" type="Number"
                                         :value="getStartPointEdit" readonly>
                                 </div>
                                 <div class="blast-info-body-content-container fold">
-                                    <div class="blast-info-body-content-title fold">End Point</div>
+                                    <div class="blast-info-body-content-title fold">End Point (m)</div>
                                     <input class="blast-info-body-content-message fold" type="number"
                                         @change="handleChangeFinishPoint"
                                         step="0.1" :value="getFinishPointEdit">
                                 </div>
                                 <div class="blast-info-body-content-container fold">
-                                    <div class="blast-info-body-content-title fold">Drilling Length</div>
+                                    <div class="blast-info-body-content-title fold">Drilling Length (m)</div>
                                     <input class="blast-info-body-content-message fold" type="text"
                                         :value="getLengthEdit" readonly>
                                 </div>
                                 <div class="blast-info-body-content-container fold">
-                                    <div class="blast-info-body-content-title fold">Explosive Bulk</div>
+                                    <div class="blast-info-body-content-title fold">Explosive Bulk (kg)</div>
                                     <input class="blast-info-body-content-message fold" type="number"
                                         @change="handleChangeExplosiveBulk"
                                         :value="getExplosiveBulkEdit">
                                 </div>
                                 <div class="blast-info-body-content-container fold">
-                                    <div class="blast-info-body-content-title fold">Explosive Cartridge</div>
+                                    <div class="blast-info-body-content-title fold">Explosive Cartridge (kg)</div>
                                     <input class="blast-info-body-content-message fold" type="number"
                                         @change="handleChangeExplosiveCartridge"
                                         :value="getExplosiveCartridgeEdit">
                                 </div>
                                 <div class="blast-info-body-content-container fold">
-                                    <div class="blast-info-body-content-title fold">Detonator</div>
+                                    <div class="blast-info-body-content-title fold">Detonator (kg)</div>
                                     <input class="blast-info-body-content-message fold" type="Number"
                                         @change="handleChangeDetonator"
                                         :value="getDetonatorEdit">
                                 </div>
                                 <div class="blast-info-body-content-container fold">
-                                    <div class="blast-info-body-content-title fold">Drilling Depth</div>
+                                    <div class="blast-info-body-content-title fold">Drilling Depth (m)</div>
                                     <input class="blast-info-body-content-message fold" type="Number"
                                         @change="handleChangeDrillingDepth"
                                         step="0.1" :value="getDrillingDepthEdit">
@@ -370,7 +370,6 @@ export default {
                     }
                 } else if (index == blastList.length - 1) {
                     const nextStartTime = new Date(blastList[index - 1].blast_info.blasting_time).getTime() / 1000;
-                    console.log(changedTime, nextStartTime)
                     if(!!nextStartTime){
                         if (changedTime > nextStartTime) {
                             this.sweetbox.fire("The time you are trying to change is greater than the start time of the next blasting . Please check the time again.");
@@ -413,16 +412,12 @@ export default {
             }
         },
         handleCancelButton() {
-            this._clearData();
             this.isEdit = false;
             this.$emit('select-edit-blast-cancel-button');
+            this.isBlastingDetailClose = false;
         },
         handleCloseButton() {
-            if (this.isEdit) {
-                this.handleCancelButton();
-            } else {
-                this.$emit('select-close-button', {});
-            }
+            this.$emit('select-close-button', {});
             this._clearData();
         },
         handleEditButton() {
@@ -469,7 +464,7 @@ export default {
             this.detonator = e.target.value;
         },
         handleChangeDrillingDepth(e) {
-            this.blastingLength = e.target.value;
+            this.drilling_depth = parseInt(e.target.value);
         },
         handleChangeBlastingDate(e) {
             this.blastDate = e.target.value;
@@ -496,10 +491,10 @@ export default {
             }
         },
         handleChangeTeamId(e) {
-            this.blastInformation.team_id = e.target.value;
+            this.team_id = e.target.value;
         },
         handleChangeTeamNos(e) {
-            this.blastInformation.team_nos = e.target.value;
+            this.team_nos = e.target.value;
         },
     },
     computed: {
@@ -763,7 +758,7 @@ export default {
     display: inline-block;
 }
 .blast-info-body-content-title.fold {
-    width: 35%;
+    width: 40%;
     font-size: 13px;
     text-align: left;
 }
@@ -780,7 +775,7 @@ export default {
     cursor: default;
 }
 .blast-info-body-content-message.fold {
-    width: 60%;
+    width: 55%;
     font-size: 13px;
     padding-left: 14px;
 }

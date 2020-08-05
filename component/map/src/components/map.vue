@@ -3909,7 +3909,7 @@
                 // TODO: right click?
                 marker.on('contextmenu', () => {});
                 let cFactor = 30;   // 100 : 34  , 200 : 38  , 300 : 42
-                let arrowPosition = parseFloat(((tunnel.length / 2) * 0.078).toFixed(1)),
+                let arrowPosition = parseFloat(((tunnel.length / 2) * 0.0685).toFixed(1)),
                     arrowPl = "vertex-last",
                     textDxBase = parseInt(tunnel.width / 2) - cFactor,
                     textDx = {stops: [[4, textDxBase], [5, textDxBase * 2], [6, textDxBase * 4], [7, textDxBase * 8]]};
