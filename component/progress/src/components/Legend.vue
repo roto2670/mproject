@@ -95,7 +95,7 @@ export default {
 }
 .title-container {
     color: #ffffff;
-    font-size: 20px;
+    font-size: 19px;
     font-weight: bold;
     padding: 4px 8px 4px 8px;
     background: rgba(85, 185, 250, 0.5);
@@ -112,7 +112,7 @@ export default {
 .message-box {
     display: inline-block;
     color: #0c649e;
-    font-size: 18px;
+    font-size: 15px;
     font-weight: bold;
     padding-left: 8px;
 }
