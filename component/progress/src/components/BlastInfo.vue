@@ -358,8 +358,14 @@ export default {
                 this.isEdit = false;
             } else if (blastList.length > 1) {
                 if (index == 0) {
-                    const beforeStartTime = new Date(blastList[index + 1].blast_info.blasting_time).getTime() / 1000,
-                          beforeFinishTime = beforeStartTime + blastList[index + 1].accum_time;
+                    let beforeFinishTime = 0;
+                    if (!!blastList[index + 1]){
+                        if (blastList[index + 1].work_list.length !== 0) {
+                            beforeFinishTime = new Date(blastList[index + 1].work_list[0].work_history_list[0].timestamp).getTime()/1000
+                        } else {
+                            beforeFinishTime = blastList[index + 1].blast_info.blasting_time
+                        }
+                    }
                     if (changedTime < beforeFinishTime) {
                         this.sweetbox.fire("The time you are trying to change is less than the end time of the previous blasting. Please check the time again.");
                     } else {
@@ -386,9 +392,13 @@ export default {
                         this.isEdit = false;
                     }
                 } else {
-                    const beforeStartTime = new Date(blastList[index + 1].blast_info.blasting_time).getTime() / 1000,
-                          beforeFinishTime = beforeStartTime + blastList[index + 1].accum_time,
-                          nextStartTime = new Date(blastList[index - 1].blast_info.blasting_time).getTime() / 1000;
+                    let beforeFinishTime = 0,
+                        nextStartTime = new Date(blastList[index - 1].blast_info.blasting_time).getTime() / 1000;
+                    if (blastList[index + 1].work_list.length !== 0) {
+                            beforeFinishTime = new Date(blastList[index + 1].work_list[0].work_history_list[0].timestamp).getTime()/1000
+                        } else {
+                            beforeFinishTime = blastList[index + 1].blast_info.blasting_time
+                        }
                     if (changedTime < beforeFinishTime) {
                         this.sweetbox.fire("The time you are trying to change is less than the end time of the previous blasting. Please check the time again.");
                     } else {
@@ -425,15 +435,21 @@ export default {
             this.$emit('select-edit-blast-button', this.tunnel, this.id);
         },
         handleRemoveButton() {
-            let data = {};
+            let data = {},
+                blastList = this.tunnel.blast_list,
+                index = blastList.findIndex(x => x.id === this.id);
             data.blast_id = this.id;
-            this.services.getWorkListByBlast(data, (resData) => {
-                if (resData.length == 0) {
-                    this.$emit('select-remove-blast-button', this.id);
-                } else {
-                    this.sweetbox.fire("Deletion not possible because child data exists.");
-                }
-            });
+            if (index == 0) {
+                this.services.getWorkListByBlast(data, (resData) => {
+                    if (resData.length == 0) {
+                        this.$emit('select-remove-blast-button', this.id);
+                    } else {
+                        this.sweetbox.fire("Deletion not possible because child data exists.");
+                    }
+                });
+            } else {
+                this.sweetbox.fire("Not the latest Blast data. Please delete the latest Blast data sequentially.");
+            }
         },
         handleAddWorkButton() {
             if (!this.isFinish) {
