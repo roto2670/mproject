@@ -137,7 +137,7 @@ export default {
                 'selected': '#dddddd',
                 '0': '#a0a0ff',
                 '1': '#00aabb',
-                '3': '#00aabb',
+                '3': '#5e5e5e',
                 '4': '#0000ff',
                 '100': '#01b050',
                 '101': '#9f5900',
@@ -919,6 +919,14 @@ export default {
                 this.clearCurrentMarker();
             }
             this.hidingMarker.show();
+            if (this.hidingMarker != null) {
+                this.hidingMarker.updateSymbol({
+                        markerLineColor: '#000000',
+                        markerLineWidth: 1,
+                        markerFill: this.colorMap['selected'],
+                        markerOpacity: 1
+                });
+            }
             this.setCurrentMarker(this.hidingMarker);
         },
         handleEditBlast(tunnelData, selectBlastID) {
@@ -1342,8 +1350,6 @@ export default {
                 boxSymbol: {
                     markerType: 'square',
                     markerLineColor: this.colorMap[typ],
-                    // TODO:
-                    // markerLineColor: '#ffffff',
                     markerLineWidth: 1,
                     markerFill: this.colorMap[typ],
                     markerFillOpacity: 1

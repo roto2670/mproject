@@ -206,10 +206,10 @@ export default {
           }
       },
       _finishPointCheck(){
-          if (!!this.finishPoint) {
+          if (this.blastingLength > 0) {
               this.finishPointCheck = true;
           } else {
-              this.sweetbox.fire("Finish point not entered. Please check the Finish point.");
+              this.sweetbox.fire("The length you are trying to change cannot be 0 or minus length.. Please check the Finish point and Blasing Length.");
               this.finishPointCheck = false;
           }
       },
@@ -284,6 +284,7 @@ export default {
         },
         getBlastingLength() {
             this.blastingLength = this.finishPoint - this.startPoint;
+                this.blastingLength = parseFloat(this.blastingLength.toFixed(1));
             return this.blastingLength;
         },
         getTeamList() {
