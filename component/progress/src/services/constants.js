@@ -80,7 +80,7 @@ window.CONSTANTS = {
             //WIDTH: 140,
             WIDTH: 0.778,
             HEIGHT: 18,
-            LOCATION_LENGTH: 0.0685
+            LOCATION_LENGTH: 0.0709
         },
         BASEPOINT: {
             WIDTH: 8,

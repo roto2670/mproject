@@ -284,7 +284,7 @@ export default {
         },
         getBlastingLength() {
             this.blastingLength = this.finishPoint - this.startPoint;
-                this.blastingLength = parseFloat(this.blastingLength.toFixed(1));
+            this.blastingLength = parseFloat(this.blastingLength.toFixed(1));
             return this.blastingLength;
         },
         getTeamList() {
