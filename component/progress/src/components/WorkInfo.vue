@@ -111,7 +111,7 @@
                         @click="handleFinishWork">Finish</div>
                 </div>
                 <div class="work-info-body-button-container line">
-                    <div class="work-info-body-button" :class="{ buttonDisabled: isStart }"
+                    <div class="work-info-body-button" :class="{ buttonDisabled: !isFinish }"
                         @click="handleEditButton">Edit</div>
                     <div class="work-info-body-button" :class="{ buttonDisabled: isStart }"
                         @click="handleRemoveWork">Remove</div>
@@ -412,13 +412,13 @@ export default {
             }
         },
         handleOkButton() {
-            let blast = this.blastInfo;
+            let blast = this.blastInfo,
+                data = this.workInfo;
             this._startTimeCheck(blast);
             this._finishTimeCheck(blast);
             if (this.startTimeCheckState && this.finishTimeCheckState) {
-                this.$emit('select-ok-button', this.workInfo);
-                this.isEdit = false;
                 this._clearData();
+                this.$emit('select-ok-button', data);
             }
         },
         handleCancelButton() {
@@ -651,7 +651,7 @@ export default {
             if (this.workInfo.state == window.CONSTANTS.WORK_STATE.FINISH) {
                 if (this.workInfo.work_history_list.length > 0) {
                     finishTime = this.workInfo.work_history_list[0].timestamp.substring(0, 16);
-                    this.finishTimestamp = new Date(this.workInfo.work_history_list[0].timestamp).getTime()/1000
+                    this.finishTimestamp = new Date(finishTime).getTime()/1000
                     finishTime = finishTime.replace("T", ". ");
                     finishTime = finishTime.replace("-", ". ");
                     finishTime = finishTime.replace("-", ". ");
@@ -696,7 +696,7 @@ export default {
             if (this.workInfo.work_history_list != undefined &&
                 this.workInfo.work_history_list.length > 0) {
                 startTime = this.workInfo.work_history_list[this.workInfo.work_history_list.length - 1].timestamp.substring(0, 16);
-                this.startTimestamp = new Date(this.workInfo.work_history_list[0].timestamp).getTime()/1000
+                this.startTimestamp = new Date(startTime).getTime()/1000
                 startTime = startTime.replace("T", ". ");
                 startTime = startTime.replace("-", ". ");
                 startTime = startTime.replace("-", ". ");
@@ -705,9 +705,7 @@ export default {
         },
         getTotalTime() {
             let tmpTime = new Date(0);
-            if (!!!this.totalDuration) {
-                this.totalDuration = this.workInfo.accum_time;
-            }
+            this.totalDuration = this.workInfo.accum_time;
             tmpTime.setSeconds(this.totalDuration);
             // OLD format
             // return tmpTime.toISOString().substr(11,8);

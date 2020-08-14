@@ -352,10 +352,7 @@ export default {
             data.blast_id = this.id;
             data.id = this.blastInformation.id;
             if (blastList.length == 1) {
-                data.blasting_time = this.blasting_time;
-                this.$emit('select-ok-button', data, this.tunnel, this.blast);
-                this._clearData();
-                this.isEdit = false;
+                this._okButton(data);
             } else if (blastList.length > 1) {
                 if (index == 0) {
                     let beforeFinishTime = 0;
@@ -363,16 +360,13 @@ export default {
                         if (blastList[index + 1].work_list.length !== 0) {
                             beforeFinishTime = new Date(blastList[index + 1].work_list[0].work_history_list[0].timestamp).getTime()/1000
                         } else {
-                            beforeFinishTime = blastList[index + 1].blast_info.blasting_time
+                            beforeFinishTime = new Date(blastList[index + 1].blast_info.blasting_time).getTime()/1000
                         }
                     }
                     if (changedTime < beforeFinishTime) {
                         this.sweetbox.fire("The time you are trying to change is less than the end time of the previous blasting. Please check the time again.");
                     } else {
-                        data.blasting_time = this.blasting_time;
-                        this.$emit('select-ok-button', data, this.tunnel, this.blast);
-                        this._clearData();
-                        this.isEdit = false;
+                        this._okButton(data);
                     }
                 } else if (index == blastList.length - 1) {
                     const nextStartTime = new Date(blastList[index - 1].blast_info.blasting_time).getTime() / 1000;
@@ -380,16 +374,10 @@ export default {
                         if (changedTime > nextStartTime) {
                             this.sweetbox.fire("The time you are trying to change is greater than the start time of the next blasting . Please check the time again.");
                         } else {
-                            data.blasting_time = this.blasting_time;
-                            this.$emit('select-ok-button', data, this.tunnel, this.blast);
-                            this._clearData();
-                            this.isEdit = false;
+                            this._okButton(data);
                         }
                     } else {
-                        data.blasting_time = this.blasting_time;
-                        this.$emit('select-ok-button', data, this.tunnel, this.blast);
-                        this._clearData();
-                        this.isEdit = false;
+                        this._okButton(data);
                     }
                 } else {
                     let beforeFinishTime = 0,
@@ -397,7 +385,7 @@ export default {
                     if (blastList[index + 1].work_list.length !== 0) {
                             beforeFinishTime = new Date(blastList[index + 1].work_list[0].work_history_list[0].timestamp).getTime()/1000
                         } else {
-                            beforeFinishTime = blastList[index + 1].blast_info.blasting_time
+                            beforeFinishTime = new Date(blastList[index + 1].blast_info.blasting_time).getTime()/1000
                         }
                     if (changedTime < beforeFinishTime) {
                         this.sweetbox.fire("The time you are trying to change is less than the end time of the previous blasting. Please check the time again.");
@@ -406,19 +394,23 @@ export default {
                             if (changedTime > nextStartTime) {
                                 this.sweetbox.fire("The time you are trying to change is greater than the start time of the next blasting . Please check the time again.");
                             } else {
-                                data.blasting_time = this.blasting_time;
-                                this.$emit('select-ok-button', data, this.tunnel, this.blast);
-                                this._clearData();
-                                this.isEdit = false;
+                                this._okButton(data);
                             }
                         } else {
-                            data.blasting_time = this.blasting_time;
-                            this.$emit('select-ok-button', data, this.tunnel, this.blast);
-                            this._clearData();
-                            this.isEdit = false;
+                            this._okButton(data);
                         }
                     }
                 }
+            }
+        },
+        _okButton(data) {
+            if (data.blasting_length > 0) {
+                data.blasting_time = this.blasting_time;
+                this.$emit('select-ok-button', data, this.tunnel, this.blast);
+                this._clearData();
+                this.isEdit = false;
+            } else {
+                this.sweetbox.fire("The length you are trying to change cannot be 0 or minus length. Please check the Finish point and Blasing Length.");
             }
         },
         handleCancelButton() {
@@ -492,18 +484,18 @@ export default {
         },
         handleChangeFinishPoint(e) {
             let blastList = this.tunnel.blast_list,
-                _finish_point = parseInt(e.target.value),
+                _finish_point = parseFloat(e.target.value),
                 index = blastList.findIndex(x => x.id === this.id);
+            this.finish_point = _finish_point;
+            this.blastingLength = this.finish_point - this.start_point;
             if (_finish_point > this.start_point) {
                 if (index > 0) {
                     this.sweetbox.fire("The length cannot be changed because more recent blasts exist. Please delete the latest blasts and change the length.");
                 } else {
-                    this.finish_point = _finish_point;
-                    this.blastingLength = this.finish_point - this.start_point;
                     this.$emit('change-blast-length', this.tunnel, this.blastingLength, this.id);
                 }
             } else {
-                this.sweetbox.fire("The length you want to change cannot be minus length. Please reset the finish point.");
+                this.sweetbox.fire("The length you want to change cannot be 0 or minus length. Please reset the finish point.");
             }
         },
         handleChangeTeamId(e) {
