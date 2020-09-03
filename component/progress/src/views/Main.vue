@@ -215,7 +215,6 @@ export default {
                         this.basePointLayers[value].setZIndex(0);
                         this.basePointMarkers[value] = {};
                     });
-                    this._getActivityList();
                     this._getEquipmentList();
                     this._getOperatorList();
                     //TODO:
@@ -249,14 +248,6 @@ export default {
             var r = Math.random() * 16 | 0, v = c == 'x' ? r : (r & 3 | 8);
             return v.toString(16);
           });
-        },
-        _getActivityList() {
-            this.services.getActivityList(activityList => {
-                // TODO:
-                // console.log("Success to get activity list.", activityList);
-            }, (error) => {
-                console.log("Failed to get activity list.", error);
-            });
         },
         _getEquipmentList() {
             this.services.getEquipmentList(equipmentList => {
