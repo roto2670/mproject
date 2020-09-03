@@ -47,6 +47,11 @@
                     <input id="workFinishTime" type="time" class="work-info-body-content-message"
                         :value="getFinishTime" @change="handleChangeWorkFinishTime" />
                 </div>
+                <div class="work-info-body-content-container">
+                    <div class="work-info-body-content-title">Total Duration (m)</div>
+                    <input type="text" class="work-info-body-content-message"
+                        :value="getTotalTime" @change="handleChangeTotalDuration" />
+                </div>
             </div>
             <div class="work-info-button-container">
                 <div class="work-info-ok-button"
@@ -94,12 +99,6 @@
                     <div class="work-info-body-content-title">Finish Time</div>
                     <input type="text" class="work-info-body-content-message"
                         :value="getFinishTimeStr" readonly>
-                </div>
-
-                <div class="work-info-body-content-container">
-                    <div class="work-info-body-content-title">Total Duration</div>
-                    <input type="text" class="work-info-body-content-message"
-                        :value="getTotalTime" readonly>
                 </div>
 
                 <div class="work-info-body-button-container">
@@ -433,18 +432,50 @@ export default {
         handleChangeWorkStartTime (e) {
             this.startTime = e.target.value
             this.startTimestamp = new Date(this.startDate + "T" + this.startTime).getTime()/1000
+            if ((this.finishTimestamp - this.startTimestamp) > 0) {
+                this.totalDuration = (this.finishTimestamp - this.startTimestamp)/60
+            } else {
+                this.totalDuration = "0"
+            }
         },
         handleChangeWorkStartDate (e) {
             this.startDate = e.target.value
             this.startTimestamp = new Date(this.startDate + "T" + this.startTime).getTime()/1000
+            if ((this.finishTimestamp - this.startTimestamp) > 0) {
+                this.totalDuration = (this.finishTimestamp - this.startTimestamp)/60
+            } else {
+                this.totalDuration = "0"
+            }
         },
         handleChangeWorkFinishTime (e) {
             this.finishTime = e.target.value
             this.finishTimestamp = new Date(this.finishDate + "T" + this.finishTime).getTime()/1000
+            if ((this.finishTimestamp - this.startTimestamp) > 0) {
+                this.totalDuration = (this.finishTimestamp - this.startTimestamp)/60
+            } else {
+                this.totalDuration = "0"
+            }
         },
         handleChangeWorkFinishDate (e) {
             this.finishDate = e.target.value
             this.finishTimestamp = new Date(this.finishDate + "T" + this.finishTime).getTime()/1000
+            if ((this.finishTimestamp - this.startTimestamp) > 0) {
+                this.totalDuration = (this.finishTimestamp - this.startTimestamp)/60
+            } else {
+                this.totalDuration = "0"
+            }
+        },
+        handleChangeTotalDuration(e) {
+            let finishTime = null,
+                finishDate = null,
+                duration = null;
+            this.totalDuration = e.target.value;
+            duration = parseInt(this.totalDuration);
+            this.finishTimestamp = this.startTimestamp + (duration*60);
+            finishTime = new Date(this.finishTimestamp*1000);
+            this.finishTime = finishTime.toTimeString().substring(0,8);
+            finishDate = finishTime.getFullYear().toString() + "-" + ("0" + (finishTime.getMonth() + 1)).slice(-2).toString() + "-" + ("0" + finishTime.getDate()).slice(-2).toString();
+            this.finishDate = finishDate;
         },
         handleStartWork() {
             if (!this.isStart && !this.isFinish) {
@@ -628,23 +659,31 @@ export default {
         },
         getFinishTime() {
             let finishTime = '';
-            if (this.workInfo.state == window.CONSTANTS.WORK_STATE.FINISH) {
-                if (this.workInfo.work_history_list.length > 0) {
-                    finishTime = this.workInfo.work_history_list[0].timestamp;
+            if (!!!this.finishTime) {
+                if (this.workInfo.state == window.CONSTANTS.WORK_STATE.FINISH) {
+                    if (this.workInfo.work_history_list.length > 0) {
+                        finishTime = this.workInfo.work_history_list[0].timestamp;
+                    }
                 }
+                this.finishTime = finishTime.substring(11,19);
+                return finishTime.substring(11,19);
+            } else {
+                return this.finishTime;
             }
-            this.finishTime = finishTime.substring(11,19);
-            return finishTime.substring(11,19);
         },
         getFinishDate() {
             let finishDate = '';
-            if (this.workInfo.state == window.CONSTANTS.WORK_STATE.FINISH) {
-                if (this.workInfo.work_history_list.length > 0) {
-                    finishDate = this.workInfo.work_history_list[0].timestamp;
+            if (!!!this.finishDate) {
+                if (this.workInfo.state == window.CONSTANTS.WORK_STATE.FINISH) {
+                    if (this.workInfo.work_history_list.length > 0) {
+                        finishDate = this.workInfo.work_history_list[0].timestamp;
+                    }
                 }
+                this.finishDate = finishDate.substring(0,10);
+                return finishDate.substring(0,10);
+            } else {
+                return this.finishDate;
             }
-            this.finishDate = finishDate.substring(0,10);
-            return finishDate.substring(0,10);
         },
         getFinishTimeStr() {
             let finishTime = '';
@@ -669,27 +708,35 @@ export default {
         },
         getStartDate() {
             let startDate = '';
-            if (this.workInfo.state == window.CONSTANTS.WORK_STATE.FINISH) {
-                if (this.workInfo.work_history_list.length == 1) {
-                    startDate = this.workInfo.work_history_list[0].timestamp;
-                } else if (this.workInfo.work_history_list.length == 2) {
-                    startDate = this.workInfo.work_history_list[1].timestamp;
+            if (!!!this.startDate) {
+                if (this.workInfo.state == window.CONSTANTS.WORK_STATE.FINISH) {
+                    if (this.workInfo.work_history_list.length == 1) {
+                        startDate = this.workInfo.work_history_list[0].timestamp;
+                    } else if (this.workInfo.work_history_list.length == 2) {
+                        startDate = this.workInfo.work_history_list[1].timestamp;
+                    }
                 }
+                this.startDate = startDate.substring(0,10);
+                return startDate.substring(0,10);
+            } else {
+                return this.startDate;
             }
-            this.startDate = startDate.substring(0,10);
-            return startDate.substring(0,10);
         },
         getStartTime() {
             let startTime = '';
-            if (this.workInfo.state == window.CONSTANTS.WORK_STATE.FINISH) {
-                if (this.workInfo.work_history_list.length == 1) {
-                    startTime = this.workInfo.work_history_list[0].timestamp;
-                } else if (this.workInfo.work_history_list.length == 2) {
-                    startTime = this.workInfo.work_history_list[1].timestamp;
+            if (!!!this.startTime) {
+                if (this.workInfo.state == window.CONSTANTS.WORK_STATE.FINISH) {
+                    if (this.workInfo.work_history_list.length == 1) {
+                        startTime = this.workInfo.work_history_list[0].timestamp;
+                    } else if (this.workInfo.work_history_list.length == 2) {
+                        startTime = this.workInfo.work_history_list[1].timestamp;
+                    }
                 }
+                this.startTime = startTime.substring(11,19)
+                return startTime.substring(11,19);
+            } else {
+                return this.startTime;
             }
-            this.startTime = startTime.substring(11,19)
-            return startTime.substring(11,19);
         },
         getStartTimeStr() {
             let startTime = 'Not Started';
@@ -705,16 +752,10 @@ export default {
         },
         getTotalTime() {
             let tmpTime = new Date(0);
-            this.totalDuration = this.workInfo.accum_time;
-            tmpTime.setSeconds(this.totalDuration);
-            // OLD format
-            // return tmpTime.toISOString().substr(11,8);
-            let tList = tmpTime.toISOString().substr(9,7).split('T');
-            let day = parseInt(tList[0]) - 1;
-            let tStr = tList[1].split(":");
-            let h = tStr[0] + 'H';
-            let m = tStr[1] + "M";
-            return day + "D" + " " + h + " " + m
+            if (!!!this.totalDuration) {
+                this.totalDuration = this.workInfo.accum_time/60;
+            }
+            return this.totalDuration;
         },
         getPauseTotalTime() {
             let tmpTime = new Date(0);
@@ -771,13 +812,13 @@ export default {
     font-size: 1.4em;
 }
 .work-info-body-content-title {
-    width: 30%;
+    width: 35%;
     height: 2.4em;
     font-size: 15px;
     display: inline-block;
 }
 .work-info-body-content-message {
-    width: 70%;
+    width: 65%;
     height: 2.4em;
     font-size: 14px;
     border-radius: 5px;
