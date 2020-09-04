@@ -309,69 +309,64 @@ export default {
                     this.tunnelIDList.push(tunnel.id);
                     this.blastIdWithTunnel[tunnel.id] = [];
                     this._drawTunnel(tunnel);
+                    this._getBlastList(tunnel.blast_list);
                 });
                 this._getWorkList();
             }, (error) => {
                 console.log("Failed to get tunnel list.", error);
             });
         },
-        _getWorkList() {
-            this.services.getWorkList(resData => {
-                this._.forEach(resData, (work) => {
-                    if (!(work.blast_id in this.workIdWithBlast)) {
-                        this.workIdWithBlast[work.blast_id] = {
-                            0: [],  // Main Work
-                            1: [],  // Supporting
-                            2: []   // Idel Time
-                        }
+        _getWorkList(workList, blast) {
+            this._.forEach(workList, (work) => {
+                if (!(work.blast_id in this.workIdWithBlast)) {
+                    this.workIdWithBlast[work.blast_id] = {
+                        0: [],  // Main Work
+                        1: [],  // Supporting
+                        2: []   // Idel Time
                     }
+                }
 
-                    if (work.category == window.CONSTANTS.CATEGORY.MAIN_WORK) {
-                        this.workIdWithBlast[work.blast_id][0].push(work.id)
-                    } else if (work.category == window.CONSTANTS.CATEGORY.SUPPORTING) {
-                        this.workIdWithBlast[work.blast_id][1].push(work.id)
-                    } else {
-                        this.workIdWithBlast[work.blast_id][2].push(work.id)
-                    }
-
-                    this.$store.commit('addWork', work);
-                });
-                this._getPauseList();
-                this._getBlastList();
-            }, (error) => {
-                console.log("Failed to get work list.", error);
+                if (work.category == window.CONSTANTS.CATEGORY.MAIN_WORK) {
+                    this.workIdWithBlast[work.blast_id][0].push(work.id)
+                } else if (work.category == window.CONSTANTS.CATEGORY.SUPPORTING) {
+                    this.workIdWithBlast[work.blast_id][1].push(work.id)
+                } else {
+                    this.workIdWithBlast[work.blast_id][2].push(work.id)
+                }
+                let workMarker = this.workLayer.getGeometryById(blast.id);
+                if (!!workMarker) {
+                    this.workLayer.removeGeometry([workMarker]);
+                }
+                this.$store.commit('addWork', work);
+                this.drawWork(blast);
+                this._getPauseList(work.pause_history_list);
             });
         },
-        _getPauseList() {
-            this.services.getPauseList(resData => {
-                this._.forEach(resData, (pause) => {
-                    if (!(pause.work_id in this.pauseIdWithWork)) {
-                        this.pauseIdWithWork[pause.work_id] = [];
-                    }
-                    this.pauseIdWithWork[pause.work_id].push(pause.id);
-                    this.$store.commit('addPause', pause);
-                });
+        _getPauseList(pauseHistoryList) {
+            this._.forEach(pauseHistoryList, (pause) => {
+                if (!(pause.work_id in this.pauseIdWithWork)) {
+                    this.pauseIdWithWork[pause.work_id] = [];
+                }
+                this.pauseIdWithWork[pause.work_id].push(pause.id);
+                this.$store.commit('addPause', pause);
             });
         },
-        _getBlastList() {
-            this.services.getBlastList(blastList => {
-                this._.forEach(blastList, blast => {
-                    if (!(blast.tunnel_id in this.blastIdWithTunnel)) {
-                        this.blastIdWithTunnel[blast.tunnel_id] = [];
+        _getBlastList(blastList) {
+            this._.forEach(blastList, blast => {
+                if (!(blast.tunnel_id in this.blastIdWithTunnel)) {
+                    this.blastIdWithTunnel[blast.tunnel_id] = [];
+                }
+                if (!(blast.id in this.workIdWithBlast)) {
+                    this.workIdWithBlast[blast.id] = {
+                        0: [],  // Main Work
+                        1: [],  // Supporting
+                        2: []   // Idel Time
                     }
-                    if (!(blast.id in this.workIdWithBlast)) {
-                        this.workIdWithBlast[blast.id] = {
-                            0: [],  // Main Work
-                            1: [],  // Supporting
-                            2: []   // Idel Time
-                        }
-                    }
-                    this._drawBlast(blast, false);
-                    this.blastIDList.push(blast.id);
-                });
-                this._getBlastInfoList();
-            }, (error) => {
-                console.log("Failed to get blast list.", error);
+                }
+                this._drawBlast(blast, false);
+                this.$store.commit('addBlastInfo', blast.blast_info);
+                this.blastIDList.push(blast.id);
+                this._getWorkList(blast.work_list, blast);
             });
         },
         _getBlastInfoList() {
