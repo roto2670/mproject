@@ -418,9 +418,9 @@ export default {
             marker.on('contextmenu', () => {});
         },
         _drawTunnel(tunnel){
-            const left_x_loc = tunnel.left_x_loc,
-                  right_x_loc = tunnel.right_x_loc,
-                  y_loc = tunnel.y_loc,
+            const leftXLoc = tunnel.left_x_loc,
+                  rightXLoc = tunnel.right_x_loc,
+                  yLoc = tunnel.y_loc,
                   width = tunnel.width,
                   height = tunnel.height,
                   direction = tunnel.direction,
@@ -428,15 +428,15 @@ export default {
             let basePointInfo = this.$store.getters.getBasePoint(tunnel.basepoint_id),
                 textDx = {stops: [[4, width], [5, width * 2], [6, width * 4], [7, width * 8]]},
                 arrowPl = "vertex-last",
-                markerSetting = [[left_x_loc, y_loc], [right_x_loc, y_loc]],
-                arrowSetting = [[left_x_loc, y_loc], [right_x_loc - 0.8, y_loc]],
+                markerSetting = [[leftXLoc, yLoc], [rightXLoc, yLoc]],
+                arrowSetting = [[leftXLoc, yLoc], [rightXLoc - 0.8, yLoc]],
                 arrowPosition = parseFloat(((tunnel.length / 2) * 0.0685).toFixed(1));
 
             if (tunnel.direction == window.CONSTANTS.DIRECTION.WEST ||
                 tunnel.direction == window.CONSTANTS.DIRECTION.EAST_SIDE_WEST ||
                 tunnel.direction == window.CONSTANTS.DIRECTION.WEST_SIDE_WEST) {
                 arrowPl = "vertex-first";
-                arrowSetting = [[left_x_loc + 0.8, y_loc], [right_x_loc, y_loc]];
+                arrowSetting = [[leftXLoc + 0.8, yLoc], [rightXLoc, yLoc]];
                 textDx = {stops: [[4, width], [5, width * 2], [6, width * 4], [7, width * 8]]};
             }
             let marker = new maptalks.LineString(
@@ -941,7 +941,7 @@ export default {
                 arrowPl = "vertex-last",
                 blastHeight = tunnelData.height,
                 markerSetting = [[position[0], position[1]], [position[0] + blastWidth, position[1]]];
-
+            console.log(position)
             if (tunnelData.direction == window.CONSTANTS.DIRECTION.WEST ||
                 tunnelData.direction == window.CONSTANTS.DIRECTION.EAST_SIDE_WEST ||
                 tunnelData.direction == window.CONSTANTS.DIRECTION.WEST_SIDE_WEST) {
@@ -1228,8 +1228,8 @@ export default {
             this.setCurrentTunnelId(tunnelId);
             this.setCurrentType(window.CONSTANTS.TYPE.ADD_BLAST);
             const tunnelData = this.$store.getters.getTunnel(tunnelId),
-                  left_x_loc = tunnelData.left_x_loc,
-                  right_x_loc = tunnelData.right_x_loc,
+                  leftXLoc = tunnelData.left_x_loc,
+                  rightXLoc = tunnelData.right_x_loc,
                   yPosition = tunnelData.y_loc,
                   width = tunnelData.width,
                   height = tunnelData.height,
@@ -1344,10 +1344,13 @@ export default {
         },
         _drawBlast(blast, isUpdated) {
             const tunnelData = this.$store.getters.getTunnel(blast.tunnel_id),
+                  leftXLoc = blast.left_x_loc,
+                  rightXLoc = blast.right_x_loc,
+                  yLoc = blast.y_loc,
                   blastWidth = blast.width,
                   blastHeight = blast.height;
             let typ = window.CONSTANTS.TUNNEL_TYPE.BLAST,
-                markerSetting = [[blast.left_x_loc, blast.y_loc], [blast.left_x_loc + blastWidth, blast.y_loc]],
+                markerSetting = [[leftXLoc, yLoc], [leftXLoc + blastWidth, yLoc]],
                 arrowPl = "vertex-last";
             if (blast.state === window.CONSTANTS.BLAST_STATE.FINISH) {
                 if (tunnelData.category == window.CONSTANTS.TUNNEL_CATEGORY.TH) {
@@ -1373,7 +1376,7 @@ export default {
                 tunnelData.direction == window.CONSTANTS.DIRECTION.EAST_SIDE_WEST ||
                 tunnelData.direction == window.CONSTANTS.DIRECTION.WEST_SIDE_WEST) {
                 arrowPl = "vertex-first";
-                markerSetting = [[blast.right_x_loc - blastWidth, blast.y_loc], [blast.right_x_loc, blast.y_loc]];
+                markerSetting = [[rightXLoc - blastWidth, yLoc], [rightXLoc, yLoc]];
             }
             let _marker = new maptalks.LineString(
             markerSetting,
@@ -1382,7 +1385,7 @@ export default {
                 arrowStyle: null,
                 arrowPlacement: arrowPl,
                 symbol: {
-                    'lineColor': this.colorMap['3'],
+                    'lineColor': this.colorMap[typ],
                     'lineWidth': {stops: [[4, 18], [5, 36], [6, 72], [7, 144]]},
                     'lineOpacity': 1,
                     'textPlacement': 'line',

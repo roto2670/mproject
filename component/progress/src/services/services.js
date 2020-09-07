@@ -59,7 +59,7 @@ export const getInfo = (readyCallback) => {
 }
 
 export const getMapFile = (readyCallback) => {
-    const baseImageUrl = `${ window.CONSTANTS.URL.BASE_IMG }map1.png`;
+    const baseImageUrl = `${ window.CONSTANTS.URL.BASE_IMG }map.png`;
     if (window.CONSTANTS.IS_DEV) {
         readyCallback(baseImageUrl);
     } else {
