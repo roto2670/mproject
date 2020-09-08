@@ -622,8 +622,9 @@ export default {
         handleEquipDetail() {
             this.isEquipClose = !this.isEquipClose;
         },
-        handleAddEquipmentAddButton(equipmentId, operatorId) {
+        handleAddEquipmentAddButton(category, equipmentId, operatorId) {
             let data = {};
+                data.category = category;
                 data.equipment_id = equipmentId;
                 data.operator_id = operatorId;
                 data.accum_time = 0;

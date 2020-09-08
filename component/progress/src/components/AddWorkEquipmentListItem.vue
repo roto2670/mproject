@@ -9,9 +9,16 @@
             </div>
             <div class="add-work-equipment-select-container">
                 <select class="add-work-equipment-select-box"
+                    @change="handleChangeCategory">
+                    <option disabled selected>Select Category</option>
+                    <option v-for="(value, key) in equipInfo" :value="key" :key="key">
+                        {{ value }}
+                    </option>
+                </select>
+                <select class="add-work-equipment-select-box"
                     @change="handleChangeEquipment">
                     <option disabled selected>Select Equipment</option>
-                    <option v-for="value in equipmentList" :value="value.id" :key="value.id">
+                    <option v-for="value in getEquipList" :value="value.id" :key="value.id">
                         {{ value.name }}
                     </option>
                 </select>
@@ -59,13 +66,19 @@ export default {
     data() {
         return {
             selectEquipmentId: '',
-            selectOperatorId: ''
+            selectOperatorId: '',
+            selectedCategory: '',
+            equipInfo: window.CONSTANTS.EQUIPMENT_INFO
         }
     },
     methods: {
         _handleClear() {
             this.selectEquipmentId = '';
             this.selectOperatorId = '';
+            this.selectedCategory = '';
+        },
+        handleChangeCategory(e) {
+            this.selectedCategory = e.target.value;
         },
         handleChangeOperator(e) {
             this.selectOperatorId = e.target.value;
@@ -75,7 +88,7 @@ export default {
         },
         handleAddButton() {
             if (this.selectEquipmentId != '' && this.selectOperatorId != '') {
-                this.$emit('select-add-button', this.selectEquipmentId, this.selectOperatorId);
+                this.$emit('select-add-button', this.selectedCategory, this.selectEquipmentId, this.selectOperatorId);
                 this._handleClear();
             }
         },
@@ -85,12 +98,22 @@ export default {
         }
     },
     computed: {
+        getEquipList() {
+            let filterEquipList = [];
+            if (this.selectedCategory != '') {
+                this._.forEach(this.equipmentList, equipment => {
+                    if (equipment.category == this.selectedCategory) {
+                        filterEquipList.push(equipment);
+                    }
+                });
+            }
+            return filterEquipList;
+        },
         getOperatorList() {
             let filterOperatorList = [];
-            if (this.selectEquipmentId != '') {
-                let selectEquipment = this.$store.getters.getEquipment(this.selectEquipmentId);
+            if (this.selectedCategory != '') {
                 this._.forEach(this.operatorList, operator => {
-                    if (operator.category == selectEquipment.category) {
+                    if (operator.category == this.selectedCategory) {
                         filterOperatorList.push(operator);
                     }
                 });
@@ -118,7 +141,7 @@ export default {
 }
 .add-work-equipment-selectbox {
     width: 400px;
-    height: 200px;
+    height: 300px;
     position: absolute;
     background-color: #ffffff;
     top: 30%;
@@ -128,7 +151,7 @@ export default {
 }
 .add-work-equipment-title-container {
     width: 100%;
-    height: 25%;
+    height: 20%;
 }
 .add-work-equipment-title-message {
     width: 100%;
@@ -142,10 +165,10 @@ export default {
 }
 .add-work-equipment-select-container {
     width: 100%;
-    height: 50%;
+    height: 55%;
 }
 .add-work-equipment-select-box {
-    min-width: 55%;
+    min-width: 70%;
     max-width: 100%;
     padding: .375em .625em;
     margin: 0.5em;

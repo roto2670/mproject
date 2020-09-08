@@ -164,7 +164,11 @@ export default {
         },
         id: {
           type: String
-        }
+        },
+        tunnelList: {
+            type: Array,
+            default: []
+        },
     },
     data() {
         return {
@@ -330,23 +334,25 @@ export default {
             this.tunnelId = this.totalTunnelName + this._getCategoryName(this.category) + this._getDirectionName(this.direction);
         },
         handleChangeDirection(e) {
-            let tunnelList = this.$store.getters.getTunnelListByBasePointId(this.tunnelInfo.basepoint_id),
-                tunnelID = this.id,
-                changeDirection = null,
+            const tunnelId = this.id;
+            let changeDirection = null,
                 otherDirection = null,
-                otherTunnel = tunnelList.find(function(item) {
-                    return item.id !== tunnelID
-                });
+                otherTunnelID = this.tunnelList.find(function(item) {
+                    return item !== tunnelId;
+                }),
+                otherTunnel = this.$store.getters.getTunnel(otherTunnelID);
             this.direction = e.target.value;
             if (this.direction == "1" || this.direction == "3" || this.direction == "5") {
                 changeDirection = "WEST";
             } else {
                 changeDirection = "EAST";
             }
-            if (otherTunnel.direction == 1 || otherTunnel.direction == 3 || otherTunnel.direction == 5) {
-                otherDirection = "WEST";
-            } else {
-                otherDirection = "EAST";
+            if(!!otherTunnel) {
+                if (otherTunnel.direction == 1 || otherTunnel.direction == 3 || otherTunnel.direction == 5) {
+                    otherDirection = "WEST";
+                } else {
+                    otherDirection = "EAST";
+                }
             }
             if (!!!otherTunnel){
                 this._setTunnelId();

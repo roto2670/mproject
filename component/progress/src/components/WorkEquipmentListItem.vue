@@ -1,6 +1,7 @@
 <template>
     <div id="workEquipmentListItem" class="work-equipment-list-item-container">
         <div class="work-equipment-list-item-text-container">
+            <div class="work-equipment-list-category"> {{ getCategory }}</div>
             <div class="work-equipment-list-name"> {{ getName }}</div>
             <div class="work-equipment-list-operator"> {{ getOperator }}</div>
         </div>
@@ -22,6 +23,7 @@ export default {
     },
     data() {
         return {
+            category: null,
             equipementInfo: null,
             operatorInfo: null
         }
@@ -29,6 +31,13 @@ export default {
     methods: {
     },
     computed: {
+        getCategory() {
+            if (this.equipmentInfo) {
+                return window.CONSTANTS.EQUIPMENT_INFO[this.equipmentInfo.category];
+            } else {
+                return null;
+            }
+        },
         getName() {
             if (this.equipmentInfo) {
                 return this.equipmentInfo.name;
@@ -69,16 +78,24 @@ export default {
     width: 100%;
     padding-top: 0.1em;
 }
+.work-equipment-list-category {
+    display: inline-block;
+    width: 30%;
+    text-overflow: ellipsis;
+    overflow: hidden;
+    white-space: nowrap;
+    font-size: 0.7em;
+}
 .work-equipment-list-name {
     display: inline-block;
-    width: 50%;
+    width: 30%;
     text-overflow: ellipsis;
     overflow: hidden;
     white-space: nowrap;
 }
 .work-equipment-list-operator {
     display: inline-block;
-    width: 50%;
+    width: 40%;
     text-overflow: ellipsis;
     overflow: hidden;
     white-space: nowrap;

@@ -80,7 +80,7 @@ window.CONSTANTS = {
             //WIDTH: 140,
             WIDTH: 0.778,
             HEIGHT: 18,
-            LOCATION_LENGTH: 0.0685
+            LOCATION_LENGTH: 0.0709
         },
         BASEPOINT: {
             WIDTH: 8,
@@ -230,6 +230,29 @@ window.CONSTANTS = {
         IN_PROGRESS: 1,
         FINISH: 2,
     },
+    EQUIPMENT_INFO: {
+        "1": "JUMBO DRILL(2B)",
+        "2": "JUMBO DRILL(3B)",
+        "3": "CHARGING CAR",
+        "4": "WHEEL LOADER",
+        "5": "DUMP TRUCK",
+        "6": "EXCAVATOR(WHEEL)",
+        "7": "EXCAVATOR(CRAWLER)",
+        "8": "SHOTCRETE MACHINE",
+        "9": "JCB",
+        "10": "CORE DRILLING MACHINE",
+        "11": "DOZER",
+        "12": "GROUTING MACHINE",
+        "13": "MAI PUMP",
+        "14": "MOBILE PRODUCTION UNIT",
+        "15": "CHARGING PUMP UNIT",
+        "16": "BUS",
+        "17": "WCBH Drilling Machine",
+        "18": "Explosive Van",
+        "19": "Concrete Mixer Truck",
+        "20": "Shuttle",
+        "21": "Worker"
+    }
 };
 if (window.CONSTANTS.IS_DEV) {
     //window.CONSTANTS.URL.CONSOLE = 'http://192.168.0.15:5000';

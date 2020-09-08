@@ -4,7 +4,7 @@
         <AddBasePoint :type="getCurrentType()"
             @select-ok-button="handleAddBasePointOkButton"
             @select-cancel-button="handleAddBasePointCancelButton"></AddBasePoint>
-        <BasePointInfo :type="getCurrentType()" :id="currentTunnelId"
+        <BasePointInfo :type="getCurrentType()" :id="currentBaseId"
             @select-ok-button="handleBasePointInfoOkButton"
             @select-close-button="handleBasePointInfoCloseButton"
             @select-add-cavern-button="handleAddCavern"
@@ -15,6 +15,7 @@
             @select-ok-button="handleAddTunnelOkButton"
             @select-cancel-button="handleAddTunnelCancelButton"></AddTunnel>
         <TunnelInfo :type="getCurrentType()" :id="currentTunnelId"
+            :tunnelList="getTunnelFromBasepoint()"
             @change-tunnel-direction="handleChangeDirectionCavern"
             @change-tunnel-length="handleChangeLengthCavern"
             @select-add-cavern-button="editCavern"
@@ -103,6 +104,7 @@ export default {
             tunnelMarkers: {},    // {t_type: {t_id: t_marker}}
             arrowMarkers: {},
             blastMarkers: {},  // {b_id: b_marker, ..}
+            tunnelIdWithBase: {},
             blastIdWithTunnel: {},    // {t_id: [b_id, ..]}
             workIdWithBlast: {},    // {b_id: {0: [w_id, ..], 1: [w_id, ..], 2: [w_id, ..]}} 0(MainWork), 1(Supporting), 2(IdelTime)
             pauseIdWithWork: {},  // {w_id: [p_id, ..]}
@@ -123,6 +125,7 @@ export default {
             workEquipmentList: [],
             //
             currentType: null,
+            currentBaseId: null,
             currentTunnelId: null,
             currentTunnelType: null,
             currentBlastId: null,
@@ -215,7 +218,6 @@ export default {
                         this.basePointLayers[value].setZIndex(0);
                         this.basePointMarkers[value] = {};
                     });
-                    this._getActivityList();
                     this._getEquipmentList();
                     this._getOperatorList();
                     //TODO:
@@ -229,7 +231,6 @@ export default {
                     this.workLayer.setZIndex(101);
                     this.extraLayers = new maptalks.VectorLayer('vector150').addTo(this.map);
                     this.extraLayers.setZIndex(150);
-
                 });
                 this.map.on('zoomend moveend', (e) => {
                     this.zoomLevel = 50 * (this.map.getZoom() / 11);
@@ -249,14 +250,6 @@ export default {
             var r = Math.random() * 16 | 0, v = c == 'x' ? r : (r & 3 | 8);
             return v.toString(16);
           });
-        },
-        _getActivityList() {
-            this.services.getActivityList(activityList => {
-                // TODO:
-                // console.log("Success to get activity list.", activityList);
-            }, (error) => {
-                console.log("Failed to get activity list.", error);
-            });
         },
         _getEquipmentList() {
             this.services.getEquipmentList(equipmentList => {
@@ -303,6 +296,7 @@ export default {
                 // TODO:
                 // console.log("Success to get basepoint list.");
                 this._.forEach(basePointList, basePoint => {
+                    this.tunnelIdWithBase[basePoint.id] = [];
                     this._drawBasePoint(basePoint);
                 });
                 this._getTunnelList();
@@ -316,71 +310,67 @@ export default {
                 // console.log("Success to get tunnels");
                 this._.forEach(tunnels, tunnel => {
                     this.tunnelIDList.push(tunnel.id);
+                    this.tunnelIdWithBase[tunnel.basepoint_id].push(tunnel.id);
                     this.blastIdWithTunnel[tunnel.id] = [];
                     this._drawTunnel(tunnel);
+                    this._getBlastList(tunnel.blast_list);
                 });
                 this._getWorkList();
             }, (error) => {
                 console.log("Failed to get tunnel list.", error);
             });
         },
-        _getWorkList() {
-            this.services.getWorkList(resData => {
-                this._.forEach(resData, (work) => {
-                    if (!(work.blast_id in this.workIdWithBlast)) {
-                        this.workIdWithBlast[work.blast_id] = {
-                            0: [],  // Main Work
-                            1: [],  // Supporting
-                            2: []   // Idel Time
-                        }
+        _getWorkList(workList, blast) {
+            this._.forEach(workList, (work) => {
+                if (!(work.blast_id in this.workIdWithBlast)) {
+                    this.workIdWithBlast[work.blast_id] = {
+                        0: [],  // Main Work
+                        1: [],  // Supporting
+                        2: []   // Idel Time
                     }
+                }
 
-                    if (work.category == window.CONSTANTS.CATEGORY.MAIN_WORK) {
-                        this.workIdWithBlast[work.blast_id][0].push(work.id)
-                    } else if (work.category == window.CONSTANTS.CATEGORY.SUPPORTING) {
-                        this.workIdWithBlast[work.blast_id][1].push(work.id)
-                    } else {
-                        this.workIdWithBlast[work.blast_id][2].push(work.id)
-                    }
-
-                    this.$store.commit('addWork', work);
-                });
-                this._getPauseList();
-                this._getBlastList();
-            }, (error) => {
-                console.log("Failed to get work list.", error);
+                if (work.category == window.CONSTANTS.CATEGORY.MAIN_WORK) {
+                    this.workIdWithBlast[work.blast_id][0].push(work.id)
+                } else if (work.category == window.CONSTANTS.CATEGORY.SUPPORTING) {
+                    this.workIdWithBlast[work.blast_id][1].push(work.id)
+                } else {
+                    this.workIdWithBlast[work.blast_id][2].push(work.id)
+                }
+                let workMarker = this.workLayer.getGeometryById(blast.id);
+                if (!!workMarker) {
+                    this.workLayer.removeGeometry([workMarker]);
+                }
+                this.$store.commit('addWork', work);
+                this.drawWork(blast);
+                this._getPauseList(work.pause_history_list);
             });
         },
-        _getPauseList() {
-            this.services.getPauseList(resData => {
-                this._.forEach(resData, (pause) => {
-                    if (!(pause.work_id in this.pauseIdWithWork)) {
-                        this.pauseIdWithWork[pause.work_id] = [];
-                    }
-                    this.pauseIdWithWork[pause.work_id].push(pause.id);
-                    this.$store.commit('addPause', pause);
-                });
+        _getPauseList(pauseHistoryList) {
+            this._.forEach(pauseHistoryList, (pause) => {
+                if (!(pause.work_id in this.pauseIdWithWork)) {
+                    this.pauseIdWithWork[pause.work_id] = [];
+                }
+                this.pauseIdWithWork[pause.work_id].push(pause.id);
+                this.$store.commit('addPause', pause);
             });
         },
-        _getBlastList() {
-            this.services.getBlastList(blastList => {
-                this._.forEach(blastList, blast => {
-                    if (!(blast.tunnel_id in this.blastIdWithTunnel)) {
-                        this.blastIdWithTunnel[blast.tunnel_id] = [];
+        _getBlastList(blastList) {
+            this._.forEach(blastList, blast => {
+                if (!(blast.tunnel_id in this.blastIdWithTunnel)) {
+                    this.blastIdWithTunnel[blast.tunnel_id] = [];
+                }
+                if (!(blast.id in this.workIdWithBlast)) {
+                    this.workIdWithBlast[blast.id] = {
+                        0: [],  // Main Work
+                        1: [],  // Supporting
+                        2: []   // Idel Time
                     }
-                    if (!(blast.id in this.workIdWithBlast)) {
-                        this.workIdWithBlast[blast.id] = {
-                            0: [],  // Main Work
-                            1: [],  // Supporting
-                            2: []   // Idel Time
-                        }
-                    }
-                    this._drawBlast(blast, false);
-                    this.blastIDList.push(blast.id);
-                });
-                this._getBlastInfoList();
-            }, (error) => {
-                console.log("Failed to get blast list.", error);
+                }
+                this._drawBlast(blast, false);
+                this.$store.commit('addBlastInfo', blast.blast_info);
+                this.blastIDList.push(blast.id);
+                this._getWorkList(blast.work_list, blast);
             });
         },
         _getBlastInfoList() {
@@ -428,27 +418,41 @@ export default {
             marker.on('contextmenu', () => {});
         },
         _drawTunnel(tunnel){
-            const xPosition = tunnel.x_loc,
-                  yPosition = tunnel.y_loc,
+            const leftXLoc = tunnel.left_x_loc,
+                  rightXLoc = tunnel.right_x_loc,
+                  yLoc = tunnel.y_loc,
                   width = tunnel.width,
                   height = tunnel.height,
+                  direction = tunnel.direction,
                   typ = tunnel.category; // TODO:
-            let marker = new maptalks.TextBox("", [xPosition, yPosition],
-                                              {stops: [[4, width], [5, width * 2], [6, width * 4], [7, width * 8]]},
-                                              {stops: [[4, height], [5, height * 2], [6, height * 4], [7, height * 8]]}, {
-                id: tunnel.id,
-                editable: false,
-                draggable: false,
-                boxSymbol: {
-                    markerType: 'square',
-                    markerLineColor: this.colorMap[typ],
-                    markerLineWidth: 1,
-                    markerFill: this.colorMap[typ],
-                    markerFillOpacity: this.tunnelOpacity
-                },
-                symbol: {
-                    textMaxWidth: {stops: [[4, width], [5, width * 2], [6, width * 4], [7, width * 8]]},
-                    textMaxHeight: {stops: [[4, height], [5, height * 2], [6, height * 4], [7, height * 8]]}
+            let basePointInfo = this.$store.getters.getBasePoint(tunnel.basepoint_id),
+                textDx = {stops: [[4, width], [5, width * 2], [6, width * 4], [7, width * 8]]},
+                arrowPl = "vertex-last",
+                markerSetting = [[leftXLoc, yLoc], [rightXLoc, yLoc]],
+                arrowSetting = [[leftXLoc, yLoc], [rightXLoc - 0.8, yLoc]],
+                arrowPosition = parseFloat(((tunnel.length / 2) * 0.0685).toFixed(1));
+
+            if (tunnel.direction == window.CONSTANTS.DIRECTION.WEST ||
+                tunnel.direction == window.CONSTANTS.DIRECTION.EAST_SIDE_WEST ||
+                tunnel.direction == window.CONSTANTS.DIRECTION.WEST_SIDE_WEST) {
+                arrowPl = "vertex-first";
+                arrowSetting = [[leftXLoc + 0.8, yLoc], [rightXLoc, yLoc]];
+                textDx = {stops: [[4, width], [5, width * 2], [6, width * 4], [7, width * 8]]};
+            }
+            let marker = new maptalks.LineString(
+                markerSetting,
+                {
+                    id: tunnel.id,
+                    arrowStyle: null,
+                    arrowPlacement: arrowPl,
+                    symbol: {
+                        'lineColor': this.colorMap[tunnel.category],
+                        'lineWidth': {stops: [[4, 18], [5, 36], [6, 72], [7, 144]]},
+                        'lineOpacity': this.tunnelOpacity,
+                        'textPlacement': 'line',
+                        'textSize': {stops: [[4, 10], [5, 20], [6, 40], [7, 80]]},
+                        'textDy': {stops: [[4, 2], [5, 4], [6, 8], [7, 16]]},
+                        'textFill': '#ffffff',
                 }
             });
             marker.defaultWidth = width;
@@ -460,26 +464,8 @@ export default {
             this._handleTunnelClickEvent(marker);
             // TODO: right click?
             marker.on('contextmenu', () => {});
-            let cFactor = 30;   // 100 : 34  , 200 : 38  , 300 : 42
-            let arrowPosition = parseFloat(((tunnel.length / 2) * 0.0685).toFixed(1)),
-                arrowPl = "vertex-last",
-                textDxBase = parseInt(tunnel.width / 2) - cFactor,
-                textDx = {stops: [[4, textDxBase], [5, textDxBase * 2], [6, textDxBase * 4], [7, textDxBase * 8]]};
-            if (tunnel.direction == window.CONSTANTS.DIRECTION.WEST ||
-                tunnel.direction == window.CONSTANTS.DIRECTION.EAST_SIDE_WEST ||
-                tunnel.direction == window.CONSTANTS.DIRECTION.WEST_SIDE_WEST) {
-                arrowPl = "vertex-first";
-                textDxBase = -parseInt((tunnel.width / 2) - cFactor),
-                textDx = {stops: [[4, textDxBase], [5, textDxBase * 2], [6, textDxBase * 4], [7, textDxBase * 8]]};
-            }
+
             // TODO: arrowMarker id
-            let arrowSetting = null,
-                basePointInfo = this.$store.getters.getBasePoint(tunnel.basepoint_id);
-            if (textDxBase > 0) {
-                arrowSetting = [[basePointInfo.x_loc, yPosition], [basePointInfo.x_loc + (arrowPosition * 2) - 1, yPosition]];
-            } else {
-                arrowSetting = [[basePointInfo.x_loc - (arrowPosition * 2) + 1, yPosition], [basePointInfo.x_loc, yPosition]];
-            }
             let _arrowMarker = new maptalks.LineString(
                 arrowSetting,
                 {
@@ -487,7 +473,7 @@ export default {
                     arrowStyle: [0.5, 0.5],
                     arrowPlacement: arrowPl,
                     symbol: {
-                        'lineColor': this.colorMap[typ],
+                        'lineColor': this.colorMap[tunnel.category],
                         'lineWidth': {stops: [[4, 8], [5, 16], [6, 32], [7, 64]]},
                         'lineOpacity': 1,
                         'textName': tunnel.tunnel_id,
@@ -564,6 +550,14 @@ export default {
             let equipmentList = this.$store.getters.getEquipmentList();
             return equipmentList;
         },
+        getTunnelFromBasepoint() {
+            if (!!!this.currentTunnelId) {
+                return [];
+            } else {
+                let basepoint_id = this.$store.getters.getTunnel(this.currentTunnelId).basepoint_id;
+                return this.tunnelIdWithBase[basepoint_id];
+            }
+        },
         setCurrentType(typ) {
             this.currentType = typ;
         },
@@ -587,6 +581,12 @@ export default {
         },
         clearCurrentMarker() {
             this.currentMarker = null;
+        },
+        setCurrentBaseId(id) {
+            this.currentBaseId = id;
+        },
+        clearCurrentBaseId() {
+            this.currentBaseId = null;
         },
         setCurrentTunnelId(id) {
             this.currentTunnelId = id;
@@ -651,11 +651,8 @@ export default {
                         }
                     }
                     this.blastMarkers[blast.id].updateSymbol({
-                            markerLineColor: this.colorMap[typ],
-                            // TODO:
-                            markerLineWidth: 1,
-                            markerFill: this.colorMap[typ],
-                            markerOpacity: 1
+                        lineColor: this.colorMap[typ],
+                        lineOpacity: 1
                     });
                 }
             } else {
@@ -663,6 +660,7 @@ export default {
             }
             this.clearCurrentType();
             this.clearCurrentTunnelId();
+            this.clearCurrentBaseId();
             this.clearTunnelType();
             this.clearCurrentBlastId();
             this.clearBlastType();
@@ -699,17 +697,20 @@ export default {
                     || this.currentMarker.markerType == window.CONSTANTS.TUNNEL_CATEGORY.B1
                     || this.currentMarker.markerType == window.CONSTANTS.TUNNEL_CATEGORY.B2) {
                     this.currentMarker.updateSymbol({
-                            markerLineColor: this.colorMap[this.currentMarker.markerType],
-                            markerLineWidth: 1,
-                            markerFill: this.colorMap[this.currentMarker.markerType],
-                            markerFillOpacity: this.tunnelOpacity
+                            lineColor: this.colorMap[this.currentMarker.markerType],
+                            lineOpacity: this.tunnelOpacity
+                    });
+                } else if (this.currentMarker.markerType == window.CONSTANTS.TUNNEL_TYPE.BASEPOINT) {
+                    this.currentMarker.updateSymbol({
+                        markerLineColor: this.colorMap[window.CONSTANTS.TUNNEL_TYPE.BASEPOINT],
+                        markerLineWidth: 1,
+                        markerFill: this.colorMap[window.CONSTANTS.TUNNEL_TYPE.BASEPOINT],
+                        markerFillOpacity: 1
                     });
                 } else {
                     this.currentMarker.updateSymbol({
-                            markerLineColor: this.colorMap[this.currentMarker.markerType],
-                            markerLineWidth: 1,
-                            markerFill: this.colorMap[this.currentMarker.markerType],
-                            markerFillOpacity: 1
+                            lineColor: this.colorMap[this.currentMarker.markerType],
+                            lineOpacity: 1
                     });
                 }
                 this.clearAll();
@@ -721,17 +722,20 @@ export default {
                     || this.currentMarker.markerType == window.CONSTANTS.TUNNEL_CATEGORY.B1
                     || this.currentMarker.markerType == window.CONSTANTS.TUNNEL_CATEGORY.B2) {
                     this.currentMarker.updateSymbol({
-                        markerLineColor: this.colorMap[this.currentMarker.markerType],
+                        lineColor: this.colorMap[this.currentMarker.markerType],
+                        lineOpacity: this.tunnelOpacity
+                    });
+                } else if (this.currentMarker.markerType == window.CONSTANTS.TUNNEL_TYPE.BASEPOINT) {
+                    this.currentMarker.updateSymbol({
+                        markerLineColor: this.colorMap[window.CONSTANTS.TUNNEL_TYPE.BASEPOINT],
                         markerLineWidth: 1,
-                        markerFill: this.colorMap[this.currentMarker.markerType],
-                        markerFillOpacity: this.tunnelOpacity
+                        markerFill: this.colorMap[window.CONSTANTS.TUNNEL_TYPE.BASEPOINT],
+                        markerFillOpacity: 1
                     });
                 } else {
                     this.currentMarker.updateSymbol({
-                        markerLineColor: this.colorMap[this.currentMarker.markerType],
-                        markerLineWidth: 1,
-                        markerFill: this.colorMap[this.currentMarker.markerType],
-                        markerFillOpacity: 1
+                        lineColor: this.colorMap[this.currentMarker.markerType],
+                        lineOpacity: this.tunnelOpacity
                     });
                 }
             }
@@ -806,7 +810,7 @@ export default {
                             markerOpacity: 1
                     });
                     this.closeMenu();
-                    this.setCurrentTunnelId(_marker.getId());
+                    this.setCurrentBaseId(_marker.getId());
                     this.setCurrentMarker(_marker);
                     this.setTunnelType(_marker.markerType);
                     this.setCurrentType(window.CONSTANTS.TYPE.SELECT_BASEPOINT);
@@ -842,36 +846,28 @@ export default {
             this.handleClearSelectItemWithoutClear();
             this.setCurrentType(window.CONSTANTS.TYPE.ADD_TUNNEL);
             this.setTunnelType(window.CONSTANTS.TUNNEL_TYPE.CAVERN);
-            let defaultLength = 100;
-            let basePointInfo = this.$store.getters.getBasePoint(basePointId),
-                width = parseFloat((window.CONSTANTS.TUNNEL_DEFAULT_SIZE.CAVERN_ROW.WIDTH * defaultLength).toFixed(4)),
+            let defaultLength = 100,
+                basePointInfo = this.$store.getters.getBasePoint(basePointId),
+                width = parseFloat((window.CONSTANTS.TUNNEL_DEFAULT_SIZE.CAVERN_ROW.LOCATION_LENGTH * defaultLength).toFixed(4)),
                 height = window.CONSTANTS.TUNNEL_DEFAULT_SIZE.CAVERN_ROW.HEIGHT,
-                xLocation = parseFloat((basePointInfo.x_loc + (window.CONSTANTS.TUNNEL_DEFAULT_SIZE.CAVERN_ROW.LOCATION_LENGTH * (defaultLength / 2))).toFixed(4));
-                //xLocation = basePointInfo.x_loc + 6.5;
-            // First is East  ( value == 0)
-            // if (direction === window.CONSTANTS.DIRECTION.EAST) {
-            //     xLocation += 6.5;
-            // } else {
-            //     xLocation -= 6.5;
-            // }
-            let marker = new maptalks.TextBox("", [xLocation, basePointInfo.y_loc],
-                                              {stops: [[4, width], [5, width * 2], [6, width * 4], [7, width * 8]]},
-                                              {stops: [[4, height], [5, height * 2], [6, height * 4], [7, height * 8]]}, {
-                id: this._getUUID(),
-                editable: false,
-                draggable: true,
-                boxSymbol: {
-                    markerType: 'square',
-                    markerLineColor: '#000000',
-                    markerLineWidth: 1,
-                    markerFill: this.colorMap[window.CONSTANTS.TUNNEL_TYPE.CAVERN],
-                    markerFillOpacity: 1
-                },
-                symbol: {
-                    textMaxWidth: {stops: [[4, width], [5, width * 2], [6, width * 4], [7, width * 8]]},
-                    textMaxHeight: {stops: [[4, height], [5, height * 2], [6, height * 4], [7, height * 8]]}
+                xLocation = basePointInfo.x_loc,
+                marker = new maptalks.LineString(
+                [[xLocation, basePointInfo.y_loc], [xLocation+width, basePointInfo.y_loc]],
+                {
+                    id: this._getUUID(),
+                    arrowStyle: null,
+                    arrowPlacement: "vertex-last",
+                    symbol: {
+                        'lineColor':  this.colorMap[window.CONSTANTS.TUNNEL_TYPE.CAVERN],
+                        'lineWidth': {stops: [[4, 18], [5, 36], [6, 72], [7, 144]]},
+                        'lineOpacity': 1,
+                        'textPlacement': 'line',
+                        'textSize': {stops: [[4, 10], [5, 20], [6, 40], [7, 80]]},
+                        'textDy': {stops: [[4, 2], [5, 4], [6, 8], [7, 16]]},
+                        'textFill': '#ffffff',
+                    }
                 }
-            });
+            );
             marker.defaultWidth = width;
             marker.defaultHeight = height;
             marker.markerType = window.CONSTANTS.TUNNEL_TYPE.CAVERN;
@@ -908,11 +904,8 @@ export default {
                         }
                     }
                     this.blastMarkers[blast.id].updateSymbol({
-                            markerLineColor: this.colorMap[typ],
-                            // TODO:
-                            markerLineWidth: 1,
-                            markerFill: this.colorMap[typ],
-                            markerOpacity: 1
+                            lineColor: this.colorMap[typ],
+                            lineOpacity: 1
                     });
                 }
             } else {
@@ -921,10 +914,8 @@ export default {
             this.hidingMarker.show();
             if (this.hidingMarker != null) {
                 this.hidingMarker.updateSymbol({
-                        markerLineColor: '#000000',
-                        markerLineWidth: 1,
-                        markerFill: this.colorMap['selected'],
-                        markerOpacity: 1
+                        lineColor: this.colorMap['selected'],
+                        lineOpacity: 1
                 });
             }
             this.setCurrentMarker(this.hidingMarker);
@@ -946,24 +937,32 @@ export default {
             this.setLastBlastId(lastBlastId);
             let defaultBlastLength = lastBlastLength,
                 position = this._getBlastPosition(tunnelData, lastBlastId, defaultBlastLength),
-                blastWidth = parseFloat((defaultBlastLength * window.CONSTANTS.TUNNEL_DEFAULT_SIZE.CAVERN_ROW.WIDTH).toFixed(4)),
-                blastHeight = tunnelData.height;
+                blastWidth = parseFloat((defaultBlastLength * window.CONSTANTS.TUNNEL_DEFAULT_SIZE.CAVERN_ROW.LOCATION_LENGTH).toFixed(4)),
+                arrowPl = "vertex-last",
+                blastHeight = tunnelData.height,
+                markerSetting = [[position[0], position[1]], [position[0] + blastWidth, position[1]]];
+            console.log(position)
+            if (tunnelData.direction == window.CONSTANTS.DIRECTION.WEST ||
+                tunnelData.direction == window.CONSTANTS.DIRECTION.EAST_SIDE_WEST ||
+                tunnelData.direction == window.CONSTANTS.DIRECTION.WEST_SIDE_WEST) {
+                arrowPl = "vertex-first";
+                markerSetting = [[position[0] - blastWidth, position[1]], [position[0], position[1]]];
+            }
 
-            let _marker = new maptalks.TextBox("", position,
-                                               {stops: [[4, blastWidth], [5, blastWidth * 2], [6, blastWidth * 4], [7, blastWidth * 8]]},
-                                               {stops: [[4, blastHeight], [5, blastHeight * 2], [6, blastHeight * 4], [7, blastHeight * 8]]}, {
+            let _marker = new maptalks.LineString(
+            markerSetting,
+            {
                 id: this._getUUID(),
-                editable: false,
-                boxSymbol: {
-                    markerType: 'square',
-                    markerLineColor: '#000000',
-                    markerLineWidth: 1,
-                    markerFill: this.colorMap['3'],
-                    markerFillOpacity: 1
-                },
+                arrowStyle: null,
+                arrowPlacement: arrowPl,
                 symbol: {
-                    textMaxWidth: {stops: [[4, blastWidth], [5, blastWidth * 2], [6, blastWidth * 4], [7, blastWidth * 8]]},
-                    textMaxHeight: {stops: [[4, blastHeight], [5, blastHeight * 2], [6, blastHeight * 4], [7, blastHeight * 8]]}
+                    'lineColor': this.colorMap['3'],
+                    'lineWidth': {stops: [[4, 18], [5, 36], [6, 72], [7, 144]]},
+                    'lineOpacity': 1,
+                    'textPlacement': 'line',
+                    'textSize': {stops: [[4, 10], [5, 20], [6, 40], [7, 80]]},
+                    'textDy': {stops: [[4, 2], [5, 4], [6, 8], [7, 16]]},
+                    'textFill': '#ffffff',
                 }
             });
             _marker.defaultWidth = blastWidth;
@@ -974,44 +973,51 @@ export default {
         },
         handleEditChangeLengthBlast(tunnelData, blastLength, selectBlastID) {
             let count = this.blastIdWithTunnel[tunnelData.id].length,
+                direction = tunnelData.direction,
                 lastBlastId = this.blastIdWithTunnel[tunnelData.id][0];
             if (count >= 1) {
                  var idIndex = this.blastIdWithTunnel[tunnelData.id].indexOf(selectBlastID);
                  lastBlastId = this.blastIdWithTunnel[tunnelData.id][idIndex + 1];
              }
             let position = this._getBlastPosition(tunnelData, lastBlastId, blastLength),
-                width = parseFloat((blastLength * window.CONSTANTS.TUNNEL_DEFAULT_SIZE.CAVERN_ROW.WIDTH).toFixed(4));
-            this.currentMarker.setCoordinates(position);
-            this.currentMarker.setWidth({stops: [[4, width], [5, width * 2], [6, width * 4], [7, width * 8]]});
+                locationSet = null,
+                width = parseFloat((blastLength * window.CONSTANTS.TUNNEL_DEFAULT_SIZE.CAVERN_ROW.LOCATION_LENGTH).toFixed(4));
+            if (direction == window.CONSTANTS.DIRECTION.EAST ||
+                direction == window.CONSTANTS.DIRECTION.EAST_SIDE_EAST ||
+                direction == window.CONSTANTS.DIRECTION.WEST_SIDE_EAST) {
+                locationSet = [[position[0], position[1]], [position[0] + width, position[1]]];
+            } else {
+                locationSet = [[position[0] - width, position[1]], [position[0], position[1]]];
+            }
+            this.currentMarker.setCoordinates(locationSet);
             this.currentMarker.defaultWidth = width;
         },
         editCavern(basePointId, tunnelId) {
             this.handleClearSelectItemWithoutClear();
             let tunnelData = this.$store.getters.getTunnel(tunnelId),
-                defaultLength = tunnelData.length,
+                defaultLength = 100,
                 direction = tunnelData.direction,
                 basePointInfo = this.$store.getters.getBasePoint(basePointId),
-                width = parseFloat((window.CONSTANTS.TUNNEL_DEFAULT_SIZE.CAVERN_ROW.WIDTH * defaultLength).toFixed(4)),
+                width = parseFloat((window.CONSTANTS.TUNNEL_DEFAULT_SIZE.CAVERN_ROW.LOCATION_LENGTH * defaultLength).toFixed(4)),
                 height = window.CONSTANTS.TUNNEL_DEFAULT_SIZE.CAVERN_ROW.HEIGHT,
-                xLocation = basePointInfo.x_loc;
-            let marker = new maptalks.TextBox("", [xLocation, basePointInfo.y_loc],
-                                              {stops: [[4, width], [5, width * 2], [6, width * 4], [7, width * 8]]},
-                                              {stops: [[4, height], [5, height * 2], [6, height * 4], [7, height * 8]]}, {
-                id: this._getUUID(),
-                editable: false,
-                draggable: true,
-                boxSymbol: {
-                    markerType: 'square',
-                    markerLineColor: '#000000',
-                    markerLineWidth: 1,
-                    markerFill: this.colorMap[window.CONSTANTS.TUNNEL_TYPE.CAVERN],
-                    markerFillOpacity: 1
-                },
-                symbol: {
-                    textMaxWidth: {stops: [[4, width], [5, width * 2], [6, width * 4], [7, width * 8]]},
-                    textMaxHeight: {stops: [[4, height], [5, height * 2], [6, height * 4], [7, height * 8]]}
+                xLocation = basePointInfo.x_loc,
+                marker = new maptalks.LineString(
+                [[xLocation, basePointInfo.y_loc], [xLocation+width, basePointInfo.y_loc]],
+                {
+                    id: this._getUUID(),
+                    arrowStyle: null,
+                    arrowPlacement: "vertex-last",
+                    symbol: {
+                        'lineColor':  this.colorMap[window.CONSTANTS.TUNNEL_TYPE.CAVERN],
+                        'lineWidth': {stops: [[4, 18], [5, 36], [6, 72], [7, 144]]},
+                        'lineOpacity': 1,
+                        'textPlacement': 'line',
+                        'textSize': {stops: [[4, 10], [5, 20], [6, 40], [7, 80]]},
+                        'textDy': {stops: [[4, 2], [5, 4], [6, 8], [7, 16]]},
+                        'textFill': '#ffffff',
+                    }
                 }
-            });
+            );
             marker.defaultWidth = width;
             marker.defaultHeight = height;
             marker.markerType = window.CONSTANTS.TUNNEL_TYPE.CAVERN;
@@ -1028,34 +1034,37 @@ export default {
         },
         handleChangeDirectionCavern(direction, length) {
             let basePointInfo = this.$store.getters.getBasePoint(this.currentMarker.basepointId),
-                xLocation = basePointInfo.x_loc;
-            if (direction == window.CONSTANTS.DIRECTION.EAST ||
-                direction == window.CONSTANTS.DIRECTION.EAST_SIDE_EAST ||
-                direction == window.CONSTANTS.DIRECTION.WEST_SIDE_EAST) {
-                // xLocation += ((0.078 * length) / 2);
-                xLocation += parseFloat((window.CONSTANTS.TUNNEL_DEFAULT_SIZE.CAVERN_ROW.LOCATION_LENGTH * (length / 2)).toFixed(4));
-            } else {
-                //xLocation -= ((0.078 * length) / 2);
-                xLocation -= parseFloat((window.CONSTANTS.TUNNEL_DEFAULT_SIZE.CAVERN_ROW.LOCATION_LENGTH * (length / 2)).toFixed(4));
-            }
-            this.currentMarker.setCoordinates([xLocation, basePointInfo.y_loc]);
-        },
-        handleChangeLengthCavern(length, direction) {
-            let basePointInfo = this.$store.getters.getBasePoint(this.currentMarker.basepointId),
-                xLocation = basePointInfo.x_loc;
+                xLocation = basePointInfo.x_loc,
+                width = parseFloat((window.CONSTANTS.TUNNEL_DEFAULT_SIZE.CAVERN_ROW.LOCATION_LENGTH * length).toFixed(4)),
+                locationSet = null;
             if (direction == window.CONSTANTS.DIRECTION.EAST ||
                 direction == window.CONSTANTS.DIRECTION.EAST_SIDE_EAST ||
                 direction == window.CONSTANTS.DIRECTION.WEST_SIDE_EAST) {
                 //xLocation += ((0.078 * length) / 2);
-                xLocation += parseFloat((window.CONSTANTS.TUNNEL_DEFAULT_SIZE.CAVERN_ROW.LOCATION_LENGTH * (length / 2)).toFixed(4));
+                locationSet = [[xLocation, basePointInfo.y_loc], [xLocation + width, basePointInfo.y_loc]]
             } else {
                 //xLocation -= ((0.078 * length) / 2);
-                xLocation -= parseFloat((window.CONSTANTS.TUNNEL_DEFAULT_SIZE.CAVERN_ROW.LOCATION_LENGTH * (length / 2)).toFixed(4));
+                locationSet = [[xLocation - width, basePointInfo.y_loc], [xLocation, basePointInfo.y_loc]]
             }
-            this.currentMarker.setCoordinates([xLocation, basePointInfo.y_loc]);
-            let width = parseFloat((window.CONSTANTS.TUNNEL_DEFAULT_SIZE.CAVERN_ROW.WIDTH * length).toFixed(4));
-            this.currentMarker.setWidth({stops: [[4, width], [5, width * 2], [6, width * 4], [7, width * 8]]});
             this.currentMarker.defaultWidth = width;
+            this.currentMarker.setCoordinates(locationSet);
+        },
+        handleChangeLengthCavern(length, direction) {
+            let basePointInfo = this.$store.getters.getBasePoint(this.currentMarker.basepointId),
+                xLocation = basePointInfo.x_loc,
+                width = parseFloat((window.CONSTANTS.TUNNEL_DEFAULT_SIZE.CAVERN_ROW.LOCATION_LENGTH * length).toFixed(4)),
+                locationSet = null;
+            if (direction == window.CONSTANTS.DIRECTION.EAST ||
+                direction == window.CONSTANTS.DIRECTION.EAST_SIDE_EAST ||
+                direction == window.CONSTANTS.DIRECTION.WEST_SIDE_EAST) {
+                //xLocation += ((0.078 * length) / 2);
+                locationSet = [[xLocation, basePointInfo.y_loc], [xLocation + width, basePointInfo.y_loc]]
+            } else {
+                //xLocation -= ((0.078 * length) / 2);
+                locationSet = [[xLocation - width, basePointInfo.y_loc], [xLocation, basePointInfo.y_loc]]
+            }
+            this.currentMarker.defaultWidth = width;
+            this.currentMarker.setCoordinates(locationSet);
         },
         handleAddTunnelOkButton(value) {
             const data = {}
@@ -1069,11 +1078,13 @@ export default {
             data.tunnel_id = value.tunnelId;
             data.b_accum_length = 0;
             data.initial_b_time = null;
-            data.x_loc = this.currentMarker.getCoordinates().x;
-            data.y_loc = this.currentMarker.getCoordinates().y;
             data.width = this.currentMarker.defaultWidth;
             data.height = this.currentMarker.defaultHeight;
-            data.basepoint_id = this.currentTunnelId;
+            data.basepoint_id = this.currentBaseId;
+            const basePoint = this.$store.getters.getBasePoint(this.currentBaseId);
+            data.left_x_loc = this.currentMarker.getCoordinates()[0].x;
+            data.right_x_loc = this.currentMarker.getCoordinates()[1].x;
+            data.y_loc = basePoint.y_loc;
             this.currentMarker.remove();
             this.services.addTunnel(data, (resData) => {
                 console.log("success to add tunnel");
@@ -1094,10 +1105,10 @@ export default {
                 let _marker = this.blastMarkers[marker.getId()];
                 if (_marker != null) {
                     _marker.updateSymbol({
-                            markerLineColor: '#000000',
-                            markerLineWidth: 1,
-                            markerFill: this.colorMap['selected'],
-                            markerOpacity: 1
+                            //markerLineColor: '#000000',
+                            //markerLineWidth: 1,
+                            lineColor: this.colorMap['selected'],
+                            lineOpacity: 1
                     });
                     this.closeMenu();
                     this.setCurrentBlastId(_marker.getId());
@@ -1114,10 +1125,10 @@ export default {
                 let _marker = this.tunnelMarkers[e.target.markerType][e.target.getId()];
                 if (_marker != null) {
                     _marker.updateSymbol({
-                            markerLineColor: '#000000',
-                            markerLineWidth: 1,
-                            markerFill: this.colorMap['selected'],
-                            markerOpacity: 1
+                            //markerLineColor: '#000000',
+                            //markerLineWidth: 1,
+                            lineColor: this.colorMap['selected'],
+                            lineOpacity: 1
                     });
                     this.closeMenu();
                     this.setCurrentTunnelId(_marker.getId());
@@ -1134,8 +1145,9 @@ export default {
             }
         },
         handleTunnelInfoOkButton(data) {
-            data.x_loc = this.currentMarker.getCoordinates().x;
-            data.y_loc = this.currentMarker.getCoordinates().y;
+            data.left_x_loc = this.currentMarker.getCoordinates()[0].x;
+            data.right_x_loc = this.currentMarker.getCoordinates()[1].x;
+            data.y_loc = this.currentMarker.getCoordinates()[0].y;
             data.width = this.currentMarker.defaultWidth;
             data.height = this.currentMarker.defaultHeight;
             this.services.updateTunnel(data, (resData) => {
@@ -1159,44 +1171,34 @@ export default {
             });
         },
         _getBlastPosition(tunnelData, oldBlastId, blastLength) {
-            let xPosition = tunnelData.x_loc,
-                yPosition = tunnelData.y_loc,
-                _xPosition = 0,
+            let _xPosition = 0,
                 _yPosition = 0,
-                _t = 0,
                 _oldBlast = null;
             if (oldBlastId != null) {
                 _oldBlast = this.$store.getters.getBlast(oldBlastId);
-                xPosition = _oldBlast.x_loc;
-                yPosition = _oldBlast.y_loc;
-            }
-
-            if (tunnelData.direction == window.CONSTANTS.DIRECTION.EAST ||
-                tunnelData.direction == window.CONSTANTS.DIRECTION.EAST_SIDE_EAST ||
-                tunnelData.direction == window.CONSTANTS.DIRECTION.WEST_SIDE_EAST) {
-                let __t = null;
-                if (_oldBlast != null) {
-                    __t = parseFloat(((_oldBlast.width / 2) * 0.088).toFixed(4));
-                    _t = xPosition + __t;
-                } else {
-                    __t = parseFloat(((tunnelData.width / 2) * 0.088).toFixed(4));
-                    _t = xPosition - __t;
+                if (tunnelData.direction == window.CONSTANTS.DIRECTION.EAST ||
+                    tunnelData.direction == window.CONSTANTS.DIRECTION.EAST_SIDE_EAST ||
+                    tunnelData.direction == window.CONSTANTS.DIRECTION.WEST_SIDE_EAST) {
+                    _xPosition = _oldBlast.right_x_loc;
+                    _yPosition = _oldBlast.y_loc;
+                } else if (tunnelData.direction == window.CONSTANTS.DIRECTION.WEST ||
+                    tunnelData.direction == window.CONSTANTS.DIRECTION.EAST_SIDE_WEST ||
+                    tunnelData.direction == window.CONSTANTS.DIRECTION.WEST_SIDE_WEST) {
+                    _xPosition = _oldBlast.left_x_loc;
+                    _yPosition = _oldBlast.y_loc;
                 }
-                _xPosition = _t + parseFloat(((blastLength / 2) * window.CONSTANTS.TUNNEL_DEFAULT_SIZE.CAVERN_ROW.LOCATION_LENGTH).toFixed(4));
-                _yPosition = yPosition;
-            } else if (tunnelData.direction == window.CONSTANTS.DIRECTION.WEST ||
-                tunnelData.direction == window.CONSTANTS.DIRECTION.EAST_SIDE_WEST ||
-                tunnelData.direction == window.CONSTANTS.DIRECTION.WEST_SIDE_WEST) {
-                let __t = null;
-                if (_oldBlast != null) {
-                    __t = parseFloat(((_oldBlast.width / 2) * 0.088).toFixed(4));
-                    _t = xPosition - __t;
-                } else {
-                    __t = parseFloat(((tunnelData.width / 2) * 0.088).toFixed(4));
-                    _t = xPosition + __t;
+            } else {
+                if (tunnelData.direction == window.CONSTANTS.DIRECTION.EAST ||
+                    tunnelData.direction == window.CONSTANTS.DIRECTION.EAST_SIDE_EAST ||
+                    tunnelData.direction == window.CONSTANTS.DIRECTION.WEST_SIDE_EAST) {
+                    _xPosition = tunnelData.left_x_loc;
+                    _yPosition = tunnelData.y_loc;
+                } else if (tunnelData.direction == window.CONSTANTS.DIRECTION.WEST ||
+                    tunnelData.direction == window.CONSTANTS.DIRECTION.EAST_SIDE_WEST ||
+                    tunnelData.direction == window.CONSTANTS.DIRECTION.WEST_SIDE_WEST) {
+                    _xPosition = tunnelData.right_x_loc;
+                    _yPosition = tunnelData.y_loc;
                 }
-                _xPosition = _t - parseFloat(((blastLength / 2) * window.CONSTANTS.TUNNEL_DEFAULT_SIZE.CAVERN_ROW.LOCATION_LENGTH).toFixed(4));
-                _yPosition = yPosition;
             }
             return [_xPosition, _yPosition];
         },
@@ -1205,18 +1207,32 @@ export default {
             this._handleAddBlast(tunnelId, tunnelType);
         },
         _handleChangeLengthBlast(tunnelId, lastBlastId, blastLength) {
-            const tunnelData = this.$store.getters.getTunnel(tunnelId);
-            let position = this._getBlastPosition(tunnelData, lastBlastId, blastLength),
-                width = parseFloat((blastLength * window.CONSTANTS.TUNNEL_DEFAULT_SIZE.CAVERN_ROW.WIDTH).toFixed(4)),
-                height = tunnelData.height;
-            this.currentMarker.setCoordinates(position);
-            this.currentMarker.setWidth({stops: [[4, width], [5, width * 2], [6, width * 4], [7, width * 8]]});
+            const tunnelData = this.$store.getters.getTunnel(tunnelId),
+                  direction = tunnelData.direction,
+                  position = this._getBlastPosition(tunnelData, lastBlastId, blastLength),
+                  basePointInfo = this.$store.getters.getBasePoint(tunnelData.basepoint_id);
+            let xLocation = basePointInfo.x_loc,
+                width = parseFloat((window.CONSTANTS.TUNNEL_DEFAULT_SIZE.CAVERN_ROW.LOCATION_LENGTH * blastLength).toFixed(4)),
+                locationSet = null;
+            if (direction == window.CONSTANTS.DIRECTION.EAST ||
+                direction == window.CONSTANTS.DIRECTION.EAST_SIDE_EAST ||
+                direction == window.CONSTANTS.DIRECTION.WEST_SIDE_EAST) {
+                locationSet = [[position[0], position[1]], [position[0] + width, position[1]]];
+            } else {
+                locationSet = [[position[0] - width, position[1]], [position[0], position[1]]];
+            }
+            this.currentMarker.setCoordinates(locationSet);
             this.currentMarker.defaultWidth = width;
         },
         _handleAddBlast(tunnelId, tunnelType) {
             this.setCurrentTunnelId(tunnelId);
             this.setCurrentType(window.CONSTANTS.TYPE.ADD_BLAST);
             const tunnelData = this.$store.getters.getTunnel(tunnelId),
+                  leftXLoc = tunnelData.left_x_loc,
+                  rightXLoc = tunnelData.right_x_loc,
+                  yPosition = tunnelData.y_loc,
+                  width = tunnelData.width,
+                  height = tunnelData.height,
                   data = {};
 
             let count = this.blastIdWithTunnel[tunnelId].length,
@@ -1228,24 +1244,32 @@ export default {
             this.setLastBlastId(lastBlastId);
             let defaultBlastLength = 10,
                 position = this._getBlastPosition(tunnelData, lastBlastId, defaultBlastLength),
-                blastWidth = parseFloat((defaultBlastLength * window.CONSTANTS.TUNNEL_DEFAULT_SIZE.CAVERN_ROW.WIDTH).toFixed(4)),
-                blastHeight = tunnelData.height;
+                blastWidth = parseFloat((defaultBlastLength * window.CONSTANTS.TUNNEL_DEFAULT_SIZE.CAVERN_ROW.LOCATION_LENGTH).toFixed(4)),
+                arrowPl = "vertex-last",
+                blastHeight = tunnelData.height,
+                markerSetting = [[position[0], yPosition], [position[0] + blastWidth, yPosition]];
 
-            let _marker = new maptalks.TextBox("", position,
-                                               {stops: [[4, blastWidth], [5, blastWidth * 2], [6, blastWidth * 4], [7, blastWidth * 8]]},
-                                               {stops: [[4, blastHeight], [5, blastHeight * 2], [6, blastHeight * 4], [7, blastHeight * 8]]}, {
+            if (tunnelData.direction == window.CONSTANTS.DIRECTION.WEST ||
+                tunnelData.direction == window.CONSTANTS.DIRECTION.EAST_SIDE_WEST ||
+                tunnelData.direction == window.CONSTANTS.DIRECTION.WEST_SIDE_WEST) {
+                arrowPl = "vertex-first";
+                markerSetting = [[position[0] - blastWidth, yPosition], [position[0], yPosition]];
+            }
+
+            let _marker = new maptalks.LineString(
+            markerSetting,
+            {
                 id: this._getUUID(),
-                editable: false,
-                boxSymbol: {
-                    markerType: 'square',
-                    markerLineColor: '#000000',
-                    markerLineWidth: 1,
-                    markerFill: this.colorMap['3'],
-                    markerFillOpacity: 1
-                },
+                arrowStyle: null,
+                arrowPlacement: arrowPl,
                 symbol: {
-                    textMaxWidth: {stops: [[4, blastWidth], [5, blastWidth * 2], [6, blastWidth * 4], [7, blastWidth * 8]]},
-                    textMaxHeight: {stops: [[4, blastHeight], [5, blastHeight * 2], [6, blastHeight * 4], [7, blastHeight * 8]]}
+                    'lineColor': this.colorMap['3'],
+                    'lineWidth': {stops: [[4, 18], [5, 36], [6, 72], [7, 144]]},
+                    'lineOpacity': 1,
+                    'textPlacement': 'line',
+                    'textSize': {stops: [[4, 10], [5, 20], [6, 40], [7, 80]]},
+                    'textDy': {stops: [[4, 2], [5, 4], [6, 8], [7, 16]]},
+                    'textFill': '#ffffff',
                 }
             });
             _marker.defaultWidth = blastWidth;
@@ -1257,8 +1281,8 @@ export default {
         handleAddBlastOkButton(tunnelId, value) {
             const data = {'blast': {},
                           'info': {}},
-                  blastId = this._getUUID();
-
+                  blastId = this._getUUID(),
+                  tunnelData = this.$store.getters.getTunnel(tunnelId);
             data.blast.id = blastId;
             data.blast.tunnel_id = tunnelId;
             data.blast.state = window.CONSTANTS.BLAST_STATE.IN_PROGRESS;
@@ -1266,8 +1290,9 @@ export default {
             data.blast.m_accum_time = 0;
             data.blast.s_accum_time = 0;
             data.blast.i_accum_time = 0;
-            data.blast.x_loc = this.currentMarker.getCoordinates().x;
-            data.blast.y_loc = this.currentMarker.getCoordinates().y;
+            data.blast.left_x_loc = this.currentMarker.getCoordinates()[0].x;
+            data.blast.right_x_loc = this.currentMarker.getCoordinates()[1].x;
+            data.blast.y_loc = this.currentMarker.getCoordinates()[0].y;
             data.blast.width = this.currentMarker.defaultWidth;
             data.blast.height = this.currentMarker.defaultHeight;
             data.info = value;
@@ -1295,8 +1320,9 @@ export default {
             const data = {'blast': {},
                           'info': {}};
             data.blast = blastData;
-            data.blast.x_loc = this.currentMarker.getCoordinates().x;
-            data.blast.y_loc = this.currentMarker.getCoordinates().y;
+            data.blast.left_x_loc = this.currentMarker.getCoordinates()[0].x;
+            data.blast.right_x_loc = this.currentMarker.getCoordinates()[1].x;
+            data.blast.y_loc = this.currentMarker.getCoordinates()[0].y;
             data.blast.width = this.currentMarker.defaultWidth;
             data.blast.height = this.currentMarker.defaultHeight;
             data.info = blastInformationData;
@@ -1318,10 +1344,14 @@ export default {
         },
         _drawBlast(blast, isUpdated) {
             const tunnelData = this.$store.getters.getTunnel(blast.tunnel_id),
-                  position = [blast.x_loc, blast.y_loc],
+                  leftXLoc = blast.left_x_loc,
+                  rightXLoc = blast.right_x_loc,
+                  yLoc = blast.y_loc,
                   blastWidth = blast.width,
                   blastHeight = blast.height;
-            let typ = window.CONSTANTS.TUNNEL_TYPE.BLAST;
+            let typ = window.CONSTANTS.TUNNEL_TYPE.BLAST,
+                markerSetting = [[leftXLoc, yLoc], [leftXLoc + blastWidth, yLoc]],
+                arrowPl = "vertex-last";
             if (blast.state === window.CONSTANTS.BLAST_STATE.FINISH) {
                 if (tunnelData.category == window.CONSTANTS.TUNNEL_CATEGORY.TH) {
                     typ = window.CONSTANTS.TUNNEL_TYPE.FINISH_TH;
@@ -1342,21 +1372,26 @@ export default {
                 }
             }
 
-            let _marker = new maptalks.TextBox("", position,
-                                               {stops: [[4, blastWidth], [5, blastWidth * 2], [6, blastWidth * 4], [7, blastWidth * 8]]},
-                                               {stops: [[4, blastHeight], [5, blastHeight * 2], [6, blastHeight * 4], [7, blastHeight * 8]]}, {
+            if (tunnelData.direction == window.CONSTANTS.DIRECTION.WEST ||
+                tunnelData.direction == window.CONSTANTS.DIRECTION.EAST_SIDE_WEST ||
+                tunnelData.direction == window.CONSTANTS.DIRECTION.WEST_SIDE_WEST) {
+                arrowPl = "vertex-first";
+                markerSetting = [[rightXLoc - blastWidth, yLoc], [rightXLoc, yLoc]];
+            }
+            let _marker = new maptalks.LineString(
+            markerSetting,
+            {
                 id: blast.id,
-                editable: false,
-                boxSymbol: {
-                    markerType: 'square',
-                    markerLineColor: this.colorMap[typ],
-                    markerLineWidth: 1,
-                    markerFill: this.colorMap[typ],
-                    markerFillOpacity: 1
-                },
+                arrowStyle: null,
+                arrowPlacement: arrowPl,
                 symbol: {
-                    textMaxWidth: {stops: [[4, blastWidth], [5, blastWidth * 2], [6, blastWidth * 4], [7, blastWidth * 8]]},
-                    textMaxHeight: {stops: [[4, blastHeight], [5, blastHeight * 2], [6, blastHeight * 4], [7, blastHeight * 8]]}
+                    'lineColor': this.colorMap[typ],
+                    'lineWidth': {stops: [[4, 18], [5, 36], [6, 72], [7, 144]]},
+                    'lineOpacity': 1,
+                    'textPlacement': 'line',
+                    'textSize': {stops: [[4, 10], [5, 20], [6, 40], [7, 80]]},
+                    'textDy': {stops: [[4, 2], [5, 4], [6, 8], [7, 16]]},
+                    'textFill': '#ffffff',
                 }
             });
             _marker.defaultWidth = blastWidth;
@@ -1457,6 +1492,7 @@ export default {
             });
             this.clearCurrentType();
             this.clearCurrentTunnelId();
+            this.clearCurrentBaseId();
             this.clearTunnelType();
             this.clearCurrentBlastId();
             this.clearBlastType();
@@ -1642,7 +1678,7 @@ export default {
                     let marker = new maptalks.Marker(
                         // Origin (200623)
                         // [blast.x_loc, blast.y_loc + 0.4], {
-                        [blast.x_loc, blast.y_loc + 0.05], {
+                        [(blast.left_x_loc + blast.right_x_loc)/2 , blast.y_loc + 0.05], {
                             id: blast.id,  // TODO:
                             symbol: {
                                 'markerFile': fileUrl,
@@ -1911,6 +1947,7 @@ export default {
                 if (data.kind === 'add') {
                     let basePoint = this.$store.getters.getBasePoint(item.id);
                     if (basePoint === null || basePoint === undefined) {
+                        this.tunnelIdWithBase[item.id] = [];
                         this._drawBasePoint(item);
                     }
                     this.$store.commit('addBasePoint', item);
@@ -1920,6 +1957,7 @@ export default {
                     if (basePoint !== null || basePoint !== undefined) {
                         let basePointMarker = this.basePointMarkers[typ][item];
                         basePointMarker.remove();
+                        delete this.tunnelIdWithBase[item]
                         delete this.basePointMarkers[typ][item];
                         this.$store.commit('removeBasePoint', item);
                     }
@@ -1934,15 +1972,18 @@ export default {
                 if (data.kind === 'add') {
                     let tunnel = this.$store.getters.getTunnel(item.id);
                     if (tunnel === null || tunnel === undefined) {
+                        this.tunnelIdWithBase[item.basepoint_id].push(item.id)
                         this._drawTunnel(item);
                     }
                     this.$store.commit('addTunnel', item);
                 } else if (data.kind === 'remove') {
                     let tunnel = this.$store.getters.getTunnel(item),
+                        basepointId = tunnel.basepoint_id,
                         typ = tunnel.category;
                     if (tunnel !== null || tunnel !== undefined) {
                         let tunnelMarker = this.tunnelMarkers[typ][item];
                         tunnelMarker.remove();
+                        this.tunnelIdWithBase[basepointId] = this._.without(this.tunnelIdWithBase[basepointId], item);
                         delete this.tunnelMarkers[typ][item];
                         let arrowMarker = this.arrowMarkers[item];
                         arrowMarker.remove()
@@ -2026,7 +2067,7 @@ export default {
                             typ = "idle";
                         }
                         _blastMarker.updateSymbol({
-                            markerFill: this.colorMap[typ]
+                            lineColor: this.colorMap[typ]
                         });
                     }
                     this.drawWork(blast);
