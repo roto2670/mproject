@@ -85,7 +85,7 @@
                 </div>
                 <div class="tunnel-info-body-content-container">
                     <div class="tunnel-info-body-content-title">Started Date</div>
-                    <input v-if="isStarted()" type="text" class="work-info-body-content-message"
+                    <input v-if="isStarted()" type="text" class="tunnel-info-body-content-message"
                         :value="getStartTime" readonly>
                     <input v-else type="text" class="tunnel-info-body-content-message" value="Not Started"
                         readonly>
