@@ -7,6 +7,13 @@
                 @select-cancel-button="handleAddEquipmentCancelButton">
             </AddWorkEquipmentListItem>
         </div>
+        <div>
+            <AddWorkPauseListItem :isOpen="isOpenAddPause"
+                :operatorList="operatorList" :equipmentList="equipmentList"
+                @select-add-button="handleAddPauseAddButton"
+                @select-cancel-button="handleAddPauseCancelButton">
+            </AddWorkPauseListItem>
+        </div>
         <div v-if="isEdit" id="workInfoEditor" class="work-info-container">
             <div class="work-info-title-container">
                 ACTIVITY DETAILS
@@ -134,9 +141,12 @@
                                     </div>
                                 </div>
                             </div>
+                            <div class="work-info-body-list-button-container">
+                                <div v-if="isFinish" class="work-info-body-list-button-add" :class="{ buttonDisabled: isFinish }"
+                                    @click="handleAddPauseButton">ADD Pause</div>
+                            </div>
                         </div>
                     </div>
-
 
                     <div class="work-info-equip-detail-container">
                         <div class="detail-title-container" @click="handleEquipDetail">
@@ -171,12 +181,14 @@
 <script>
 import PauseListItem from '@/components/PauseListItem';
 import AddWorkEquipmentListItem from '@/components/AddWorkEquipmentListItem';
+import AddWorkPauseListItem from '@/components/AddWorkPauseListItem';
 import WorkEquipmentListItem from '@/components/WorkEquipmentListItem';
 export default {
     name: 'WorkInfo',
     components: {
         PauseListItem,
         AddWorkEquipmentListItem,
+        AddWorkPauseListItem,
         WorkEquipmentListItem,
     },
     props: {
@@ -223,6 +235,7 @@ export default {
             isPauseClose: true,
             isEquipClose: true,
             isOpenAddWorkEquipment: false,
+            isOpenAddPause: false,
             isView: false,
             refState: false
         }
@@ -247,6 +260,7 @@ export default {
             this.isPauseClose = true;
             this.isEquipClose = true;
             this.isOpenAddWorkEquipment = false;
+            this.isOpenAddPause = false;
             this.isView = false;
             this.refState = false;
         },
@@ -550,6 +564,18 @@ export default {
                 }
             }
         },
+        handleAddPauseAddButton(data) {
+            data.work_id = this.workInfo.id;
+            data.typ = this.workInfo.typ;
+            data.category = this.workInfo.category;
+            this.services.stopCompletedWork(data, (resData) => {
+                this.workInfo = this.$store.getters.getWork(this.id);
+                console.log("success to stop work");
+                this.isOpenAddPause = false;
+            }, (error) => {
+                console.log("fail to stop work : ", error);
+            });
+        },
         handleFinishWork() {
             if (!this.isFinish) {
                 let workInfo = this.workInfo,
@@ -579,7 +605,7 @@ export default {
                             }, (error) => {
                                 console.log("fail to finish work : ", error);
                             });
-                        } else if (this.workInfo.state == window.CONSTANTS.WORK_STATE.FINISH) {
+                        } else if (workInfo.state == window.CONSTANTS.WORK_STATE.FINISH) {
                             this.sweetbox.fire("Already Finish.");
                         } else {
                             let data = {};
@@ -603,6 +629,9 @@ export default {
         },
         handleAddEquipmentButton() {
             this.isOpenAddWorkEquipment = true;
+        },
+        handleAddPauseButton() {
+            this.isOpenAddPause = true;
         },
         formatDate(date) {
             var dateInfo = new Date(date),
@@ -640,6 +669,9 @@ export default {
         },
         handleAddEquipmentCancelButton() {
             this.isOpenAddWorkEquipment = false;
+        },
+        handleAddPauseCancelButton() {
+            this.isOpenAddPause = false;
         }
     },
     computed: {
@@ -715,6 +747,9 @@ export default {
                         startDate = this.workInfo.work_history_list[0].timestamp;
                     } else if (this.workInfo.work_history_list.length == 2) {
                         startDate = this.workInfo.work_history_list[1].timestamp;
+                    } else if (this.workInfo.work_history_list.length > 2) {
+                        let index = this.workInfo.work_history_list.length - 1
+                        startDate = this.workInfo.work_history_list[index].timestamp;
                     }
                 }
                 this.startDate = startDate.substring(0,10);
@@ -731,6 +766,9 @@ export default {
                         startTime = this.workInfo.work_history_list[0].timestamp;
                     } else if (this.workInfo.work_history_list.length == 2) {
                         startTime = this.workInfo.work_history_list[1].timestamp;
+                    } else if (this.workInfo.work_history_list.length > 2) {
+                        let index = this.workInfo.work_history_list.length - 1
+                        startTime = this.workInfo.work_history_list[index].timestamp;
                     }
                 }
                 this.startTime = startTime.substring(11,19)
