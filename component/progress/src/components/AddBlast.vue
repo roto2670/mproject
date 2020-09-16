@@ -157,15 +157,27 @@ export default {
       },
       handleChangeBlastExplosiveBulk(e) {
           this.explosiveBulk = e.target.value;
+          if (!!!this.explosiveBulk) {
+            this.explosiveBulk = 0
+          }
       },
       handleChangeBlastExplosiveCartridge(e) {
           this.explosiveCartridge = e.target.value;
+          if (!!!this.explosiveCartridge) {
+            this.explosiveCartridge = 0
+          }
       },
       handleChangeBlastDetonator(e) {
           this.detonator = e.target.value;
+          if (!!!this.detonator) {
+            this.detonator = 0
+          }
       },
       handleChangeBlastDrillingDepth(e) {
           this.drillingDepth = e.target.value;
+          if (!!!this.drillingDepth) {
+            this.drillingDepth = 0.0
+          }
       },
       handleChangeBlastBlastingDate(e) {
           this.blastingDate = e.target.value;
