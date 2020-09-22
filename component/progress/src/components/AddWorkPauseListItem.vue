@@ -1,35 +1,35 @@
 <template>
-    <div v-if="isOpen" id="addWorkEquipmentListItem" class="add-work-equipment-list-item-container">
-        <div class="add-work-equipment-background"></div>
-        <div class="add-work-equipment-selectbox">
-            <div class="add-work-equipment-title-container">
-                <div class="add-work-equipment-title-message">
+    <div v-if="isOpen" id="addWorkPauseListItem" class="add-work-pause-list-item-container">
+        <div class="add-work-pause-background"></div>
+        <div class="add-work-pause-selectbox">
+            <div class="add-work-pause-title-container">
+                <div class="add-work-pause-title-message">
                     Please select the reason
                 </div>
             </div>
-            <div class="add-work-equipment-select-container">
-                <select class="add-work-equipment-select-box"
+            <div class="add-work-pause-select-container">
+                <select class="add-work-pause-select-box"
                     @change="handleChangeReason">
                     <option disabled selected>Please select the reason</option>
                     <option v-for="message in messageList" :value="message.message" :key="message.message">
                         {{ message.message }}
                     </option>
                 </select>
-                <input id="pauseStartDate" type="date" class="add-work-equipment-date"
+                <input id="pauseStartDate" type="date" class="add-work-pause-date"
                     @change="handleChangPauseStartDate" />
-                <input id="pauseStartTime" type="time" class="add-work-equipment-date"
+                <input id="pauseStartTime" type="time" class="add-work-pause-date"
                     @change="handleChangePauseStartTime"/>
-                <input id="pauseFinishDate" type="date" class="add-work-equipment-date"
+                <input id="pauseFinishDate" type="date" class="add-work-pause-date"
                     @change="handleChangePauseFinishDate" />
-                <input id="pauseFinishTime" type="time" class="add-work-equipment-date"
+                <input id="pauseFinishTime" type="time" class="add-work-pause-date"
                     @change="handleChangePauseFinishTime" />
             </div>
-            <div class="add-work-equipment-button-container">
-                <div class="add-work-equipment-button add"
+            <div class="add-work-pause-button-container">
+                <div class="add-work-pause-button add"
                     @click="handleAddButton">
                     Add
                 </div>
-                <div class="add-work-equipment-button cancel"
+                <div class="add-work-pause-button cancel"
                     @click="handleCancleButton">
                     Cancel
                 </div>
@@ -40,21 +40,13 @@
 </template>
 <script>
 export default {
-    name: 'AddWorkEquipmentListItem',
+    name: 'addWorkPauseListItem',
     components: {
     },
     props: {
         isOpen: {
             type: Boolean,
             default: false
-        },
-        operatorList: {
-            type: Array,
-            default: []
-        },
-        equipmentList: {
-            type: Array,
-            default: []
         }
     },
     data() {
@@ -115,48 +107,26 @@ export default {
         }
     },
     computed: {
-        getEquipList() {
-            let filterEquipList = [];
-            if (this.selectedCategory != '') {
-                this._.forEach(this.equipmentList, equipment => {
-                    if (equipment.category == this.selectedCategory) {
-                        filterEquipList.push(equipment);
-                    }
-                });
-            }
-            return filterEquipList;
-        },
-        getOperatorList() {
-            let filterOperatorList = [];
-            if (this.selectedCategory != '') {
-                this._.forEach(this.operatorList, operator => {
-                    if (operator.category == this.selectedCategory) {
-                        filterOperatorList.push(operator);
-                    }
-                });
-            }
-            return filterOperatorList;
-        }
     },
     created() {
     }
 }
 </script>
 <style>
-.add-work-equipment-list-item-container {
+.add-work-pause-list-item-container {
     width: 100%;
     height: 100%;
     position: absolute;
     z-index: 10;
 }
-.add-work-equipment-background {
+.add-work-pause-background {
     width: 100%;
     height: 100%;
     position: absolute;
     opacity: 0.4;
     background-color: #000000;
 }
-.add-work-equipment-selectbox {
+.add-work-pause-selectbox {
     width: 400px;
     height: 400px;
     position: absolute;
@@ -166,11 +136,11 @@ export default {
     text-align: center;
     border-radius: 4px;
 }
-.add-work-equipment-title-container {
+.add-work-pause-title-container {
     width: 100%;
     height: 20%;
 }
-.add-work-equipment-title-message {
+.add-work-pause-title-message {
     width: 100%;
     font-size: 1.8em;
     padding: 0.5em 0.1em 0.5em 0.1em;
@@ -180,11 +150,11 @@ export default {
     text-align: center;
     text-transform: none;
 }
-.add-work-equipment-select-container {
+.add-work-pause-select-container {
     width: 100%;
     height: 60%;
 }
-.add-work-equipment-select-box {
+.add-work-pause-select-box {
     width: 75%;
     padding: .375em .625em;
     margin: 0.5em;
@@ -192,18 +162,18 @@ export default {
     color: #595959;
     font-size: 1.0em;
 }
-.add-work-equipment-date {
+.add-work-pause-date {
     width: 70%;
     padding: .375em .625em;
     margin: 0.5em;
     color: #595959;
     font-size: 1.0em;
 }
-.add-work-equipment-button-container {
+.add-work-pause-button-container {
     width: 100%;
     height: 25%;
 }
-.add-work-equipment-button {
+.add-work-pause-button {
     display: inline-block;
     border: 0;
     border-radius: .25em;
@@ -216,10 +186,10 @@ export default {
     padding: 0.2em;
     margin: 0.4em;
 }
-.add-work-equipment-button.add {
+.add-work-pause-button.add {
     background-color: #3085d6;
 }
-.add-work-equipment-button.cancel {
+.add-work-pause-button.cancel {
     background-color: #aaa;
 }
 </style>

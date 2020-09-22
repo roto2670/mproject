@@ -9,7 +9,6 @@
         </div>
         <div>
             <AddWorkPauseListItem :isOpen="isOpenAddPause"
-                :operatorList="operatorList" :equipmentList="equipmentList"
                 @select-add-button="handleAddPauseAddButton"
                 @select-cancel-button="handleAddPauseCancelButton">
             </AddWorkPauseListItem>
