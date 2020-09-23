@@ -1417,6 +1417,7 @@ export default {
             // this.setBlastContextMenu(_marker, tunnelData.tunnel_id);
         },
         handleSelectWorkItem(workId) {
+            this.handleClearSelectItemWithoutClear();
             this.services.getWorkDataByWork({"work_id": workId}, (resData) => {
                 console.log("Success to get work Data list", resData);
                 this.workEquipmentList = [];

@@ -8,6 +8,7 @@
                 </div>
             </div>
             <div class="add-work-pause-select-container">
+                <div class="pause-body-content-title">Message</div>
                 <select class="add-work-pause-select-box"
                     @change="handleChangeReason">
                     <option disabled selected>Please select the reason</option>
@@ -15,13 +16,25 @@
                         {{ message.message }}
                     </option>
                 </select>
-                <input id="pauseStartDate" type="date" class="add-work-pause-date"
+            </div>
+            <div class="add-work-pause-select-container">
+                <div class="pause-body-content-title">Start date</div>
+                <input id="pauseStartDate" type="date" class="pause-body-content-message"
                     @change="handleChangPauseStartDate" />
-                <input id="pauseStartTime" type="time" class="add-work-pause-date"
+            </div>
+            <div class="add-work-pause-select-container">
+                <div class="pause-body-content-title">Start time</div>
+                <input id="pauseStartTime" type="time" class="pause-body-content-message"
                     @change="handleChangePauseStartTime"/>
-                <input id="pauseFinishDate" type="date" class="add-work-pause-date"
+            </div>
+            <div class="add-work-pause-select-container">
+                <div class="pause-body-content-title">end date</div>
+                <input id="pauseFinishDate" type="date" class="pause-body-content-message"
                     @change="handleChangePauseFinishDate" />
-                <input id="pauseFinishTime" type="time" class="add-work-pause-date"
+            </div>
+            <div class="add-work-pause-select-container">
+                <div class="pause-body-content-title">end time</div>
+                <input id="pauseFinishTime" type="time" class="pause-body-content-message"
                     @change="handleChangePauseFinishTime" />
             </div>
             <div class="add-work-pause-button-container">
@@ -98,8 +111,16 @@ export default {
             data.end_time = this.finishTimestamp;
             data.accum_time = this.finishTimestamp - this.startTimestamp;
             data.message = this.selectedCategory;
-            this.$emit('select-add-button', data);
-            this._handleClear();
+            if (!!data.start_time && !!data.end_time && data.message) {
+                //this.$emit('select-add-button', data);
+                //this._handleClear();
+            } else if (!!!data.start_time) {
+                this.sweetbox.fire("You have not entered an start time. Please enter an start time.");
+            } else if (!!!data.end_time) {
+                this.sweetbox.fire("You have not entered an end time. Please enter an end time.");
+            } else if (!!!data.message) {
+                this.sweetbox.fire("No reason selected. Please select a reason message.");
+            }
         },
         handleCancleButton() {
             this.$emit('select-cancel-button', {});
@@ -152,21 +173,34 @@ export default {
 }
 .add-work-pause-select-container {
     width: 100%;
-    height: 60%;
+    height: 12%;
+}
+.pause-body-content-title {
+    width: 25%;
+    height: 2.4em;
+    font-size: 15px;
+    display: inline-block;
+}
+.pause-body-content-message {
+    width: 60%;
+    font-size: 1.0em;
+    color: #595959;
+    margin: 0.5em;
+    padding: .375em .625em;
+    box-sizing: border-box;
+    display: inline-block
 }
 .add-work-pause-select-box {
-    width: 70%;
+    width: 60%;
     padding: .375em .625em;
     margin: 0.5em;
     background: inherit;
-    color: #595959;
     font-size: 1.0em;
 }
 .add-work-pause-date {
     width: 70%;
     padding: .375em .625em;
     margin: 0.5em;
-    color: #595959;
     font-size: 1.0em;
 }
 .add-work-pause-button-container {

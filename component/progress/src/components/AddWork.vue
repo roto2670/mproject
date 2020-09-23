@@ -84,6 +84,7 @@ export default {
             finishDate: null,
             startTimeStamp: null,
             finishTimeStamp: null,
+            tmpList: null,
             startTimeCheckState: false,
             finishTimeCheckState: false
         }
@@ -101,6 +102,7 @@ export default {
             this.finishDate = null;
             this.startTimeStamp = null;
             this.finishTimeStamp = null;
+            this.tmpActivity = null;
             this.startTimeCheckState = false;
             this.finishTimeCheckState = false;
         },
@@ -130,10 +132,19 @@ export default {
             if (!!check_obj) {
                 return true;
             } else {
+                if(!!!this.tmpActivity) {
+                    this.tmpActivity = key;
+                } else {
+                    if (this.tmpActivity > key) {
+                        this.tmpActivity = key;
+                    }
+                    this.activity = this.tmpActivity;
+                }
                 return false;
             }
         },
         handleChangeCategory(e) {
+            this.tmpActivity = null;
             this.category = e.target.value;
             if (this.category == window.CONSTANTS.CATEGORY.MAIN_WORK) {
                 this.activity = '101'
