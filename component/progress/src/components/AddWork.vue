@@ -126,8 +126,9 @@ export default {
             }
         },
         isMainWorkDisabled(key) {
-            if (this.category == '0') {
-                return false;
+            let check_obj = this.blastInfo.work_list.find(x => x.typ === key);
+            if (!!check_obj) {
+                return true;
             } else {
                 return false;
             }
@@ -189,14 +190,18 @@ export default {
         },
         _finishTimeCheck(blast) {
             if (!!this.finishTimestamp) {
-                let blast_list = this.tunnelInfo.blast_list,
-                    blastIndex = blast_list.findIndex(x => x.id === this.blastId),
-                    work_list = blast.work_list,
-                    nextBlastingTime = new Date(blast_list[blastIndex - 1].blast_info.blasting_time).getTime()/1000
-                if (this.finishTimestamp > nextBlastingTime) {
-                    this.sweetbox.fire("The finish time you are trying to change cannot be greater than the next blast time. Please check the time again.");
+                if (this.finishTimestamp > this.startTimestamp) {
+                    let blast_list = this.tunnelInfo.blast_list,
+                        blastIndex = blast_list.findIndex(x => x.id === this.blastId),
+                        work_list = blast.work_list,
+                        nextBlastingTime = new Date(blast_list[blastIndex - 1].blast_info.blasting_time).getTime()/1000
+                    if (this.finishTimestamp > nextBlastingTime) {
+                        this.sweetbox.fire("The finish time you are trying to change cannot be greater than the next blast time. Please check the time again.");
+                    } else {
+                        this.finishTimeCheckState = true;
+                    }
                 } else {
-                    this.finishTimeCheckState = true;
+                    this.sweetbox.fire("The finish time you want to change cannot be less than the start time. Please reset the finish time.")
                 }
             } else {
                 this.sweetbox.fire("Finish time not entered. Please check again.");

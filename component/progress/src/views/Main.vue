@@ -2086,6 +2086,7 @@ export default {
                     }
                 } else if (data.kind === 'update') {
                     this.$store.commit('updateWork', item);
+                    this.$refs.workInfoView.refreshPauseList();
                 }
             });
         },
