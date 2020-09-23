@@ -155,7 +155,7 @@ export default {
     height: 60%;
 }
 .add-work-pause-select-box {
-    width: 75%;
+    width: 70%;
     padding: .375em .625em;
     margin: 0.5em;
     background: inherit;
