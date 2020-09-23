@@ -2107,6 +2107,7 @@ export default {
                     if (item.work_id in this.pauseIdWithWork) {
                         this.pauseIdWithWork[item.work_id].push(item.id);
                     }
+                    this.$refs.workInfoView.refreshPauseList();
                 } else if (data.kind === 'remove') {
                     let pause = this.$store.getters.getPause(item);
                     this.pauseIdWithWork[pause.work_id] = this._.without(this.pauseIdWithWork[pause.work_id], item);
