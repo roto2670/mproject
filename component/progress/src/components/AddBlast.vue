@@ -1,7 +1,7 @@
 <template>
     <div v-if="isType()" id="blastAddEditor" class="blast-add-container">
       <div class="blast-add-title-container">
-        ADD BLAST
+        ADD EXCAVATION
       </div>
       <div class="blast-add-body-container">
         <div class="blast-add-body-content-container">
@@ -218,10 +218,10 @@ export default {
           }
       },
       _finishPointCheck(){
-          if (this.blastingLength > 0) {
+          if (this.blastingLength >= 0) {
               this.finishPointCheck = true;
           } else {
-              this.sweetbox.fire("The length you are trying to change cannot be 0 or minus length.. Please check the Finish point and Blasing Length.");
+              this.sweetbox.fire("The length you are trying to change cannot be minus length.. Please check the Finish point and Blasing Length.");
               this.finishPointCheck = false;
           }
       },

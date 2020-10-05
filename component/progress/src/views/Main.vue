@@ -1090,6 +1090,7 @@ export default {
                 console.log("success to add tunnel");
                 this.blastIdWithTunnel[data.id] = [];
                 this.handleClearSelectItem();
+                this.handleAddBlast(data.id, window.CONSTANTS.TUNNEL_TYPE.CAVERN)
             }, (error) => {
                 console.log("fail to add tunnel : ", error)
                 this.handleClearSelectItem();
@@ -1485,11 +1486,8 @@ export default {
                 }
             }
             this.blastMarkers[blast.id].updateSymbol({
-                    markerLineColor: this.colorMap[typ],
-                    // TODO:
-                    markerLineWidth: 1,
-                    markerFill: this.colorMap[typ],
-                    markerOpacity: 1
+                lineColor: this.colorMap[typ],
+                lineOpacity: 1
             });
             this.clearCurrentType();
             this.clearCurrentTunnelId();
@@ -2027,6 +2025,14 @@ export default {
                     }
                     this.drawWork(item);
                     this.clearForBlastData(item);
+                    if (item.state == 2) {
+                        let tunnelInfo = this.$store.getters.getTunnel(item.tunnel_id),
+                            blastList = tunnelInfo.blast_list,
+                            blastIndex = blastList.findIndex(x => x.id === item.id)
+                        if (blastIndex == 0) {
+                            this.handleAddBlast(item.tunnel_id, window.CONSTANTS.TUNNEL_TYPE.CAVERN)
+                        }
+                    }
                 }
             });
         },
