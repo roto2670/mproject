@@ -289,7 +289,7 @@ export default {
         },
         getWorkState() {
             if (this.tunnel.blast_list.length > 0) {
-                return window.CONSTANTS.WORK_STATE_NAME[this.tunnel.blast_list[0].state];
+                return window.CONSTANTS.WORK_STATE_NAME[this.blast.state];
             } else {
                 // Not Started
                 return window.CONSTANTS.WORK_STATE_NAME[0];
