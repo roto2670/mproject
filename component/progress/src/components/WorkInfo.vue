@@ -578,7 +578,8 @@ export default {
         handleFinishWork() {
             if (!this.isFinish) {
                 let workInfo = this.workInfo,
-                    finishWork = this.services.finishWork;
+                    finishWork = this.services.finishWork,
+                    tunnel_id = this.tunnelInfo.id;
                 this.sweetbox.fire({
                     title: 'Are you sure you want to finish?',
                     text: "The finish button was clicked. If you want to finish, click Yes or NO.",

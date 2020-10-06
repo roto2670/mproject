@@ -488,14 +488,14 @@ export default {
                 index = blastList.findIndex(x => x.id === this.id);
             this.finish_point = _finish_point;
             this.blastingLength = this.finish_point - this.start_point;
-            if (_finish_point > this.start_point) {
+            if (_finish_point >= this.start_point) {
                 if (index > 0) {
                     this.sweetbox.fire("The length cannot be changed because more recent blasts exist. Please delete the latest blasts and change the length.");
                 } else {
                     this.$emit('change-blast-length', this.tunnel, this.blastingLength, this.id);
                 }
             } else {
-                this.sweetbox.fire("The length you want to change cannot be 0 or minus length. Please reset the finish point.");
+                this.sweetbox.fire("The length you want to change cannot be minus length. Please reset the finish point.");
             }
         },
         handleChangeTeamId(e) {
@@ -565,7 +565,7 @@ export default {
         },
         getWorkState() {
             if (this.tunnel.blast_list.length > 0) {
-                return window.CONSTANTS.WORK_STATE_NAME[this.tunnel.blast_list[0].state];
+                return window.CONSTANTS.WORK_STATE_NAME[this.blast.state];
             } else {
                 // Not Started
                 return window.CONSTANTS.WORK_STATE_NAME[0];
