@@ -146,6 +146,7 @@ window.CONSTANTS = {
         HUB: "hub",
         IPCAM: "ipcam",
         BEACON: "beacon",
+        NEW_BEACON: "mibs00001",
         MIBSSKEC: "mibsskec",
         SPEAKER: "speaker",
         ROUTER: "router"
