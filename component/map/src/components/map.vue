@@ -2629,7 +2629,8 @@
             _getSortList(data, key) {
                 let sortData = data;
                 sortData = _.sortBy(sortData, key);
-                sortData = _.reverse(sortData);
+                // sortData = _.reverse(sortData);
+                sortData = sortData.reverse();
                 sortData = _.values(sortData);
                 return sortData;
             },

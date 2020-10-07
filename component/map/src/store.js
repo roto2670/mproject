@@ -233,7 +233,8 @@ export default new Vuex.Store({
 					if (detectedGadget._t > beforeDetectedGadget._t) {
 						let hubList = _.sortBy(state.hubListDetectOneGadget[detectedGadget.gid], ['_t']),
 							index = -1;
-						hubList = _.reverse(hubList);
+						// hubList = _.reverse(hubList);
+						hubList = hubList.reverse();
 						hubList = _.values(hubList);
 						index = _.findIndex(hubList, (item) => {
 							return item.hid === detectedGadget.hid;
