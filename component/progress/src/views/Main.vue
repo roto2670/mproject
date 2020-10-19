@@ -25,7 +25,7 @@
             @select-add-blast-button="handleAddBlast"
             @select-remove-tunnel-button="handleRemoveTunnel"></TunnelInfo>
         <AddBlast :type="getCurrentType()" :tunnelId="currentTunnelId"
-            :lastBlastId="lastBlastId"
+            :lastBlastId="lastBlastId" :autoData="autoData"
             @change-blasting-length="_handleChangeLengthBlast"
             @select-ok-button="handleAddBlastOkButton"
             @select-cancel-button="handleAddBlastCancelButton"></AddBlast>
@@ -55,6 +55,7 @@
             @select-cancel-button="handleWorkInfoCancelButton"
             @select-ok-button="handleWorkInfoOkButton"
             @select-close-button="handleWorkInfoCloseButton"
+            @pause-add-status="handlePauseAddStatus"
             @select-remove-work-button="handleWorkRemoveButton"></WorkInfo>
         <Legend :isShow="isShowLegend"></Legend>
         <div :id="id" class="map-container">
@@ -133,6 +134,7 @@ export default {
             currentBlastType: null,
             currentMarker: null,
             lastBlastId: '',
+            autoData: null,
             //
             blastLayer: null,
             workLayer: null,
@@ -160,7 +162,8 @@ export default {
                 'idle' : '#feff00'
             },
             tunnelOpacity: 0.6,
-            isShowLegend: false
+            isShowLegend: false,
+            blockingStatus: false
         }
     },
     methods: {
@@ -224,6 +227,7 @@ export default {
                     this._getMessageList();
                     this._getTeamList();
                     this._getEquipmentInfoList();
+                    this._getActivityList();
                     this._getBasePointList();
                     this.blastLayer = new maptalks.VectorLayer('vector').addTo(this.map);
                     this.blastLayer.setZIndex(2);
@@ -289,6 +293,31 @@ export default {
                 // console.log("Success to get equipment info list.", equipmentInfoList);
             }, (error) => {
                 console.log("Failed to get equipment info list.", error);
+            });
+        },
+        _getActivityList() {
+            this.services.getActivityList(activityList => {
+                this._.forEach(activityList, activity => {
+                    window.CONSTANTS.WORK_NAME[parseInt(activity.activity_id)] = activity.name;
+                    if (activity.category == 0) {
+                        window.CONSTANTS.MAIN_WORK[activity.name.replace(" ", "_")] = activity.activity_id;
+                        if (!!activity.file_path) {
+                            window.CONSTANTS.URL.MAIN[parseInt(activity.activity_id)] = activity.file_path
+                        }
+                    } else if (activity.category == 1) {
+                        window.CONSTANTS.SUPPORTING_WORK[activity.name.replace(" ", "_")] = activity.activity_id;
+                        if (!!activity.file_path) {
+                            window.CONSTANTS.URL.SUPPORTING[parseInt(activity.activity_id)] = activity.file_path
+                        }
+                    } else if (activity.category == 2) {
+                        window.CONSTANTS.IDEL_TIME[activity.name.replace(" ", "_")] = activity.activity_id;
+                        if (!!activity.file_path) {
+                            window.CONSTANTS.URL.IDLE[parseInt(activity.activity_id)] = activity.file_path
+                        }
+                    }
+                });
+            }, (error) => {
+                console.log("Failed to get activity list.", error);
             });
         },
         _getBasePointList() {
@@ -1066,6 +1095,38 @@ export default {
             this.currentMarker.defaultWidth = width;
             this.currentMarker.setCoordinates(locationSet);
         },
+        _startWork(blastId, timeStamp){
+            let data = {
+                    id: this._getUUID(),
+                    category: 0,
+                    typ: '101',
+                    state: 0,
+                    accum_time: 0,
+                    p_accum_time: 0,
+                    blast_id: blastId
+                },
+                startData = {
+                    id: data.id,
+                    category: 0,
+                    typ: '101',
+                    blast_id: blastId,
+                    start_time: timeStamp
+                };
+            this.services.addWork(data, (resData) => {
+                console.log("success to add Work")
+                if (!(data.id in this.pauseIdWithWork)) {
+                    this.pauseIdWithWork[data.id] = [];
+                }
+                this.services.startWork(startData, (resData) => {
+                    console.log("success to start work");
+                }, (error) => {
+                    console.log("fail to start work : ", error);
+                });
+            }, (error) => {
+                console.error("Failed to add work.", error);
+                this.workIdWithBlast[data.blastId][data.category] = this._.without(this.workIdWithBlast[data.blastId][data.category], data.id);
+            });
+        },
         handleAddTunnelOkButton(value) {
             const data = {}
             data.id = this.currentMarker.getId();
@@ -1243,7 +1304,7 @@ export default {
             }
 
             this.setLastBlastId(lastBlastId);
-            let defaultBlastLength = 10,
+            let defaultBlastLength = 5,
                 position = this._getBlastPosition(tunnelData, lastBlastId, defaultBlastLength),
                 blastWidth = parseFloat((defaultBlastLength * window.CONSTANTS.TUNNEL_DEFAULT_SIZE.CAVERN_ROW.LOCATION_LENGTH).toFixed(4)),
                 arrowPl = "vertex-last",
@@ -1301,18 +1362,28 @@ export default {
             data.info.id = this._getUUID();
 
             this.blastIdWithTunnel[tunnelId].unshift(data.blast.id);
+            this.workIdWithBlast[blastId] = {
+                0: [],  // Main Work
+                1: [],  // Supporting
+                2: []   // Idel Time
+            }
+            let dateTime = data.info.blasting_date + "T" + data.info.blasting_time,
+                timeStamp = new Date(dateTime).getTime()/1000;
             this.services.addBlast(data, (resData) => {
                 console.log("success to add blast.")
                 this.currentMarker.remove();
                 this.handleClearSelectItem();
             }, (error) => {
                 this.currentMarker.remove();
-                this.blastIdWithTunnel[tunnelId] = this._.without(this.blastIdWithTunnel[tunnelId], data.id);
+                this.blastIdWithTunnel[tunnelId] = this._.without(this.blastIdWithTunnel[tunnelId], data.blast.id);
                 this.handleClearSelectItem();
                 console.log("fail to add blast. Error : ", error)
             });
+            this.autoData = null;
+            this._startWork(blastId, timeStamp);
         },
         handleAddBlastCancelButton() {
+            this.autoData = null;
             this.currentMarker.remove();
             this.handleClearSelectItem();
         },
@@ -1512,11 +1583,11 @@ export default {
                 data.start_time = value.start_time;
                 data.finish_time = value.finish_time;
             }
-            if (this.workIdWithBlast[value.blastId][value.category].length == 0) {
-                this.workIdWithBlast[value.blastId][value.category].push(data.id); // TODO:
-            } else {
-                this.workIdWithBlast[value.blastId][value.category].unshift(data.id); // TODO:
-            }
+            //if (this.workIdWithBlast[value.blastId][value.category].length == 0) {
+            //    this.workIdWithBlast[value.blastId][value.category].push(data.id); // TODO:
+            //} else {
+            //    this.workIdWithBlast[value.blastId][value.category].unshift(data.id); // TODO:
+            //}
             if (!!!data.is_data_build) {
                 this.services.addWork(data, (resData) => {
                     console.log("success to add Work")
@@ -1546,6 +1617,9 @@ export default {
         handleWorkInfoCloseButton(blast) {
             this.clearForBlastData(blast);
         },
+        handlePauseAddStatus(data) {
+            this.blockingStatus = data;
+        },
         handleWorkInfoCancelButton() {
             this.currentMarker.updateSymbol({
                     markerLineColor: '#000000',
@@ -1557,6 +1631,7 @@ export default {
             this.clearAll();
         },
         handleWorkInfoOkButton(workData) {
+            this.blockingStatus = true
             this.services.updateWork(workData, (resData) => {
                 console.log("success to update work", workData);
                 this.currentMarker.updateSymbol({
@@ -1665,11 +1740,23 @@ export default {
                 let fileUrl = '';
                 if (currentCategory != null && currentTyp != null) {
                     if (currentCategory == window.CONSTANTS.CATEGORY.MAIN_WORK) {
-                        fileUrl =`${ window.CONSTANTS.URL.BASE_IMG }${ window.CONSTANTS.URL.MAIN[currentTyp] }`;
+                        if (currentTyp in window.CONSTANTS.URL.MAIN) {
+                            fileUrl =`${ window.CONSTANTS.URL.BASE_IMG }${ window.CONSTANTS.URL.MAIN[currentTyp] }`;
+                        } else {
+                            fileUrl =`${ window.CONSTANTS.URL.BASE_IMG }${ window.CONSTANTS.URL.DEFUALT_IMG.MAIN }`;
+                        }
                     } else if (currentCategory == window.CONSTANTS.CATEGORY.SUPPORTING) {
-                        fileUrl =`${ window.CONSTANTS.URL.BASE_IMG }${ window.CONSTANTS.URL.SUPPORTING[currentTyp] }`;
+                        if (currentTyp in window.CONSTANTS.URL.SUPPORTING) {
+                            fileUrl =`${ window.CONSTANTS.URL.BASE_IMG }${ window.CONSTANTS.URL.SUPPORTING[currentTyp] }`;
+                        } else {
+                            fileUrl =`${ window.CONSTANTS.URL.BASE_IMG }${ window.CONSTANTS.URL.DEFUALT_IMG.SUPPORTING }`;
+                        }
                     } else {
-                        fileUrl =`${ window.CONSTANTS.URL.BASE_IMG }${ window.CONSTANTS.URL.IDLE[currentTyp] }`;
+                        if (currentTyp in window.CONSTANTS.URL.IDLE) {
+                            fileUrl =`${ window.CONSTANTS.URL.BASE_IMG }${ window.CONSTANTS.URL.IDLE[currentTyp] }`;
+                        } else {
+                            fileUrl =`${ window.CONSTANTS.URL.BASE_IMG }${ window.CONSTANTS.URL.DEFUALT_IMG.IDLE }`;
+                        }
                     }
                 }
 
@@ -1938,6 +2025,9 @@ export default {
                 updateTeamList: (data) => {
                     this._handleUpdateTeamList(data);
                 },
+                updateActivityList: (data) => {
+                    this._handleUpdateActivityList(data);
+                },
             });
         },
         _handleUpdateBasePointList(data) {
@@ -2001,10 +2091,12 @@ export default {
                 if (data.kind === 'add') {
                     let blast = this.$store.getters.getBlast(item.id);
                     if (blast === null || blast === undefined) {
-                        this.workIdWithBlast[item.id] = {
-                            0: [],  // Main Work
-                            1: [],  // Supporting
-                            2: []   // Idel Time
+                        if (!!!this.workIdWithBlast[item.id]) {
+                            this.workIdWithBlast[item.id] = {
+                                0: [],  // Main Work
+                                1: [],  // Supporting
+                                2: []   // Idel Time
+                            }
                         }
                         this._drawBlast(item, true);
                     }
@@ -2030,9 +2122,13 @@ export default {
                             blastList = tunnelInfo.blast_list,
                             blastIndex = blastList.findIndex(x => x.id === item.id)
                         if (blastIndex == 0) {
-                            this.handleAddBlast(item.tunnel_id, window.CONSTANTS.TUNNEL_TYPE.CAVERN)
+                            if (!!!this.blockingStatus) {
+                                this.autoData = item;
+                                this.handleAddBlast(item.tunnel_id, window.CONSTANTS.TUNNEL_TYPE.CAVERN)
+                            }
                         }
                     }
+                    this.blockingStatus = false;
                 }
             });
         },
@@ -2054,6 +2150,11 @@ export default {
             const list = data.v;
             this._.forEach(list, item => {
                 if (data.kind === 'add') {
+                    if (this.workIdWithBlast[item.blast_id][item.category].length == 0) {
+                        this.workIdWithBlast[item.blast_id][item.category].push(item.id); // TODO:
+                    } else {
+                        this.workIdWithBlast[item.blast_id][item.category].unshift(item.id); // TODO:
+                    }
                     this.$store.commit('addWork', item);
                     if (!(item.id in this.pauseIdWithWork)) {
                         this.pauseIdWithWork[item.id] = [];
@@ -2161,6 +2262,33 @@ export default {
                     this.$store.commit('removeTeam', item);
                 } else if (data.kind === 'update') {
                     this.$store.commit('updateTeam', item);
+                }
+            });
+        },
+        _handleUpdateActivityList(data){
+            const list = data.v;
+            this._.forEach(list, item => {
+                if (data.kind === 'add') {
+                    if (item.category == 0) {
+                        window.CONSTANTS.MAIN_WORK[item.name.replace(" ", "_")] = item.activity_id;
+                        if (!!item.file_path) {
+                            window.CONSTANTS.URL.MAIN[parseInt(item.activity_id)] = item.file_path
+                        }
+                    } else if (item.category == 1) {
+                        window.CONSTANTS.SUPPORTING_WORK[item.name.replace(" ", "_")] = item.activity_id;
+                        if (!!item.file_path) {
+                            window.CONSTANTS.URL.SUPPORTING[parseInt(item.activity_id)] = item.file_path
+                        }
+                    } else if (item.category == 2) {
+                        window.CONSTANTS.IDEL_TIME[item.name.replace(" ", "_")] = item.activity_id;
+                        if (!!item.file_path) {
+                            window.CONSTANTS.URL.IDLE[parseInt(item.activity_id)] = item.file_path
+                        }
+                    }
+                } else if (data.kind === 'remove') {
+                    //this.$store.commit('removeTeam', item);
+                } else if (data.kind === 'update') {
+                    //this.$store.commit('updateTeam', item);
                 }
             });
         },

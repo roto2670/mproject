@@ -112,8 +112,8 @@ export default {
             data.accum_time = this.finishTimestamp - this.startTimestamp;
             data.message = this.selectedCategory;
             if (!!data.start_time && !!data.end_time && data.message) {
-                //this.$emit('select-add-button', data);
-                //this._handleClear();
+                this.$emit('select-add-button', data);
+                this._handleClear();
             } else if (!!!data.start_time) {
                 this.sweetbox.fire("You have not entered an start time. Please enter an start time.");
             } else if (!!!data.end_time) {
