@@ -567,6 +567,7 @@ export default {
             data.work_id = this.workInfo.id;
             data.typ = this.workInfo.typ;
             data.category = this.workInfo.category;
+            this.$emit('pause-add-status', this.isOpenAddPause)
             this.services.stopCompletedWork(data, (resData) => {
                 this.workInfo = this.$store.getters.getWork(this.id);
                 console.log("success to stop work");

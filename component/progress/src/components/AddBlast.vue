@@ -36,12 +36,14 @@
         <div class="blast-add-body-content-container">
           <div class="blast-add-body-content-title">Blast Date</div>
           <input type="date" class="blast-add-body-content-message"
+              :value="getBlastDate"
               @change="handleChangeBlastBlastingDate">
         </div>
         <div class="blast-add-body-content-container">
           <div class="blast-add-body-content-title">Blast Time</div>
           <input type="time" class="blast-add-body-content-message"
               step="1800" min="00:00" max="23:59"
+              :value="getBlastTime"
               @change="handleChangeBlastBlastingTime">
         </div>
         <div class="blast-add-body-content-container">
@@ -105,6 +107,10 @@ export default {
         },
         lastBlastId: {
             type: String
+        },
+        autoData: {
+            type: Object,
+            default: null
         }
     },
     data() {
@@ -120,6 +126,8 @@ export default {
             drillingDepth: 0.0,
             blastingDate: null,
             blastingTime: null,
+            changedBlastingTime: null,
+            changedBastingDate: null,
             startPoint: 0.0,
             finishPoint: 0.0,
             blastingLength: 0.0,
@@ -141,6 +149,8 @@ export default {
           this.drillingDepth = 0.0;
           this.blastingDate = null;
           this.blastingTime = null;
+          this.changedBlastingTime =  null;
+          this.changedBastingDate =  null;
           this.startPoint = 0.0;
           this.finishPoint = 0.0;
           this.blastingLength = 0.0;
@@ -268,6 +278,62 @@ export default {
         getDrillingDepth() {
             return this.drillingDepth;
         },
+        getBlastDate(){
+            let startDate = '',
+                lastWork = ''
+            if (!!!this.blastingDate) {
+                if (!!!this.autoData) {
+                    if (this.lastBlast) {
+                        if (this.lastBlast.work_list.length != 0) {
+                            lastWork = this.lastBlast.work_list[0].work_history_list[0];
+                        }
+                    }
+                    if (!!lastWork) {
+                        if (lastWork.typ == 114 && lastWork.state == 2) {
+                            startDate = lastWork.timestamp;
+                        }
+                        this.blastingDate = startDate.substring(0, 10);
+                    }
+                } else {
+                    lastWork = this.autoData.work_list[0].work_history_list[0];
+                    if (lastWork.typ == 114 && lastWork.state == 2) {
+                        startDate = lastWork.timestamp;
+                        this.blastingDate = startDate.substring(0, 10);
+                    }
+                }
+                return startDate.substring(0, 10);
+            } else {
+                return this.blastingDate;
+            }
+        },
+        getBlastTime(){
+            let startTime = '',
+                lastWork = '';
+            if (!!!this.blastingTime) {
+                if (!!!this.autoData) {
+                    if (this.lastBlast) {
+                        if (this.lastBlast.work_list.length != 0) {
+                            lastWork = this.lastBlast.work_list[0].work_history_list[0];
+                        }
+                    }
+                    if (!!lastWork) {
+                        if(lastWork.typ == 114 && lastWork.state == 2) {
+                            startTime = lastWork.timestamp;
+                        }
+                        this.blastingTime = startTime.substring(11, 19);
+                    }
+                } else {
+                    lastWork = this.autoData.work_list[0].work_history_list[0];
+                    if (lastWork.typ == 114 && lastWork.state == 2) {
+                        startTime = lastWork.timestamp;
+                        this.blastingTime = startTime.substring(11, 19);
+                    }
+                }
+                return startTime.substring(11, 19);
+            } else {
+                return this.blastingTime;
+            }
+        },
         getStartPoint() {
             if (this.lastBlast != null) {
                 this.startPoint = this.lastBlast.blast_info.finish_point;
@@ -279,9 +345,9 @@ export default {
         getFinishPoint() {
             if (!this.isChangeFinishPoint) {
                 if (this.lastBlast != null) {
-                    this.finishPoint = this.lastBlast.blast_info.finish_point + 10;
+                    this.finishPoint = this.lastBlast.blast_info.finish_point + 5;
                 } else {
-                    this.finishPoint = 10;
+                    this.finishPoint = 5;
                 }
             }
             return this.finishPoint;
@@ -307,6 +373,7 @@ export default {
         }
     },
     created() {
+        //this._clearData();
     }
 }
 </script>
