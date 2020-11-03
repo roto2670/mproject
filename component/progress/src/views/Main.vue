@@ -56,7 +56,8 @@
             @select-ok-button="handleWorkInfoOkButton"
             @select-close-button="handleWorkInfoCloseButton"
             @pause-add-status="handlePauseAddStatus"
-            @select-remove-work-button="handleWorkRemoveButton"></WorkInfo>
+            @select-remove-work-button="handleWorkRemoveButton"
+            @finish-clicked="handleFinishClicked"></WorkInfo>
         <Legend :isShow="isShowLegend"></Legend>
         <div :id="id" class="map-container">
         </div>
@@ -138,6 +139,7 @@ export default {
             //
             blastLayer: null,
             workLayer: null,
+            finishClicked: false,
             colorMap: {
                 'selected': '#dddddd',
                 '0': '#a0a0ff',
@@ -1662,6 +1664,9 @@ export default {
                 console.log("Failed to remove work")
             });
         },
+        handleFinishClicked(value) {
+            this.finishClicked = true;
+        },
         drawWork(blast) {
             // TODO:
             if (blast.state === window.CONSTANTS.BLAST_STATE.IN_PROGRESS) {
@@ -2123,11 +2128,14 @@ export default {
                             blastIndex = blastList.findIndex(x => x.id === item.id)
                         if (blastIndex == 0) {
                             if (!!!this.blockingStatus) {
-                                this.autoData = item;
-                                this.handleAddBlast(item.tunnel_id, window.CONSTANTS.TUNNEL_TYPE.CAVERN)
+                                if(!!this.finishClicked){
+                                    this.autoData = item;
+                                    this.handleAddBlast(item.tunnel_id, window.CONSTANTS.TUNNEL_TYPE.CAVERN)
+                                }
                             }
                         }
                     }
+                    this.finishClicked = false;
                     this.blockingStatus = false;
                 }
             });
