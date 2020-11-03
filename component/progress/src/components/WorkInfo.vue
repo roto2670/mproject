@@ -576,10 +576,14 @@ export default {
                 console.log("fail to stop work : ", error);
             });
         },
+        pushData() {
+            this.$emit('finish-clicked', true);
+        },
         handleFinishWork() {
             if (!this.isFinish) {
                 let workInfo = this.workInfo,
                     finishWork = this.services.finishWork,
+                    pushData = this.pushData,
                     tunnel_id = this.tunnelInfo.id;
                 this.sweetbox.fire({
                     title: 'Are you sure you want to finish?',
@@ -601,6 +605,7 @@ export default {
                             data.category = workInfo.category;
                             data.typ = workInfo.typ;
                             data.blast_id = workInfo.blast_id;
+                            pushData();
                             finishWork(data, (resData) => {
                                 console.log("success to finish work");
                             }, (error) => {
