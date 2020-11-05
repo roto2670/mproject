@@ -302,17 +302,17 @@ export default {
                 this._.forEach(activityList, activity => {
                     window.CONSTANTS.WORK_NAME[parseInt(activity.activity_id)] = activity.name;
                     if (activity.category == 0) {
-                        window.CONSTANTS.MAIN_WORK[activity.name.replace(" ", "_")] = activity.activity_id;
+                        window.CONSTANTS.MAIN_WORK[activity.name.replace(/ /gi, "_")] = activity.activity_id;
                         if (!!activity.file_path) {
                             window.CONSTANTS.URL.MAIN[parseInt(activity.activity_id)] = activity.file_path
                         }
                     } else if (activity.category == 1) {
-                        window.CONSTANTS.SUPPORTING_WORK[activity.name.replace(" ", "_")] = activity.activity_id;
+                        window.CONSTANTS.SUPPORTING_WORK[activity.name.replace(/ /gi, "_")] = activity.activity_id;
                         if (!!activity.file_path) {
                             window.CONSTANTS.URL.SUPPORTING[parseInt(activity.activity_id)] = activity.file_path
                         }
                     } else if (activity.category == 2) {
-                        window.CONSTANTS.IDEL_TIME[activity.name.replace(" ", "_")] = activity.activity_id;
+                        window.CONSTANTS.IDEL_TIME[activity.name.replace(/ /gi, "_")] = activity.activity_id;
                         if (!!activity.file_path) {
                             window.CONSTANTS.URL.IDLE[parseInt(activity.activity_id)] = activity.file_path
                         }
@@ -2301,25 +2301,85 @@ export default {
             this._.forEach(list, item => {
                 if (data.kind === 'add') {
                     if (item.category == 0) {
-                        window.CONSTANTS.MAIN_WORK[item.name.replace(" ", "_")] = item.activity_id;
+                        window.CONSTANTS.MAIN_WORK[item.name.replace(/ /gi, "_")] = item.activity_id;
                         if (!!item.file_path) {
                             window.CONSTANTS.URL.MAIN[parseInt(item.activity_id)] = item.file_path
                         }
                     } else if (item.category == 1) {
-                        window.CONSTANTS.SUPPORTING_WORK[item.name.replace(" ", "_")] = item.activity_id;
+                        window.CONSTANTS.SUPPORTING_WORK[item.name.replace(/ /gi, "_")] = item.activity_id;
                         if (!!item.file_path) {
                             window.CONSTANTS.URL.SUPPORTING[parseInt(item.activity_id)] = item.file_path
                         }
                     } else if (item.category == 2) {
-                        window.CONSTANTS.IDEL_TIME[item.name.replace(" ", "_")] = item.activity_id;
+                        window.CONSTANTS.IDEL_TIME[item.name.replace(/ /gi, "_")] = item.activity_id;
                         if (!!item.file_path) {
                             window.CONSTANTS.URL.IDLE[parseInt(item.activity_id)] = item.file_path
                         }
                     }
                 } else if (data.kind === 'remove') {
-                    //this.$store.commit('removeTeam', item);
+                    if (item.category == 0) {
+                        delete window.CONSTANTS.MAIN[item.name.replace(/ /gi, "_")]
+                        if (item.activity_id in window.CONSTANTS.URL.MAIN) {
+                            delete window.CONSTANTS.URL.MAIN[parseInt(item.activity_id)];
+                        }
+                    } else if (item.category == 1) {
+                        delete window.CONSTANTS.SUPPORTING[item.name.replace(/ /gi, "_")];
+                        if (item.activity_id in window.CONSTANTS.URL.SUPPORTING) {
+                            delete window.CONSTANTS.URL.SUPPORTING[parseInt(item.activity_id)];
+                        }
+                    } else if (item.category == 2) {
+                        delete window.CONSTANTS.IDEL_TIME[item.name.replace(/ /gi, "_")];
+                        if (item.activity_id in window.CONSTANTS.URL.IDLE) {
+                            delete window.CONSTANTS.URL.IDLE[parseInt(item.activity_id)];
+                        }
+                    }
                 } else if (data.kind === 'update') {
-                    //this.$store.commit('updateTeam', item);
+                    if (item.category == 0) {
+                        let key = null;
+                        for(var _key in window.CONSTANTS.MAIN){
+                            if (window.CONSTANTS.MAIN[_key] == item.activity_id) {
+                                key = _key
+                            }
+                        }
+                        delete window.CONSTANTS.MAIN[key]
+                        if (item.activity_id in window.CONSTANTS.URL.MAIN) {
+                            delete window.CONSTANTS.URL.MAIN[parseInt(item.activity_id)];
+                        }
+                        window.CONSTANTS.IDEL_TIME[item.name.replace(/ /gi, "_")] = item.activity_id;
+                        if (!!item.file_path) {
+                            window.CONSTANTS.URL.IDLE[parseInt(item.activity_id)] = item.file_path
+                        }
+                    } else if (item.category == 1) {
+                        let key = null;
+                        for(var _key in window.CONSTANTS.SUPPORTING){
+                            if (window.CONSTANTS.SUPPORTING[_key] == item.activity_id) {
+                                key = _key
+                            }
+                        }
+                        delete window.CONSTANTS.SUPPORTING[key]
+                        if (item.activity_id in window.CONSTANTS.URL.SUPPORTING) {
+                            delete window.CONSTANTS.URL.SUPPORTING[parseInt(item.activity_id)];
+                        }
+                        window.CONSTANTS.SUPPORTING[item.name.replace(/ /gi, "_")] = item.activity_id;
+                        if (!!item.file_path) {
+                            window.CONSTANTS.URL.SUPPORTING[parseInt(item.activity_id)] = item.file_path
+                        }
+                    } else if (item.category == 2) {
+                        let key = null;
+                        for(var _key in window.CONSTANTS.IDEL_TIME){
+                            if (window.CONSTANTS.IDEL_TIME[_key] == item.activity_id) {
+                                key = _key
+                            }
+                        }
+                        delete window.CONSTANTS.IDEL_TIME[key]
+                        if (item.activity_id in window.CONSTANTS.URL.IDLE) {
+                            delete window.CONSTANTS.URL.IDLE[parseInt(item.activity_id)];
+                        }
+                        window.CONSTANTS.IDEL_TIME[item.name.replace(/ /gi, "_")] = item.activity_id;
+                        if (!!item.file_path) {
+                            window.CONSTANTS.URL.IDLE[parseInt(item.activity_id)] = item.file_path
+                        }
+                    }
                 }
             });
         },
