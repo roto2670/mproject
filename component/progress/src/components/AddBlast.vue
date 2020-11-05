@@ -108,7 +108,7 @@ export default {
         lastBlastId: {
             type: String
         },
-        autoData: {
+        finishedBlastData: {
             type: Object,
             default: null
         }
@@ -282,7 +282,7 @@ export default {
             let startDate = '',
                 lastWork = ''
             if (!!!this.blastingDate) {
-                if (!!!this.autoData) {
+                if (!!!this.finishedBlastData) {
                     if (this.lastBlast) {
                         if (this.lastBlast.work_list.length != 0) {
                             lastWork = this.lastBlast.work_list[0].work_history_list[0];
@@ -295,7 +295,7 @@ export default {
                         this.blastingDate = startDate.substring(0, 10);
                     }
                 } else {
-                    lastWork = this.autoData.work_list[0].work_history_list[0];
+                    lastWork = this.finishedBlastData.work_list[0].work_history_list[0];
                     if (lastWork.typ == 114 && lastWork.state == 2) {
                         startDate = lastWork.timestamp;
                         this.blastingDate = startDate.substring(0, 10);
@@ -310,7 +310,7 @@ export default {
             let startTime = '',
                 lastWork = '';
             if (!!!this.blastingTime) {
-                if (!!!this.autoData) {
+                if (!!!this.finishedBlastData) {
                     if (this.lastBlast) {
                         if (this.lastBlast.work_list.length != 0) {
                             lastWork = this.lastBlast.work_list[0].work_history_list[0];
@@ -323,7 +323,7 @@ export default {
                         this.blastingTime = startTime.substring(11, 19);
                     }
                 } else {
-                    lastWork = this.autoData.work_list[0].work_history_list[0];
+                    lastWork = this.finishedBlastData.work_list[0].work_history_list[0];
                     if (lastWork.typ == 114 && lastWork.state == 2) {
                         startTime = lastWork.timestamp;
                         this.blastingTime = startTime.substring(11, 19);
@@ -370,7 +370,7 @@ export default {
         },
         getTeamNos() {
             return this.teamNos;
-        }
+        },
     },
     created() {
         //this._clearData();

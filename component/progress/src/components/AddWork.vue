@@ -128,7 +128,7 @@ export default {
             }
         },
         isMainWorkDisabled(key) {
-            let check_obj = this.blastInfo.work_list.find(x => x.typ === key);
+            let check_obj = this.blastInfo.work_list.find(x => x.typ === parseInt(key));
             if (!!check_obj) {
                 return true;
             } else {

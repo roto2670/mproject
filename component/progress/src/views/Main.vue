@@ -9,7 +9,8 @@
             @select-close-button="handleBasePointInfoCloseButton"
             @select-add-cavern-button="handleAddCavern"
             @select-remove-basepoint-button="handleRemoveBasePoint"></BasePointInfo>
-        <AddTunnel :type="getCurrentType()"
+        <AddTunnel :type="getCurrentType()" :basePointId="currentBaseId"
+            :tunnelIdList="tunnelIdWithBase[currentBaseId]"
             @change-tunnel-direction="handleChangeDirectionCavern"
             @change-tunnel-length="handleChangeLengthCavern"
             @select-ok-button="handleAddTunnelOkButton"
@@ -25,7 +26,7 @@
             @select-add-blast-button="handleAddBlast"
             @select-remove-tunnel-button="handleRemoveTunnel"></TunnelInfo>
         <AddBlast :type="getCurrentType()" :tunnelId="currentTunnelId"
-            :lastBlastId="lastBlastId" :autoData="autoData"
+            :lastBlastId="lastBlastId" :finishedBlastData="finishedBlastData"
             @change-blasting-length="_handleChangeLengthBlast"
             @select-ok-button="handleAddBlastOkButton"
             @select-cancel-button="handleAddBlastCancelButton"></AddBlast>
@@ -135,11 +136,10 @@ export default {
             currentBlastType: null,
             currentMarker: null,
             lastBlastId: '',
-            autoData: null,
+            finishedBlastData: null,
             //
             blastLayer: null,
             workLayer: null,
-            finishClicked: false,
             colorMap: {
                 'selected': '#dddddd',
                 '0': '#a0a0ff',
@@ -882,8 +882,22 @@ export default {
                 width = parseFloat((window.CONSTANTS.TUNNEL_DEFAULT_SIZE.CAVERN_ROW.LOCATION_LENGTH * defaultLength).toFixed(4)),
                 height = window.CONSTANTS.TUNNEL_DEFAULT_SIZE.CAVERN_ROW.HEIGHT,
                 xLocation = basePointInfo.x_loc,
-                marker = new maptalks.LineString(
-                [[xLocation, basePointInfo.y_loc], [xLocation+width, basePointInfo.y_loc]],
+                locationSet = [[xLocation, basePointInfo.y_loc], [xLocation+width, basePointInfo.y_loc]],
+                marker = null;
+            if (this.tunnelIdWithBase[basePointId].length == 0) {
+                locationSet = [[xLocation, basePointInfo.y_loc], [xLocation+width, basePointInfo.y_loc]]
+            } else if (this.tunnelIdWithBase[basePointId].length == 1) {
+                const otherTunnel = this.$store.getters.getTunnel(this.tunnelIdWithBase[basePointId][0]);
+                if (otherTunnel.direction == window.CONSTANTS.DIRECTION.EAST ||
+                    otherTunnel.direction == window.CONSTANTS.DIRECTION.EAST_SIDE_EAST ||
+                    otherTunnel.direction == window.CONSTANTS.DIRECTION.WEST_SIDE_EAST) {
+                    locationSet = [[xLocation - width, basePointInfo.y_loc], [xLocation, basePointInfo.y_loc]]
+                } else {
+                    locationSet = [[xLocation, basePointInfo.y_loc], [xLocation + width, basePointInfo.y_loc]]
+                }
+            }
+            marker = new maptalks.LineString(
+                locationSet,
                 {
                     id: this._getUUID(),
                     arrowStyle: null,
@@ -1290,14 +1304,15 @@ export default {
         },
         _handleAddBlast(tunnelId, tunnelType) {
             this.setCurrentTunnelId(tunnelId);
-            this.setCurrentType(window.CONSTANTS.TYPE.ADD_BLAST);
+            if (!!!this.finishedBlastData) {
+                this.setCurrentType(window.CONSTANTS.TYPE.ADD_BLAST);
+            }
             const tunnelData = this.$store.getters.getTunnel(tunnelId),
                   leftXLoc = tunnelData.left_x_loc,
                   rightXLoc = tunnelData.right_x_loc,
                   yPosition = tunnelData.y_loc,
                   width = tunnelData.width,
-                  height = tunnelData.height,
-                  data = {};
+                  height = tunnelData.height;
 
             let count = this.blastIdWithTunnel[tunnelId].length,
                 lastBlastId = null;
@@ -1341,6 +1356,22 @@ export default {
             _marker.markerType = window.CONSTANTS.TUNNEL_TYPE.BLAST;
             this.blastLayers[tunnelType].addGeometry(_marker);
             this.setCurrentMarker(_marker);
+            if (!!this.finishedBlastData) {
+                let data = {
+                    explosive_bulk: 0,
+                    explosive_cartridge: 0,
+                    detonator: 0,
+                    drilling_depth: 0,
+                    blasting_date: this.finishedBlastData.work_list[0].work_history_list[0].timestamp.substring(0, 10),
+                    blasting_time: this.finishedBlastData.work_list[0].work_history_list[0].timestamp.substring(11, 19),
+                    start_point: this.finishedBlastData.blast_info.finish_point,
+                    finish_point: this.finishedBlastData.blast_info.finish_point + 5,
+                    blasting_length: 5,
+                    team_id: null,
+                    team_nos: 0
+                }
+                this.handleAddBlastOkButton(tunnelId, data)
+            }
         },
         handleAddBlastOkButton(tunnelId, value) {
             const data = {'blast': {},
@@ -1381,11 +1412,11 @@ export default {
                 this.handleClearSelectItem();
                 console.log("fail to add blast. Error : ", error)
             });
-            this.autoData = null;
+            this.finishedBlastData = null;
             this._startWork(blastId, timeStamp);
         },
         handleAddBlastCancelButton() {
-            this.autoData = null;
+            this.finishedBlastData = null;
             this.currentMarker.remove();
             this.handleClearSelectItem();
         },
@@ -1664,8 +1695,9 @@ export default {
                 console.log("Failed to remove work")
             });
         },
-        handleFinishClicked(value) {
-            this.finishClicked = true;
+        handleFinishClicked(tunnel_id, resData) {
+            this.finishedBlastData = resData;
+            this.handleAddBlast(tunnel_id, window.CONSTANTS.TUNNEL_TYPE.CAVERN)
         },
         drawWork(blast) {
             // TODO:
@@ -2126,16 +2158,7 @@ export default {
                         let tunnelInfo = this.$store.getters.getTunnel(item.tunnel_id),
                             blastList = tunnelInfo.blast_list,
                             blastIndex = blastList.findIndex(x => x.id === item.id)
-                        if (blastIndex == 0) {
-                            if (!!!this.blockingStatus) {
-                                if(!!this.finishClicked){
-                                    this.autoData = item;
-                                    this.handleAddBlast(item.tunnel_id, window.CONSTANTS.TUNNEL_TYPE.CAVERN)
-                                }
-                            }
-                        }
                     }
-                    this.finishClicked = false;
                     this.blockingStatus = false;
                 }
             });

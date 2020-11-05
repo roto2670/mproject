@@ -16,6 +16,7 @@
         <div class="tunnel-add-body-content-container">
           <div class="tunnel-add-body-content-title">Direction</div>
             <select id="direction" class="tunnel-add-body-content-message"
+                :value="getDirection"
                 @change="handleChangeDirection">
                 <option v-for="(value, key) in getDirectionList" :value="key" :key="value"
                     :selected="isDirectionSelect(key)">
@@ -72,12 +73,19 @@ export default {
         type: {
             type: Number,
             default: -1
+        },
+        basePointId: {
+            type: String
+        },
+        tunnelIdList: {
+            type: Array
         }
     },
     data() {
         return {
             category: 100,
             direction: 0,
+            changeBlock: false,
             tunnelId: '',
             tunnelName: 'C1',
             tunnelName2: 'A',
@@ -114,6 +122,7 @@ export default {
         _clearData() {
             this.category = 100;
             this.direction = 0;
+            this.changeBlock = false;
             this.tunnelId = '';
             this.tunnelName = 'C1';
             this.tunnelName2 = 'A';
@@ -124,7 +133,7 @@ export default {
             return this.type == window.CONSTANTS.TYPE.ADD_TUNNEL;
         },
         isDirectionSelect(value) {
-            return this.direction == value;
+            return this.direction == parseInt(value);
         },
         handleOkButton() {
             let data = {
@@ -159,9 +168,39 @@ export default {
             this.$emit('change-tunnel-length', this.tunnelLength, this.direction);
         },
         handleChangeDirection(e) {
-            this.direction = e.target.value;
-            this._setTunnelId();
-            this.$emit('change-tunnel-direction', this.direction, this.tunnelLength);
+            this.changeBlock = true;
+            console.log(this.tunnelIdList)
+            if (this.tunnelIdList == 0) {
+                this.direction = e.target.value;
+                this._setTunnelId();
+                this.$emit('change-tunnel-direction', this.direction, this.tunnelLength);
+            } else {
+                const otherDirection = this.$store.getters.getTunnel(this.tunnelIdList[0]).direction;
+                let changeTmp = e.target.value;
+                if (otherDirection == window.CONSTANTS.DIRECTION.EAST ||
+                    otherDirection == window.CONSTANTS.DIRECTION.EAST_SIDE_EAST ||
+                    otherDirection == window.CONSTANTS.DIRECTION.WEST_SIDE_EAST) {
+                    if (changeTmp == window.CONSTANTS.DIRECTION.EAST ||
+                        changeTmp == window.CONSTANTS.DIRECTION.EAST_SIDE_EAST ||
+                        changeTmp == window.CONSTANTS.DIRECTION.WEST_SIDE_EAST) {
+                        this.sweetbox.fire("Another tunnel already exists in the direction you want to change. Tunnel cannot be created in the selected direction.");
+                    } else {
+                        this.direction = e.target.value;
+                        this._setTunnelId();
+                        this.$emit('change-tunnel-direction', this.direction, this.tunnelLength);
+                    }
+                } else {
+                    if (changeTmp == window.CONSTANTS.DIRECTION.WEST ||
+                        changeTmp == window.CONSTANTS.DIRECTION.EAST_SIDE_WEST ||
+                        changeTmp == window.CONSTANTS.DIRECTION.WEST_SIDE_WEST) {
+                        this.sweetbox.fire("Another tunnel already exists in the direction you want to change. Tunnel cannot be created in the selected direction.");
+                    } else {
+                        this.direction = e.target.value;
+                        this._setTunnelId();
+                        this.$emit('change-tunnel-direction', this.direction, this.tunnelLength);
+                    }
+                }
+            }
         },
         handleChangeCategory(e) {
             this.category = e.target.value;
@@ -194,6 +233,40 @@ export default {
         },
     },
     computed: {
+        getDirection() {
+            if (!!!this.changeBlock){
+                console.log("no block : ", this.category)
+                if (this.tunnelIdList.length == 1) {
+                    const otherTunnel = this.$store.getters.getTunnel(this.tunnelIdList[0]);
+                    if (this.category == 100) {
+                        if (otherTunnel.direction == window.CONSTANTS.DIRECTION.EAST ||
+                            otherTunnel.direction == window.CONSTANTS.DIRECTION.EAST_SIDE_EAST ||
+                            otherTunnel.direction == window.CONSTANTS.DIRECTION.WEST_SIDE_EAST) {
+                            this.direction = 1;
+                        } else {
+                            this.direction = 0;
+                        }
+                    } else if (this.category == 101) {
+                        if (otherTunnel.direction == window.CONSTANTS.DIRECTION.EAST ||
+                            otherTunnel.direction == window.CONSTANTS.DIRECTION.EAST_SIDE_EAST ||
+                            otherTunnel.direction == window.CONSTANTS.DIRECTION.WEST_SIDE_EAST) {
+                            this.direction = 3;
+                        } else {
+                            this.direction = 2;
+                        }
+                    } else if (this.category == 102) {
+                        if (otherTunnel.direction == window.CONSTANTS.DIRECTION.EAST ||
+                            otherTunnel.direction == window.CONSTANTS.DIRECTION.EAST_SIDE_EAST ||
+                            otherTunnel.direction == window.CONSTANTS.DIRECTION.WEST_SIDE_EAST) {
+                            this.direction = 5;
+                        } else {
+                            this.direction = 4;
+                        }
+                    }
+                }
+            }
+            return this.direction;
+        },
         getDirectionList() {
             if (this.category == 100) {
                 return this.thList;

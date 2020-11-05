@@ -287,7 +287,7 @@ export default {
             }
         },
         handleEditButton() {
-            if (!this.isStart) {
+            if (!this.isStart && this.isFinish) {
                 this.isEdit = true;
             }
         },
@@ -308,7 +308,7 @@ export default {
              }
         },
         _startTimeCheck(blast) {
-            if (!!this.startTimestamp)  {
+            if (this.startTimestamp < this.finishTimestamp){
                 const work_list = blast.work_list,
                       index = work_list.findIndex(x => x.id === this.id);
                 if (work_list.length == 1) {
@@ -347,20 +347,61 @@ export default {
                     }
                 }
             } else {
-                this.startTimeCheckState = true;
+                this.sweetbox.fire("The start time cannot be later than the finish time. Please check the start time and finish time again.");
             }
         },
         _finishTimeCheck(blast) {
-            if (!!this.finishTimestamp) {
-                const work_list = blast.work_list,
-                      tunnelInfo = this.tunnelInfo,
-                      blast_list = tunnelInfo.blast_list,
-                      blastIndex = blast_list.findIndex(x => x.id === this.blastId),
-                      workIndex = work_list.findIndex(x => x.id === this.id)
-                if (blast_list.length == 1) {
+            const work_list = blast.work_list,
+                  tunnelInfo = this.tunnelInfo,
+                  blast_list = tunnelInfo.blast_list,
+                  blastIndex = blast_list.findIndex(x => x.id === this.blastId),
+                  workIndex = work_list.findIndex(x => x.id === this.id)
+            if (blast_list.length == 1) {
+                if (workIndex == 0) {
+                    this.workInfo.finish_time = this.finishTimestamp;
+                    this.finishTimeCheckState = true;
+                } else if (workIndex > 0) {
+                    let nextWorkStartTime = null;
+                    if (work_list[workIndex - 1].work_history_list.length == 1) {
+                        nextWorkStartTime = new Date(work_list[workIndex - 1].work_history_list[0].timestamp).getTime() / 1000;
+                    } else if (work_list[workIndex - 1].work_history_list.length == 2) {
+                        nextWorkStartTime = new Date(work_list[workIndex - 1].work_history_list[1].timestamp).getTime() / 1000;
+                    }
+                    if (nextWorkStartTime > this.finishTimestamp) {
+                        this.sweetbox.fire("The finish time you are trying to change cannot be greater than the start time for the next work. Please change the time again.");
+                    } else {
+                        this.workInfo.finish_time = this.finishTimestamp;
+                        this.finishTimeCheckState = true;
+                    }
+                }
+            } else {
+                if (blastIndex == 0) {
                     if (workIndex == 0) {
                         this.workInfo.finish_time = this.finishTimestamp;
                         this.finishTimeCheckState = true;
+                    } else if (workIndex > 0) {
+                        let nextWorkStartTime = null;
+                        if (work_list[workIndex - 1].work_history_list.length == 1) {
+                            nextWorkStartTime = new Date(work_list[workIndex - 1].work_history_list[0].timestamp).getTime() / 1000;
+                        } else if (work_list[workIndex - 1].work_history_list.length == 2) {
+                            nextWorkStartTime = new Date(work_list[workIndex - 1].work_history_list[1].timestamp).getTime() / 1000;
+                        }
+                        if (nextWorkStartTime < this.finishTimestamp) {
+                            this.sweetbox.fire("The finish time you are trying to change cannot be greater than the start time for the next work. Please change the time again.");
+                        } else {
+                            this.workInfo.finish_time = this.finishTimestamp;
+                            this.finishTimeCheckState = true;
+                        }
+                    }
+                } else if (blastIndex > 0) {
+                    if (workIndex == 0) {
+                        let nextBlastingTime = new Date(blast_list[blastIndex - 1].blast_info.blasting_time).getTime() / 1000;
+                        if (nextBlastingTime < this.finishTimestamp) {
+                            this.sweetbox.fire("The work finish time you are trying to change cannot be greater than the following blast time. Please check the time again.");
+                        } else {
+                            this.workInfo.finish_time = this.finishTimestamp;
+                            this.finishTimeCheckState = true;
+                        }
                     } else if (workIndex > 0) {
                         let nextWorkStartTime = null;
                         if (work_list[workIndex - 1].work_history_list.length == 1) {
@@ -375,53 +416,9 @@ export default {
                             this.finishTimeCheckState = true;
                         }
                     }
-                } else {
-                    if (blastIndex == 0) {
-                        if (workIndex == 0) {
-                            this.workInfo.finish_time = this.finishTimestamp;
-                            this.finishTimeCheckState = true;
-                        } else if (workIndex > 0) {
-                            let nextWorkStartTime = null;
-                            if (work_list[workIndex - 1].work_history_list.length == 1) {
-                                nextWorkStartTime = new Date(work_list[workIndex - 1].work_history_list[0].timestamp).getTime() / 1000;
-                            } else if (work_list[workIndex - 1].work_history_list.length == 2) {
-                                nextWorkStartTime = new Date(work_list[workIndex - 1].work_history_list[1].timestamp).getTime() / 1000;
-                            }
-                            if (nextWorkStartTime < this.finishTimestamp) {
-                                this.sweetbox.fire("The finish time you are trying to change cannot be greater than the start time for the next work. Please change the time again.");
-                            } else {
-                                this.workInfo.finish_time = this.finishTimestamp;
-                                this.finishTimeCheckState = true;
-                            }
-                        }
-                    } else if (blastIndex > 0) {
-                        if (workIndex == 0) {
-                            let nextBlastingTime = new Date(blast_list[blastIndex - 1].blast_info.blasting_time).getTime() / 1000;
-                            if (nextBlastingTime < this.finishTimestamp) {
-                                this.sweetbox.fire("The work finish time you are trying to change cannot be greater than the following blast time. Please check the time again.");
-                            } else {
-                                this.workInfo.finish_time = this.finishTimestamp;
-                                this.finishTimeCheckState = true;
-                            }
-                        } else if (workIndex > 0) {
-                            let nextWorkStartTime = null;
-                            if (work_list[workIndex - 1].work_history_list.length == 1) {
-                                nextWorkStartTime = new Date(work_list[workIndex - 1].work_history_list[0].timestamp).getTime() / 1000;
-                            } else if (work_list[workIndex - 1].work_history_list.length == 2) {
-                                nextWorkStartTime = new Date(work_list[workIndex - 1].work_history_list[1].timestamp).getTime() / 1000;
-                            }
-                            if (nextWorkStartTime > this.finishTimestamp) {
-                                this.sweetbox.fire("The finish time you are trying to change cannot be greater than the start time for the next work. Please change the time again.");
-                            } else {
-                                this.workInfo.finish_time = this.finishTimestamp;
-                                this.finishTimeCheckState = true;
-                            }
-                        }
-                    }
                 }
-            } else {
-                this.finishTimeCheckState = true;
             }
+
         },
         handleOkButton() {
             let blast = this.blastInfo,
@@ -576,15 +573,19 @@ export default {
                 console.log("fail to stop work : ", error);
             });
         },
-        pushData() {
-            this.$emit('finish-clicked', true);
+        finishClickToAddBlast(tunnel_id, resData) {
+            this.$emit('finish-clicked', tunnel_id, resData);
         },
         handleFinishWork() {
             if (!this.isFinish) {
                 let workInfo = this.workInfo,
                     finishWork = this.services.finishWork,
-                    pushData = this.pushData,
-                    tunnel_id = this.tunnelInfo.id;
+                    finishClickToAddBlast = this.finishClickToAddBlast,
+                    tunnel_id = this.tunnelInfo.id,
+                    tunnelInfo = this.tunnelInfo,
+                    blastList = tunnelInfo.blast_list,
+                    blastIndex = blastList.findIndex(x => x.id === this.blastId),
+                    res_data = null;
                 this.sweetbox.fire({
                     title: 'Are you sure you want to finish?',
                     text: "The finish button was clicked. If you want to finish, click Yes or NO.",
@@ -605,9 +606,11 @@ export default {
                             data.category = workInfo.category;
                             data.typ = workInfo.typ;
                             data.blast_id = workInfo.blast_id;
-                            pushData();
                             finishWork(data, (resData) => {
                                 console.log("success to finish work");
+                                if (blastIndex == 0 && data.typ == 114) {  //the code 114 is blasting activity
+                                    finishClickToAddBlast(tunnel_id, resData);
+                                }
                             }, (error) => {
                                 console.log("fail to finish work : ", error);
                             });
@@ -621,6 +624,9 @@ export default {
                             data.blast_id = workInfo.blast_id;
                             finishWork(data, (resData) => {
                                 console.log("success to finish work");
+                                if (blastIndex == 0 && data.typ == 114) {  //the code 114 is blasting activity
+                                    finishClickToAddBlast(tunnel_id, resData);
+                                }
                             }, (error) => {
                                 console.log("fail to finish work : ", error);
                             });
