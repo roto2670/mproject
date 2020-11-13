@@ -1702,77 +1702,14 @@ export default {
         drawWork(blast) {
             // TODO:
             if (blast.state === window.CONSTANTS.BLAST_STATE.IN_PROGRESS) {
-                let tmp = this.workIdWithBlast[blast.id][0],  // 0 is Main Work
-                    tmp1 = this.workIdWithBlast[blast.id][1],  // 1 is Supporting
-                    tmp2 = this.workIdWithBlast[blast.id][2],  // 2 is Idle
-                    latestWork = null,
-                    latestSupporting = null,
-                    latestIdle = null,
-                    latestTmpData = null,
-                    currentCategory = null,
+                let currentCategory = null,
                     currentTyp = null,
                     currentWorkId = null;
 
-                if (tmp.length > 0) {
-                    latestWork = this.$store.getters.getWork(tmp[0]);
-                    if (latestWork.state == window.CONSTANTS.WORK_STATE.IN_PROGRESS ||
-                        latestWork.state == window.CONSTANTS.WORK_STATE.STOP) {
-                        latestTmpData = latestWork;
-                        currentCategory = latestWork.category;
-                        currentTyp = latestWork.typ;
-                        currentWorkId = latestWork.id;
-                    } else {
-                        latestTmpData = latestWork;
-                        currentCategory = latestWork.category;
-                        currentTyp = latestWork.typ;
-                        currentWorkId = latestWork.id;
-                    }
-                }
-                if (tmp1.length > 0) {
-                    latestSupporting = this.$store.getters.getWork(tmp1[0]);
-                    if (latestSupporting.state == window.CONSTANTS.WORK_STATE.IN_PROGRESS ||
-                        latestSupporting.state == window.CONSTANTS.WORK_STATE.STOP) {
-                        currentCategory = latestSupporting.category;
-                        currentTyp = latestSupporting.typ;
-                        currentWorkId = latestSupporting.id;
-                    } else {
-                        if (latestTmpData != null) {
-                            if (latestTmpData.last_updated_time < latestSupporting.last_updated_time) {
-                                latestTmpData = latestSupporting;
-                                currentCategory = latestSupporting.category;
-                                currentTyp = latestSupporting.typ;
-                                currentWorkId = latestSupporting.id;
-                            }
-                        } else {
-                            latestTmpData = latestSupporting;
-                            currentCategory = latestSupporting.category;
-                            currentTyp = latestSupporting.typ;
-                            currentWorkId = latestSupporting.id;
-                        }
-                    }
-                }
-                if (tmp2.length > 0) {
-                    latestIdle = this.$store.getters.getWork(tmp2[0]);
-                    if (latestIdle.state == window.CONSTANTS.WORK_STATE.IN_PROGRESS ||
-                        latestIdle.state == window.CONSTANTS.WORK_STATE.STOP) {
-                        currentCategory = latestIdle.category;
-                        currentTyp = latestIdle.typ;
-                        currentWorkId = latestIdle.id;
-                    } else {
-                        if (latestTmpData != null) {
-                            if (latestTmpData.last_updated_time < latestIdle.last_updated_time) {
-                                latestTmpData = latestIdle;
-                                currentCategory = latestIdle.category;
-                                currentTyp = latestIdle.typ;
-                                currentWorkId = latestIdle.id;
-                            }
-                        } else {
-                            latestTmpData = latestIdle;
-                            currentCategory = latestIdle.category;
-                            currentTyp = latestIdle.typ;
-                            currentWorkId = latestIdle.id;
-                        }
-                    }
+                if (blast.work_list.length !== 0) {
+                    currentCategory = blast.work_list[0].category;
+                    currentTyp = blast.work_list[0].typ;
+                    currentWorkId = blast.work_list[0].id;
                 }
                 let fileUrl = '';
                 if (currentCategory != null && currentTyp != null) {

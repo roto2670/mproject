@@ -129,18 +129,23 @@ export default {
         },
         isMainWorkDisabled(key) {
             let check_obj = this.blastInfo.work_list.find(x => x.typ === parseInt(key));
-            if (!!check_obj) {
-                return true;
-            } else {
-                if(!!!this.tmpActivity) {
-                    this.tmpActivity = key;
+            if(this.category == 0){
+                //check duplicate activity for supporting and idle. not for main activity.
+                if (!!check_obj) {
+                    return true;
                 } else {
-                    if (this.tmpActivity > key) {
+                    if(!!!this.tmpActivity) {
                         this.tmpActivity = key;
+                    } else {
+                        if (this.tmpActivity > key) {
+                            this.tmpActivity = key;
+                        }
+                        this.activity = this.tmpActivity;
                     }
-                    this.activity = this.tmpActivity;
+                    return false;
                 }
-                return false;
+            } else {
+                return false
             }
         },
         handleChangeCategory(e) {
