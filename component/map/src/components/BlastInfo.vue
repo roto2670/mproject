@@ -234,7 +234,11 @@ export default {
             this.isBlastingDetailClose = !this.isBlastingDetailClose;
         },
         isSelectedTeam(value) {
-            return this.blastInformation.team_id == value;
+            if (!!value && this.blastInformation && !!this.blastInformation.team_id) {
+                return this.blastInformation.team_id == value.id;
+            } else {
+                return false;
+            }
         },
     },
     computed: {

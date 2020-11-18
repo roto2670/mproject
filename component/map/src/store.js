@@ -30,7 +30,9 @@ export default new Vuex.Store({
         operator: {},
         equipment: {},
         message: {},
-        team: {}
+        team: {},
+        charging: {},
+        blasting: {},
 	},
 	getters: {
 		getHubs: (state) => {
@@ -184,7 +186,13 @@ export default new Vuex.Store({
         },
         getTeamList: (state) => () => {
 			return _.values(state.team);
-        }
+        },
+        getCharging: (state) => (work_id) => {
+            return state.charging[work_id];
+        },
+        getBlasting: (state) => (work_id) => {
+            return state.blasting[work_id];
+        },
 	},
 	mutations: {
 		addHub(state, payload) {
@@ -641,6 +649,54 @@ export default new Vuex.Store({
         updateTeam(state, payload) {
             if (_.has(state.team, payload.id)) {
                 state.team[payload.id] = payload;
+            }
+        },
+        addCharging(state, payload) {
+            state.charging[payload.work_id] = payload;
+        },
+        addChargingList(state, payload) {
+            _.forEach(payload, charging => {
+                state.charging[charging.work_id] = charging;
+            });
+        },
+        removeCharging(state, work_id) {
+            if (_.has(state.charging, work_id)) {
+                delete state.charging[work_id];
+            }
+        },
+        removeChargingList(state) {
+            _.forEach(state.charging, (charging, work_id) => {
+                delete state.charging[work_id];
+            })
+            state.message = {};
+        },
+        updateCharging(state, payload) {
+            if (_.has(state.charging, payload.work_id)) {
+                state.charging[payload.work_id] = payload;
+            }
+        },
+        addBlasting(state, payload) {
+            state.blasting[payload.work_id] = payload;
+        },
+        addBlastingList(state, payload) {
+            _.forEach(payload, blasting => {
+                state.blasting[blasting.work_id] = blasting;
+            });
+        },
+        removeBlasting(state, work_id) {
+            if (_.has(state.blasting, work_id)) {
+                delete state.blasting[work_id];
+            }
+        },
+        removeBlastingList(state) {
+            _.forEach(state.blasting, (blasting, work_id) => {
+                delete state.blasting[work_id];
+            })
+            state.message = {};
+        },
+        updateBlasting(state, payload) {
+            if (_.has(state.blasting, payload.work_id)) {
+                state.blasting[payload.work_id] = payload;
             }
         },
 	},

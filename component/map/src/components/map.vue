@@ -260,6 +260,8 @@
                         this._getMessageList();
                         this._getTeamList();
                         this._getEquipmentInfoList();
+                        this._getChargingList();
+                        this._getBlastingList();
                         this._getBasePointList();
                         this.blastLayer = new maptalks.VectorLayer('vector40').addTo(this.map);
                         this.blastLayer.setZIndex(2);
@@ -3430,6 +3432,12 @@
                     updateTeamList: (data) => {
                         this._handleUpdateTeamList(data);
                     },
+                    updateChargingList: (data) => {
+                        this._handleUpdateChargingList(data);
+                    },
+                    updateBlastingList: (data) => {
+                        this._handleUpdateBlastingList(data);
+                    },
                 });
             },
             _handleUpdateBasePointList(data) {
@@ -3659,6 +3667,30 @@
                     }
                 });
             },
+            _handleUpdateChargingList(data){
+                const list = data.v;
+                this._.forEach(list, item => {
+                    if (data.kind === 'add') {
+                        this.$store.commit('addCharging', item);
+                    } else if (data.kind === 'remove') {
+                        this.$store.commit('removeCharging', item);
+                    } else if (data.kind === 'update') {
+                        this.$store.commit('updateCharging', item);
+                    }
+                });
+            },
+            _handleUpdateBlastingList(data){
+                const list = data.v;
+                this._.forEach(list, item => {
+                    if (data.kind === 'add') {
+                        this.$store.commit('addBlasting', item);
+                    } else if (data.kind === 'remove') {
+                        this.$store.commit('removeBlasting', item);
+                    } else if (data.kind === 'update') {
+                        this.$store.commit('updateBlasting', item);
+                    }
+                });
+            },
             _drawBasePoint(basePoint){
                 const xPosition = basePoint.x_loc,
                       yPosition = basePoint.y_loc,
@@ -3716,8 +3748,22 @@
             },
             _getActivityList() {
                 this.services.getActivityList(activityList => {
-                    // TODO:
-                    console.log("Success to get activity list.", activityList);
+                    this._.forEach(activityList, activity => {
+                        window.CONSTANTS.WORK_NAME[parseInt(activity.activity_id)] = activity.name;
+                        if (activity.category == 0) {
+                            if (!!activity.file_path) {
+                                window.CONSTANTS.URL.MAIN[parseInt(activity.activity_id)] = activity.file_path;
+                            }
+                        } else if (activity.category == 1) {
+                            if (!!activity.file_path) {
+                                window.CONSTANTS.URL.SUPPORTING[parseInt(activity.activity_id)] = activity.file_path;
+                            }
+                        } else if (activity.category == 2) {
+                            if (!!activity.file_path) {
+                                window.CONSTANTS.URL.IDLE[parseInt(activity.activity_id)] = activity.file_path;
+                            }
+                        }
+                    });
                 }, (error) => {
                     console.log("Failed to get activity list.", error);
                 });
@@ -3758,6 +3804,20 @@
                     console.log("Success to get equipment info list.", equipmentInfoList);
                 }, (error) => {
                     console.log("Failed to get equipment info list.", error);
+                });
+            },
+            _getChargingList() {
+                this.services.getChargingList(chargingList => {
+                    this.$store.commit('addChargingList', chargingList);
+                }, (error) => {
+                    console.log("Failed to get chargingList list.", error);
+                });
+            },
+            _getBlastingList() {
+                this.services.getBlastingList(blastingList => {
+                    this.$store.commit('addBlastingList', blastingList);
+                }, (error) => {
+                    console.log("Failed to get blasting list.", error);
                 });
             },
             _getBasePointList() {
@@ -4115,86 +4175,35 @@
             drawWork(blast) {
                 // TODO:
                 if (blast.state === window.CONSTANTS.BLAST_STATE.IN_PROGRESS) {
-                    let tmp = this.workIdWithBlast[blast.id][0],  // 0 is Main Work
-                        tmp1 = this.workIdWithBlast[blast.id][1],  // 1 is Supporting
-                        tmp2 = this.workIdWithBlast[blast.id][2],  // 2 is Idle
-                        latestWork = null,
-                        latestSupporting = null,
-                        latestIdle = null,
-                        latestTmpData = null,
-                        currentCategory = null,
+                    let currentCategory = null,
                         currentTyp = null,
                         currentWorkId = null;
 
-                    if (tmp.length > 0) {
-                        latestWork = this.$store.getters.getWork(tmp[0]);
-                        if (latestWork.state == window.CONSTANTS.WORK_STATE.IN_PROGRESS ||
-                            latestWork.state == window.CONSTANTS.WORK_STATE.STOP) {
-                            latestTmpData = latestWork;
-                            currentCategory = latestWork.category;
-                            currentTyp = latestWork.typ;
-                            currentWorkId = latestWork.id;
-                        } else {
-                            latestTmpData = latestWork;
-                            currentCategory = latestWork.category;
-                            currentTyp = latestWork.typ;
-                            currentWorkId = latestWork.id;
-                        }
-                    }
-                    if (tmp1.length > 0) {
-                        latestSupporting = this.$store.getters.getWork(tmp1[0]);
-                        if (latestSupporting.state == window.CONSTANTS.WORK_STATE.IN_PROGRESS ||
-                            latestSupporting.state == window.CONSTANTS.WORK_STATE.STOP) {
-                            currentCategory = latestSupporting.category;
-                            currentTyp = latestSupporting.typ;
-                            currentWorkId = latestSupporting.id;
-                        } else {
-                            if (latestTmpData != null) {
-                                if (latestTmpData.last_updated_time < latestSupporting.last_updated_time) {
-                                    latestTmpData = latestSupporting;
-                                    currentCategory = latestSupporting.category;
-                                    currentTyp = latestSupporting.typ;
-                                    currentWorkId = latestSupporting.id;
-                                }
-                            } else {
-                                latestTmpData = latestSupporting;
-                                currentCategory = latestSupporting.category;
-                                currentTyp = latestSupporting.typ;
-                                currentWorkId = latestSupporting.id;
-                            }
-                        }
-                    }
-                    if (tmp2.length > 0) {
-                        latestIdle = this.$store.getters.getWork(tmp2[0]);
-                        if (latestIdle.state == window.CONSTANTS.WORK_STATE.IN_PROGRESS ||
-                            latestIdle.state == window.CONSTANTS.WORK_STATE.STOP) {
-                            currentCategory = latestIdle.category;
-                            currentTyp = latestIdle.typ;
-                            currentWorkId = latestIdle.id;
-                        } else {
-                            if (latestTmpData != null) {
-                                if (latestTmpData.last_updated_time < latestIdle.last_updated_time) {
-                                    latestTmpData = latestIdle;
-                                    currentCategory = latestIdle.category;
-                                    currentTyp = latestIdle.typ;
-                                    currentWorkId = latestIdle.id;
-                                }
-                            } else {
-                                latestTmpData = latestIdle;
-                                currentCategory = latestIdle.category;
-                                currentTyp = latestIdle.typ;
-                                currentWorkId = latestIdle.id;
-                            }
-                        }
+                    if (blast.work_list.length !== 0) {
+                        currentCategory = blast.work_list[0].category;
+                        currentTyp = blast.work_list[0].typ;
+                        currentWorkId = blast.work_list[0].id;
                     }
                     let fileUrl = '';
                     if (currentCategory != null && currentTyp != null) {
                         if (currentCategory == window.CONSTANTS.CATEGORY.MAIN_WORK) {
-                            fileUrl =`${ window.CONSTANTS.URL.BASE_IMG }${ window.CONSTANTS.URL.MAIN[currentTyp] }`;
+                            if (currentTyp in window.CONSTANTS.URL.MAIN) {
+                                fileUrl =`${ window.CONSTANTS.URL.BASE_IMG }${ window.CONSTANTS.URL.MAIN[currentTyp] }`;
+                            } else {
+                                fileUrl =`${ window.CONSTANTS.URL.BASE_IMG }${ window.CONSTANTS.URL.DEFUALT_IMG.MAIN }`;
+                            }
                         } else if (currentCategory == window.CONSTANTS.CATEGORY.SUPPORTING) {
-                            fileUrl =`${ window.CONSTANTS.URL.BASE_IMG }${ window.CONSTANTS.URL.SUPPORTING[currentTyp] }`;
+                            if (currentTyp in window.CONSTANTS.URL.SUPPORTING) {
+                                fileUrl =`${ window.CONSTANTS.URL.BASE_IMG }${ window.CONSTANTS.URL.SUPPORTING[currentTyp] }`;
+                            } else {
+                                fileUrl =`${ window.CONSTANTS.URL.BASE_IMG }${ window.CONSTANTS.URL.DEFUALT_IMG.SUPPORTING }`;
+                            }
                         } else {
-                            fileUrl =`${ window.CONSTANTS.URL.BASE_IMG }${ window.CONSTANTS.URL.IDLE[currentTyp] }`;
+                            if (currentTyp in window.CONSTANTS.URL.IDLE) {
+                                fileUrl =`${ window.CONSTANTS.URL.BASE_IMG }${ window.CONSTANTS.URL.IDLE[currentTyp] }`;
+                            } else {
+                                fileUrl =`${ window.CONSTANTS.URL.BASE_IMG }${ window.CONSTANTS.URL.DEFUALT_IMG.IDLE }`;
+                            }
                         }
                     }
                     if (fileUrl !== '') {

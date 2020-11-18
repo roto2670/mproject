@@ -216,6 +216,12 @@ export class SocketClient {
                 case window.CONSTANTS.EVENT_TYPE.UPDATE_TEAM_LIST:
                     this._subscribeHandlers.updateTeamList(data);
                 break;
+                case window.CONSTANTS.EVENT_TYPE.UPDATE_CHARGING_LIST:
+                    this._subscribeHandlers.updateChargingList(data);
+                break;
+                case window.CONSTANTS.EVENT_TYPE.UPDATE_BLASTING_LIST:
+                    this._subscribeHandlers.updateBlastingList(data);
+                break;
             }
         }
     }
