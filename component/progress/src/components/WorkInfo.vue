@@ -123,6 +123,180 @@
                 </div>
 
                 <div class="work-info-pause-detail-container">
+                    <div v-if="isBlasting()" class="b-detail-title-container" @click="handleBlastingDetail">
+                        <div class="detail-title">Blasting Detail </div>
+                        <div class="button-image position" :class="{ down : isBlastingDetailClose }"></div>
+                    </div>
+                    <div v-if="isBlasting()" id="detailInfo" class="detail-container" :class="{ close: isBlastingDetailClose }">
+                        <div v-if="isBlastingDetailEdit">
+                            <!-- isEdit = true -->
+                                <div class="blast-info-body-content-container fold">
+                                    <div class="blast-info-body-content-title fold">Blasting Date</div>
+                                    <input class="blast-info-body-content-message fold" type="date"
+                                        @change="handleChangeBlastingDate"
+                                        :value="getBlastingDateEdit">
+                                </div>
+                                <div class="blast-info-body-content-container fold">
+                                    <div class="blast-info-body-content-title fold">Blasting Time</div>
+                                    <input class="blast-info-body-content-message fold" type="time"
+                                        @change="handleChangeBlastingTime"
+                                        :value="getBlastingTimeEdit">
+                                </div>
+                                <div class="blast-info-body-content-container fold">
+                                    <div class="blast-info-body-content-title fold">Start Point (m)</div>
+                                    <input class="blast-info-body-content-message fold" type="Number"
+                                        :value="getStartPointEdit" readonly>
+                                </div>
+                                <div class="blast-info-body-content-container fold">
+                                    <div class="blast-info-body-content-title fold">End Point (m)</div>
+                                    <input class="blast-info-body-content-message fold" type="number"
+                                        @change="handleChangeFinishPoint"
+                                        step="0.1" :value="getFinishPointEdit">
+                                </div>
+                                <div class="blast-info-body-content-container fold">
+                                    <div class="blast-info-body-content-title fold">Drilling Length (m)</div>
+                                    <input class="blast-info-body-content-message fold" type="text"
+                                        :value="getLengthEdit" readonly>
+                                </div>
+                            <div class="blast-info-button-container">
+                                <div class="blast-info-ok-button"
+                                    @click="handleBlastingDetailSaveButton">
+                                SAVE
+                                </div>
+                                <div class="blast-info-cancle-button"
+                                    @click="handleBlastingDetailCancelButton">
+                                CANCEL
+                                </div>
+                            </div>
+                        </div>
+                        <div v-else>
+                            <div class="blast-info-body-content-container fold">
+                                <div class="blast-info-body-content-title fold">Blasting Date</div>
+                                <input class="blast-info-body-content-message fold" type="text"
+                                    :value="getBlastingDate" readonly>
+                            </div>
+                            <div class="blast-info-body-content-container fold">
+                                <div class="blast-info-body-content-title fold">Blasting Time</div>
+                                <input class="blast-info-body-content-message fold" type="text"
+                                    :value="getBlastingTime" readonly>
+                            </div>
+                            <div class="blast-info-body-content-container fold">
+                                <div class="blast-info-body-content-title fold">Start Point</div>
+                                <input class="blast-info-body-content-message fold" type="text"
+                                    :value="getStartPoint" readonly>
+                            </div>
+                            <div class="blast-info-body-content-container fold">
+                                <div class="blast-info-body-content-title fold">End Point</div>
+                                <input class="blast-info-body-content-message fold" type="text"
+                                    :value="getFinishPoint" readonly>
+                            </div>
+                            <div class="blast-info-body-content-container fold">
+                                <div class="blast-info-body-content-title fold">Drilling Length</div>
+                                <input class="blast-info-body-content-message fold" type="text"
+                                    :value="getLength" readonly>
+                            </div>
+
+                            <div class="blast-info-button-container">
+                                <div class="blast-info-edit-button"
+                                    @click="handleEditBlastingDetailButton">
+                                EDIT
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div v-if="isCharging()" class="b-detail-title-container" @click="handleChargingDetail">
+                        <div class="detail-title">Charging Detail </div>
+                        <div class="button-image position" :class="{ down : isChargingDetailClose }"></div>
+                    </div>
+                    <div v-if="isCharging()" id="detailInfo" class="detail-container" :class="{ close: isChargingDetailClose }">
+                        <div v-if="isChargingDetailEdit">
+                            <!-- isEdit = true -->
+
+                            <div class="blast-info-body-content-container fold">
+                                <div class="blast-info-body-content-title fold">Explosive Bulk (kg)</div>
+                                <input class="blast-info-body-content-message fold" type="number"
+                                    @change="handleChangeExplosiveBulk"
+                                    :value="getExplosiveBulkEdit">
+                            </div>
+                            <div class="blast-info-body-content-container fold">
+                                <div class="blast-info-body-content-title fold">Explosive Cartridge (kg)</div>
+                                <input class="blast-info-body-content-message fold" type="number"
+                                    @change="handleChangeExplosiveCartridge"
+                                    :value="getExplosiveCartridgeEdit">
+                            </div>
+                            <div class="blast-info-body-content-container fold">
+                                <div class="blast-info-body-content-title fold">Detonator (kg)</div>
+                                <input class="blast-info-body-content-message fold" type="Number"
+                                    @change="handleChangeDetonator"
+                                    :value="getDetonatorEdit">
+                            </div>
+                            <div class="blast-info-body-content-container fold">
+                                <div class="blast-info-body-content-title fold">Drilling Depth (m)</div>
+                                <input class="blast-info-body-content-message fold" type="Number"
+                                    @change="handleChangeDrillingDepth"
+                                    step="0.1" :value="getDrillingDepthEdit">
+                            </div>
+                            <div class="blast-info-body-content-container fold">
+                                <div class="blast-info-body-content-title fold">Charging Team</div>
+                                <select class="blast-info-body-content-message fold"
+                                    @change="handleChangeTeamId">
+                                    <option disabled :selected="isSelectedTeam(null)">Select Team</option>
+                                    <option v-for="value in getTeamEdit" :value="value.id" :key="value.id"
+                                        :selected="isSelectedTeam(value)">
+                                        {{ value.name }}
+                                    </option>
+                                </select>
+                                <input class="blast-info-body-content-message fold sub" type="number"
+                                    @change="handleChangeTeamNos"
+                                    :value="getTeamNosEdit">
+                            </div>
+                            <div class="blast-info-button-container">
+                                <div class="blast-info-ok-button"
+                                    @click="handleChargingDetailSaveButton">
+                                SAVE
+                                </div>
+                                <div class="blast-info-cancle-button"
+                                    @click="handleChargingDetailCancelButton">
+                                CANCEL
+                                </div>
+                            </div>
+                        </div>
+                        <div v-else>
+                            <div class="blast-info-body-content-container fold">
+                                <div class="blast-info-body-content-title fold">Explosive Bulk</div>
+                                <input class="blast-info-body-content-message fold" type="text"
+                                    :value="getExplosiveBulk" readonly>
+                            </div>
+                            <div class="blast-info-body-content-container fold">
+                                <div class="blast-info-body-content-title fold">Explosive Cartridge</div>
+                                <input class="blast-info-body-content-message fold" type="text"
+                                    :value="getExplosiveCartridge" readonly>
+                            </div>
+                            <div class="blast-info-body-content-container fold">
+                                <div class="blast-info-body-content-title fold">Detonator</div>
+                                <input class="blast-info-body-content-message fold" type="text"
+                                    :value="getDetonator" readonly>
+                            </div>
+                            <div class="blast-info-body-content-container fold">
+                                <div class="blast-info-body-content-title fold">Drilling Depth</div>
+                                <input class="blast-info-body-content-message fold" type="text"
+                                    :value="getDrillingDepth" readonly>
+                            </div>
+                            <div class="blast-info-body-content-container fold">
+                                <div class="blast-info-body-content-title fold">Charging Team</div>
+                                <input class="blast-info-body-content-message fold" type="text"
+                                    :value="getTeam" readonly>
+                                <input class="blast-info-body-content-message fold sub" type="text"
+                                    :value="getTeamNos" readonly>
+                            </div>
+                            <div class="blast-info-button-container">
+                                <div class="blast-info-edit-button"
+                                    @click="handleEditChargingDetailButton">
+                                EDIT
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                     <div class="detail-title-container" @click="handlePauseDetail">
                         <div class="detail-title">Pause Time Detail </div>
                         <div class="button-image position" :class="{ down : isPauseClose }"></div>
@@ -217,6 +391,8 @@ export default {
     data() {
         return {
             isEdit: false,
+            isChargingDetailEdit: false,
+            isBlastingDetailEdit: false,
             isStart : false,
             isFinish : false,
             startTime: null,
@@ -229,19 +405,37 @@ export default {
             workInfo: null,
             blastInfo: null,
             tunnelInfo: null,
+            chargingInfo: null,
+            blastingInfo: null,
             startTimeCheckState: false,
             finishTimeCheckState: false,
             isPauseClose: true,
             isEquipClose: true,
             isOpenAddWorkEquipment: false,
             isOpenAddPause: false,
+            isChargingDetailClose: true,
+            isBlastingDetailClose: true,
             isView: false,
+            explosive_bulk: 0,
+            explosive_cartridge: 0,
+            detonator: 0,
+            drilling_depth: 0,
+            team_id: 0,
+            team_nos: 0,
+            blastDate: "",
+            blastTime: "",
+            start_point: 0,
+            finish_point: 0,
+            blastingLength: 0,
+            total_blasting_time: null,
             refState: false
         }
     },
     methods: {
         _clearData() {
             this.isEdit = false;
+            this.isChargingDetailEdit = false;
+            this.isBlastingDetailEdit = false;
             this.isStart = false;
             this.isFinish = false;
             this.startTime = null;
@@ -256,24 +450,63 @@ export default {
             this.workInfo = null;
             this.blastInfo = null
             this.tunnelInfo = null;
+            this.chargingInfo = null;
+            this.blastingInfo = null;
             this.isPauseClose = true;
             this.isEquipClose = true;
             this.isOpenAddWorkEquipment = false;
             this.isOpenAddPause = false;
             this.isView = false;
             this.refState = false;
+            this.isChargingDetailClose = true;
+            this.isBlastingDetailClose = true;
+            this.explosive_bulk = 0;
+            this.explosive_cartridge = 0;
+            this.detonator = 0;
+            this.drilling_depth = 0;
+            this.team_id = 0;
+            this.team_nos= 0;
+            this.blastDate = "";
+            this.blastTime = "";
+            this.start_point = 0;
+            this.finish_point = 0;
+            this.blastingLength = 0;
+            this.total_blasting_time = 0;
         },
         isType() {
             if (this.type == window.CONSTANTS.TYPE.SELECT_WORK) {
                 this.workInfo = this.$store.getters.getWork(this.id);
                 this.blastInfo = this.$store.getters.getBlast(this.workInfo.blast_id);
                 this.tunnelInfo = this.$store.getters.getTunnel(this.blastInfo.tunnel_id);
+                if (this.workInfo.typ == window.CONSTANTS.ACTIVITY.CHARGING) {
+                    this.chargingInfo = this.$store.getters.getCharging(this.workInfo.id);
+                }
+                if (this.workInfo.typ == window.CONSTANTS.ACTIVITY.BLASTING) {
+                    this.blastingInfo = this.$store.getters.getBlasting(this.workInfo.id);
+                }
                 this.setState();
                 return true;
             } else {
                 return false;
             }
         },
+        isCharging() {
+            if (this.workInfo.typ == window.CONSTANTS.ACTIVITY.CHARGING) {
+                return true;
+            }
+        },
+        isBlasting() {
+            if (this.workInfo.typ == window.CONSTANTS.ACTIVITY.BLASTING) {
+                return true;
+            }
+        },
+        handleChargingDetail() {
+            this.isChargingDetailClose = !this.isChargingDetailClose;
+        },
+        handleBlastingDetail() {
+            this.isBlastingDetailClose = !this.isBlastingDetailClose;
+        },
+
         setState() {
             if (this.workInfo.state === window.CONSTANTS.WORK_STATE.STOP) {
                 this.isStart = false;
@@ -290,6 +523,12 @@ export default {
             if (!this.isStart && this.isFinish) {
                 this.isEdit = true;
             }
+        },
+        handleEditChargingDetailButton() {
+            this.isChargingDetailEdit = true;
+        },
+        handleEditBlastingDetailButton() {
+            this.isBlastingDetailEdit = true;
         },
         handleRemoveWork() {
              if (!this.isStart) {
@@ -308,7 +547,7 @@ export default {
              }
         },
         _startTimeCheck(blast) {
-            if (this.startTimestamp < this.finishTimestamp){
+            if (this.startTimestamp <= this.finishTimestamp){
                 const work_list = blast.work_list,
                       index = work_list.findIndex(x => x.id === this.id);
                 if (work_list.length == 1) {
@@ -367,7 +606,7 @@ export default {
                     } else if (work_list[workIndex - 1].work_history_list.length == 2) {
                         nextWorkStartTime = new Date(work_list[workIndex - 1].work_history_list[1].timestamp).getTime() / 1000;
                     }
-                    if (nextWorkStartTime > this.finishTimestamp) {
+                    if (nextWorkStartTime < this.finishTimestamp) {
                         this.sweetbox.fire("The finish time you are trying to change cannot be greater than the start time for the next work. Please change the time again.");
                     } else {
                         this.workInfo.finish_time = this.finishTimestamp;
@@ -395,12 +634,17 @@ export default {
                     }
                 } else if (blastIndex > 0) {
                     if (workIndex == 0) {
-                        let nextBlastingTime = new Date(blast_list[blastIndex - 1].blast_info.blasting_time).getTime() / 1000;
-                        if (nextBlastingTime < this.finishTimestamp) {
-                            this.sweetbox.fire("The work finish time you are trying to change cannot be greater than the following blast time. Please check the time again.");
-                        } else {
+                        if (this.workInfo.typ == window.CONSTANTS.ACTIVITY.BLASTING && this.workInfo.state == 2){
                             this.workInfo.finish_time = this.finishTimestamp;
                             this.finishTimeCheckState = true;
+                        } else {
+                            let nextBlastingTime = new Date(blast_list[blastIndex - 1].blast_info.blasting_time).getTime() / 1000;
+                            if (nextBlastingTime < this.finishTimestamp) {
+                                this.sweetbox.fire("The work finish time you are trying to change cannot be greater than the following blast time. Please check the time again.");
+                            } else {
+                                this.workInfo.finish_time = this.finishTimestamp;
+                                this.finishTimeCheckState = true;
+                            }
                         }
                     } else if (workIndex > 0) {
                         let nextWorkStartTime = null;
@@ -409,7 +653,7 @@ export default {
                         } else if (work_list[workIndex - 1].work_history_list.length == 2) {
                             nextWorkStartTime = new Date(work_list[workIndex - 1].work_history_list[1].timestamp).getTime() / 1000;
                         }
-                        if (nextWorkStartTime > this.finishTimestamp) {
+                        if (nextWorkStartTime < this.finishTimestamp) {
                             this.sweetbox.fire("The finish time you are trying to change cannot be greater than the start time for the next work. Please change the time again.");
                         } else {
                             this.workInfo.finish_time = this.finishTimestamp;
@@ -433,6 +677,72 @@ export default {
         handleCancelButton() {
             this._clearData();
             this.isEdit = false;
+        },
+        handleChargingDetailSaveButton() {
+            let data = {};
+            data.explosive_bulk = this.explosive_bulk;
+            data.explosive_cartridge = this.explosive_cartridge;
+            data.detonator = this.detonator;
+            data.drilling_depth = this.drilling_depth;
+            data.team_id = this.team_id;
+            data.team_nos = this.team_nos;
+            data.work_id = this.id;
+            data.blast_id = this.blastId;
+            if (!!!this.chargingInfo) {
+                let _chargingInfo = {};
+                _chargingInfo.detonator = this.detonator;
+                _chargingInfo.drilling_depth = this.drilling_depth;
+                _chargingInfo.team_id = this.team_id;
+                _chargingInfo.explosive_cartridge = this.explosive_cartridge;
+                _chargingInfo.explosive_bulk = this.explosive_bulk;
+                this.$store.commit('addCharging', _chargingInfo);
+            } else {
+                this.chargingInfo.detonator = this.detonator;
+                this.chargingInfo.drilling_depth = this.drilling_depth;
+                this.chargingInfo.team_id = this.team_id;
+                this.chargingInfo.explosive_cartridge = this.explosive_cartridge;
+                this.chargingInfo.explosive_bulk = this.explosive_bulk;
+            }
+            this.$emit('select-charging-detail-ok-button', data);
+            this._clearData();
+            this.isChargingDetailClose = false;
+        },
+        handleChargingDetailCancelButton() {
+            this._clearData();
+            this.isChargingDetailEdit = false;
+            this.isChargingDetailClose = false;
+        },
+        handleBlastingDetailSaveButton() {
+            let data = {};
+            data.blasting_time = this.total_blasting_time;
+            data.start_point = this.start_point;
+            data.finish_point = this.finish_point;
+            data.blasting_length = this.blastingLength;
+            data.work_id = this.id;
+            data.blast_id = this.blastId;
+            if (!!!this.blastingInfo) {
+                let _blastingInfo = {};
+                _blastingInfo.blasting_time = this.total_blasting_time;
+                _blastingInfo.start_point = this.start_point;
+                _blastingInfo.finish_point = this.finish_point;
+                _blastingInfo.blasting_length = this.blasting_length;
+                _blastingInfo.work_id = this.id;
+                _blastingInfo.blast_id = this.blastId;
+                this.$store.commit('addBlasting', _blastingInfo);
+            } else {
+                this.blastingInfo.blasting_time = this.total_blasting_time;
+                this.blastingInfo.start_point = this.start_point;
+                this.blastingInfo.finish_point = this.finish_point;
+                this.blastingInfo.blasting_length = this.blasting_length;
+            }
+            this.$emit('select-blasting-detail-ok-button', data);
+            this._clearData();
+            this.isBlastingDetailClose = false;
+        },
+        handleBlastingDetailCancelButton() {
+            this._clearData();
+            this.isBlastingDetailEdit = false;
+            this.isBlastingDetailClose = false;
         },
         handleCloseButton() {
             let blast = this.$store.getters.getBlast(this.blastId);
@@ -486,6 +796,17 @@ export default {
             this.finishTime = finishTime.toTimeString().substring(0,8);
             finishDate = finishTime.getFullYear().toString() + "-" + ("0" + (finishTime.getMonth() + 1)).slice(-2).toString() + "-" + ("0" + finishTime.getDate()).slice(-2).toString();
             this.finishDate = finishDate;
+        },
+        handleChangeBlastingDate(e) {
+            this.blastDate = e.target.value;
+            this.total_blasting_time = this.blastDate + " " + this.blastTime;
+        },
+        handleChangeBlastingTime(e) {
+            this.blastTime = e.target.value;
+            this.total_blasting_time = this.blastDate + " " + this.blastTime;
+        },
+        handleChangeFinishPoint(e) {
+            this.finish_point = parseFloat(e.target.value);
         },
         handleStartWork() {
             if (!this.isStart && !this.isFinish) {
@@ -608,7 +929,7 @@ export default {
                             data.blast_id = workInfo.blast_id;
                             finishWork(data, (resData) => {
                                 console.log("success to finish work");
-                                if (blastIndex == 0 && data.typ == 114) {  //the code 114 is blasting activity
+                                if (blastIndex == 0 && data.typ == window.CONSTANTS.ACTIVITY.BLASTING) {  //the code window.CONSTANTS.ACTIVITY.BLASTING is blasting activity
                                     finishClickToAddBlast(tunnel_id, resData);
                                 }
                             }, (error) => {
@@ -624,7 +945,7 @@ export default {
                             data.blast_id = workInfo.blast_id;
                             finishWork(data, (resData) => {
                                 console.log("success to finish work");
-                                if (blastIndex == 0 && data.typ == 114) {  //the code 114 is blasting activity
+                                if (blastIndex == 0 && data.typ == window.CONSTANTS.ACTIVITY.BLASTING) {  //the code window.CONSTANTS.ACTIVITY.BLASTING is blasting activity
                                     finishClickToAddBlast(tunnel_id, resData);
                                 }
                             }, (error) => {
@@ -684,6 +1005,41 @@ export default {
         },
         handleAddPauseCancelButton() {
             this.isOpenAddPause = false;
+        },
+        isSelectedTeam(value) {
+            if (!!value && !!this.chargingInfo && !!this.chargingInfo.teacher) {
+                return this.chargingInfo.team_id == value.id;
+            } else {
+                return false;
+            }
+        },
+        handleChangeExplosiveBulk(e) {
+            this.explosive_bulk = e.target.value;
+        },
+        handleChangeExplosiveCartridge(e) {
+            this.explosive_cartridge = e.target.value;
+        },
+        handleChangeDetonator(e) {
+            this.detonator = e.target.value;
+        },
+        handleChangeDrillingDepth(e) {
+            this.drilling_depth = parseInt(e.target.value);
+        },
+        handleChangeTeamId(e) {
+            this.team_id = e.target.value;
+        },
+        handleChangeTeamNos(e) {
+            this.team_nos = e.target.value;
+        },
+        timestampToStr(timestamp){
+            let date = new Date(timestamp * 1000),
+                year = date.getFullYear(),
+                month = date.getMonth() + 1,
+                day = date.getDate(),
+                hours = date.getHours(),
+                minutes = date.getMinutes(),
+                seconds = date.getSeconds();
+            return year + "-" + month + "-" + day + " " + hours + ":" + minutes;
         }
     },
     computed: {
@@ -710,8 +1066,8 @@ export default {
                         finishTime = this.workInfo.work_history_list[0].timestamp;
                     }
                 }
-                this.finishTime = finishTime.substring(11,19);
-                return finishTime.substring(11,19);
+                this.finishTime = finishTime.substring(11,16);
+                return finishTime.substring(11,16);
             } else {
                 return this.finishTime;
             }
@@ -732,14 +1088,16 @@ export default {
         },
         getFinishTimeStr() {
             let finishTime = '';
-            if (this.workInfo.state == window.CONSTANTS.WORK_STATE.FINISH) {
-                if (this.workInfo.work_history_list.length > 0) {
-                    finishTime = this.workInfo.work_history_list[0].timestamp.substring(0, 16);
-                    this.finishTimestamp = new Date(finishTime).getTime()/1000
-                    finishTime = finishTime.replace("T", ". ");
-                    finishTime = finishTime.replace("-", ". ");
-                    finishTime = finishTime.replace("-", ". ");
+            if (!!this.workInfo.end_time) {
+                if(typeof(this.workInfo.end_time) == 'number') {
+                    finishTime = this.timestampToStr(this.workInfo.end_time).substring(0, 16);
+                } else {
+                    finishTime = this.workInfo.end_time.substring(0, 16);
                 }
+                this.finishTimestamp = new Date(finishTime).getTime()/1000;
+                finishTime = finishTime.replace("T", ". ");
+                finishTime = finishTime.replace("-", ". ");
+                finishTime = finishTime.replace("-", ". ");
             }
             return finishTime;
         },
@@ -783,17 +1141,20 @@ export default {
                         startTime = this.workInfo.work_history_list[index].timestamp;
                     }
                 }
-                this.startTime = startTime.substring(11,19)
-                return startTime.substring(11,19);
+                this.startTime = startTime.substring(11,16);
+                return startTime.substring(11,16);
             } else {
                 return this.startTime;
             }
         },
         getStartTimeStr() {
             let startTime = 'Not Started';
-            if (this.workInfo.work_history_list != undefined &&
-                this.workInfo.work_history_list.length > 0) {
-                startTime = this.workInfo.work_history_list[this.workInfo.work_history_list.length - 1].timestamp.substring(0, 16);
+            if (!!this.workInfo.start_time) {
+                if (typeof(this.workInfo.start_time) == 'number') {
+                    startTime = this.timestampToStr(this.workInfo.start_time).substring(0, 16);
+                } else {
+                    startTime = this.workInfo.start_time.substring(0, 16);
+                }
                 this.startTimestamp = new Date(startTime).getTime()/1000
                 startTime = startTime.replace("T", ". ");
                 startTime = startTime.replace("-", ". ");
@@ -804,7 +1165,7 @@ export default {
         getTotalTime() {
             let tmpTime = new Date(0);
             if (!!!this.totalDuration) {
-                this.totalDuration = this.workInfo.accum_time/60;
+                this.totalDuration = parseInt(this.workInfo.accum_time/60);
             }
             return this.totalDuration;
         },
@@ -819,7 +1180,158 @@ export default {
             let h = tStr[0] + 'H';
             let m = tStr[1] + "M";
             return day + "D" + " " + h + " " + m;
-        }
+        },
+        getExplosiveBulk() {
+            if (!!this.chargingInfo) {
+                this.explosive_bulk = this.chargingInfo.explosive_bulk;
+            }
+            return this.explosive_bulk + ' kg';
+        },
+        getExplosiveCartridge() {
+            if (!!this.chargingInfo) {
+                this.explosive_cartridge = this.chargingInfo.explosive_cartridge;
+            }
+            return this.explosive_cartridge + ' kg';
+        },
+        getDetonator() {
+            if (!!this.chargingInfo) {
+                this.detonator = this.chargingInfo.detonator;
+            }
+            return this.detonator + ' kg';
+        },
+        getDrillingDepth() {
+            if (!!this.chargingInfo) {
+                this.drilling_depth = this.chargingInfo.drilling_depth;
+            }
+            return this.drilling_depth.toFixed(1) + 'm';
+        },
+        getTeam() {
+            if (!!this.chargingInfo) {
+                this.team_id = this.chargingInfo.team_id;
+            }
+            if(!!this.team_id == 0){
+                return "Not Selected Team";
+            } else {
+                let teamId = this.team_id,
+                    teamInfo = this.$store.getters.getTeam(teamId);
+                if (teamInfo) {
+                    return teamInfo.name;
+                } else {
+                    return "Not Selected Team";
+                }
+            }
+        },
+        getTeamNos() {
+            if (!!this.chargingInfo) {
+                this.team_nos= this.chargingInfo.team_nos;
+            }
+            return this.team_nos + ' Nos';
+        },
+        getExplosiveBulkEdit() {
+            return this.explosive_bulk;
+        },
+        getExplosiveCartridgeEdit() {
+            return this.explosive_cartridge;
+        },
+        getDetonatorEdit() {
+            return this.detonator;
+        },
+        getDrillingDepthEdit() {
+            return this.drilling_depth.toFixed(1);
+        },
+        getTeamEdit() {
+            return this.$store.getters.getTeamList();
+        },
+        getTeamNosEdit() {
+            return this.team_nos;
+        },
+        getBlastingDate() {
+            if (!!this.blastingInfo){
+                if (this.blastingInfo.blasting_time != null) {
+                    this.blastDate = this.blastingInfo.blasting_time.split(' ')[0];
+                } else {
+                    this.blastDate = this.blastingInfo.blasting_time;
+                }
+                if (this.blastDate !== null && this.blastTime != null) {
+                    this.total_blasting_time = this.blastDate + " " + this.blastTime;
+                } else {
+                    this.total_blasting_time = null;
+                }
+            } else {
+                this.blastDate = "";
+            }
+            return this.blastDate;
+        },
+        getBlastingTime() {
+            if (!!this.blastingInfo){
+                if (!!this.blastingInfo) {
+                    this.blastTime = this.blastingInfo.blasting_time.split(' ')[1];
+                    this.blastTime = this.blastTime.substring(0,5);
+                } else {
+                    this.blastTime = this.blastingInfo.blasting_time;
+                }
+                if (this.blastDate !== null && this.blastTime != null) {
+                    this.total_blasting_time = this.blastDate + " " + this.blastTime;
+                } else {
+                    this.total_blasting_time = null;
+                }
+            } else {
+                this.blastTime = "";
+            }
+            return this.blastTime;
+        },
+        getStartPoint() {
+            if (!!this.blastingInfo) {
+                this.start_point = this.blastingInfo.start_point;
+            } else {
+                this.start_point = "Not entered";
+            }
+            return this.start_point;
+        },
+        getFinishPoint() {
+            if (!!this.blastingInfo) {
+                this.finish_point = this.blastingInfo.finish_point;
+            } else {
+                this.finish_point = "Not entered";
+            }
+            return this.finish_point;
+        },
+        getLength() {
+            if (this.finish_point == "Not entered") {
+                this.blastingLength = this.finish_point;
+                return this.blastingLength;
+            } else {
+                if (!!this.blastingInfo && !!this.blastingInfo.blasting_length) {
+                    this.blastingLength = this.blastingInfo.blasting_length;
+                } else {
+                    this.blastingLength = this.finish_point - this.start_point;
+                    this.blastingInfo.blasting_length = this.blasting_length;
+                }
+                return this.blastingLength.toFixed(1) + 'm';
+            }
+        },
+        getBlastingDateEdit() {
+            return this.blastDate;
+        },
+        getBlastingTimeEdit(){
+            return this.blastTime;
+        },
+        getStartPointEdit() {
+            if (this.start_point == "Not entered") {
+                this.start_point = this.blastInfo.blast_info.finish_point.toFixed(1);
+            }
+            return this.start_point;
+        },
+        getFinishPointEdit() {
+            if (this.finish_point == "Not entered") {
+                this.finish_point = parseFloat((parseFloat(this.start_point) + 5).toFixed(1));
+            }
+            return this.finish_point;
+        },
+        getLengthEdit() {
+            this.blastingLength = this.finish_point - this.start_point;
+            return this.blastingLength.toFixed(1);
+        },
     },
     created() {
     }

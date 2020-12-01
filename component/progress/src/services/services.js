@@ -252,6 +252,44 @@ export const getTunnelListByBasePoint = (data, successCallback, failCallback) =>
     });
 }
 
+export const setChargingDetail = (data, successCallback, failCallback) => {
+    axios({
+        url: `${ window.CONSTANTS.URL.CONSOLE }/work/charging/detail/set`,
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        data: data
+    }).then(response => {
+        if (response.data) {
+            successCallback(response.data);
+        } else {
+            failCallback();
+        }
+    }).catch(error => {
+        failCallback();
+    });
+}
+
+export const setBlastingDetail = (data, successCallback, failCallback) => {
+    axios({
+        url: `${ window.CONSTANTS.URL.CONSOLE }/work/blasting/detail/set`,
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        data: data
+    }).then(response => {
+        if (response.data) {
+            successCallback(response.data);
+        } else {
+            failCallback();
+        }
+    }).catch(error => {
+        failCallback();
+    });
+}
+
 export const addBlast = (data, successCallback, failCallback) => {
     axios({
         url: `${ window.CONSTANTS.URL.CONSOLE }/work/blast/add`,
@@ -784,6 +822,42 @@ export const getTeamList = (successCallback, failCallback) => {
         }
     }).then(response => {
         if(response.data) {
+            successCallback(response.data);
+        } else {
+            failCallback(error);
+        }
+    }).catch(error => {
+        failCallback(error);
+    });
+}
+
+export const getChargingList = (successCallback, failCallback) => {
+    axios({
+        url: `${ window.CONSTANTS.URL.CONSOLE }/work/charging/get/list`,
+        method: 'GET',
+        headers: {
+            'Content-Type': 'application/json'
+        }
+    }).then(response => {
+        if (response.data) {
+            successCallback(response.data);
+        } else {
+            failCallback(error);
+        }
+    }).catch(error => {
+        failCallback(error);
+    });
+}
+
+export const getBlastingList = (successCallback, failCallback) => {
+    axios({
+        url: `${ window.CONSTANTS.URL.CONSOLE }/work/blasting/get/list`,
+        method: 'GET',
+        headers: {
+            'Content-Type': 'application/json'
+        }
+    }).then(response => {
+        if (response.data) {
             successCallback(response.data);
         } else {
             failCallback(error);

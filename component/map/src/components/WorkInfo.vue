@@ -44,6 +44,74 @@
                 </div>
 
                 <div class="work-info-pause-detail-container">
+                        <div v-if="isBlasting()" class="b-detail-title-container" @click="handleBlastingDetail">
+                        <div class="detail-title">Blasting Detail </div>
+                        <div class="button-image position" :class="{ down : isBlastingDetailClose }"></div>
+                    </div>
+                    <div v-if="isBlasting()" id="detailInfo" class="detail-container" :class="{ close: isBlastingDetailClose }">
+                        <div>
+                            <div class="blast-info-body-content-container fold">
+                                <div class="blast-info-body-content-title fold">Blasting Date</div>
+                                <input class="blast-info-body-content-message fold" type="text"
+                                    :value="getBlastingDate" readonly>
+                            </div>
+                            <div class="blast-info-body-content-container fold">
+                                <div class="blast-info-body-content-title fold">Blasting Time</div>
+                                <input class="blast-info-body-content-message fold" type="text"
+                                    :value="getBlastingTime" readonly>
+                            </div>
+                            <div class="blast-info-body-content-container fold">
+                                <div class="blast-info-body-content-title fold">Start Point</div>
+                                <input class="blast-info-body-content-message fold" type="text"
+                                    :value="getStartPoint" readonly>
+                            </div>
+                            <div class="blast-info-body-content-container fold">
+                                <div class="blast-info-body-content-title fold">End Point</div>
+                                <input class="blast-info-body-content-message fold" type="text"
+                                    :value="getFinishPoint" readonly>
+                            </div>
+                            <div class="blast-info-body-content-container fold">
+                                <div class="blast-info-body-content-title fold">Drilling Length</div>
+                                <input class="blast-info-body-content-message fold" type="text"
+                                    :value="getLength" readonly>
+                            </div>
+                        </div>
+                    </div>
+                    <div v-if="isCharging()" class="b-detail-title-container" @click="handleChargingDetail">
+                        <div class="detail-title">Charging Detail </div>
+                        <div class="button-image position" :class="{ down : isChargingDetailClose }"></div>
+                    </div>
+                    <div v-if="isCharging()" id="detailInfo" class="detail-container" :class="{ close: isChargingDetailClose }">
+                        <div>
+                            <div class="blast-info-body-content-container fold">
+                                <div class="blast-info-body-content-title fold">Explosive Bulk</div>
+                                <input class="blast-info-body-content-message fold" type="text"
+                                    :value="getExplosiveBulk" readonly>
+                            </div>
+                            <div class="blast-info-body-content-container fold">
+                                <div class="blast-info-body-content-title fold">Explosive Cartridge</div>
+                                <input class="blast-info-body-content-message fold" type="text"
+                                    :value="getExplosiveCartridge" readonly>
+                            </div>
+                            <div class="blast-info-body-content-container fold">
+                                <div class="blast-info-body-content-title fold">Detonator</div>
+                                <input class="blast-info-body-content-message fold" type="text"
+                                    :value="getDetonator" readonly>
+                            </div>
+                            <div class="blast-info-body-content-container fold">
+                                <div class="blast-info-body-content-title fold">Drilling Depth</div>
+                                <input class="blast-info-body-content-message fold" type="text"
+                                    :value="getDrillingDepth" readonly>
+                            </div>
+                            <div class="blast-info-body-content-container fold">
+                                <div class="blast-info-body-content-title fold">Charging Team</div>
+                                <input class="blast-info-body-content-message fold" type="text"
+                                    :value="getTeam" readonly>
+                                <input class="blast-info-body-content-message fold sub" type="text"
+                                    :value="getTeamNos" readonly>
+                            </div>
+                        </div>
+                    </div>
                     <div class="detail-title-container" @click="handlePauseDetail">
                         <div class="detail-title">Pause Time Detail </div>
                         <div class="button-image position" :class="{ down : isPauseClose }"></div>
@@ -135,6 +203,22 @@ export default {
             tunnelInfo: null,
             isPauseClose: true,
             isEquipClose: true,
+            chargingInfo: null,
+            blastingInfo: null,
+            isChargingDetailClose: true,
+            isBlastingDetailClose: true,
+            explosive_bulk: 0,
+            explosive_cartridge: 0,
+            detonator: 0,
+            drilling_depth: 0,
+            team_id: 0,
+            team_nos: 0,
+            blastDate: "",
+            blastTime: "",
+            start_point: 0,
+            finish_point: 0,
+            blastingLength: 0,
+            total_blasting_time: null,
             isOpenAddWorkEquipment: false
         }
     },
@@ -150,17 +234,55 @@ export default {
             this.isPauseClose = true;
             this.isEquipClose = true;
             this.isOpenAddWorkEquipment = false;
+            this.chargingInfo = null;
+            this.blastingInfo = null;
+            this.isChargingDetailClose = true;
+            this.isBlastingDetailClose = true;
+            this.explosive_bulk = 0;
+            this.explosive_cartridge = 0;
+            this.detonator = 0;
+            this.drilling_depth = 0;
+            this.team_id = 0;
+            this.team_nos= 0;
+            this.blastDate = "";
+            this.blastTime = "";
+            this.start_point = 0;
+            this.finish_point = 0;
+            this.blastingLength = 0;
+            this.total_blasting_time = 0;
         },
         isType() {
             if (this.type == window.CONSTANTS.TYPE.SELECT_WORK) {
                 this.workInfo = this.$store.getters.getWork(this.id);
                 this.blastInfo = this.$store.getters.getBlast(this.workInfo.blast_id);
                 this.tunnelInfo = this.$store.getters.getTunnel(this.blastInfo.tunnel_id);
+                if (this.workInfo.typ == 113) {
+                    this.chargingInfo = this.$store.getters.getCharging(this.workInfo.id);
+                }
+                if (this.workInfo.typ == 114) {
+                    this.blastingInfo = this.$store.getters.getBlasting(this.workInfo.id);
+                }
                 this.setState();
                 return true;
             } else {
                 return false;
             }
+        },
+        isCharging() {
+            if (this.workInfo.typ == 113) {
+                return true;
+            }
+        },
+        isBlasting() {
+            if (this.workInfo.typ == 114) {
+                return true;
+            }
+        },
+        handleChargingDetail() {
+            this.isChargingDetailClose = !this.isChargingDetailClose;
+        },
+        handleBlastingDetail() {
+            this.isBlastingDetailClose = !this.isBlastingDetailClose;
         },
         setState() {
             if (this.workInfo.state === window.CONSTANTS.WORK_STATE.STOP) {
@@ -212,13 +334,12 @@ export default {
         },
         getFinishTimeStr() {
             let finishTime = '';
-            if (this.workInfo.state == window.CONSTANTS.WORK_STATE.FINISH) {
-                if (this.workInfo.work_history_list.length > 0) {
-                    finishTime = this.workInfo.work_history_list[0].timestamp.substring(0, 16);
-                    finishTime = finishTime.replace("T", ". ");
-                    finishTime = finishTime.replace("-", ". ");
-                    finishTime = finishTime.replace("-", ". ");
-                }
+            if (!!this.workInfo.end_time) {
+                finishTime = this.workInfo.end_time.substring(0, 16);
+                finishTime = this.workInfo.work_history_list[0].timestamp.substring(0, 16);
+                finishTime = finishTime.replace("T", ". ");
+                finishTime = finishTime.replace("-", ". ");
+                finishTime = finishTime.replace("-", ". ");
             }
             return finishTime;
         },
@@ -232,9 +353,8 @@ export default {
         },
         getStartTimeStr() {
             let startTime = 'Not Started';
-            if (this.workInfo.work_history_list != undefined &&
-                this.workInfo.work_history_list.length > 0) {
-                startTime = this.workInfo.work_history_list[this.workInfo.work_history_list.length - 1].timestamp.substring(0, 16);
+            if (!!this.workInfo.start_time) {
+                startTime = this.workInfo.start_time.substring(0, 16);
                 startTime = startTime.replace("T", ". ");
                 startTime = startTime.replace("-", ". ");
                 startTime = startTime.replace("-", ". ");
@@ -264,7 +384,118 @@ export default {
             let h = tStr[0] + 'H';
             let m = tStr[1] + "M";
             return day + "D" + " " + h + " " + m;
-        }
+        },
+        getLength() {
+            if (this.finish_point == "Not entered") {
+                this.blastingLength = this.finish_point;
+                return this.blastingLength;
+            } else {
+                if (!!this.blastingInfo && !!this.blastingInfo.blasting_length) {
+                    this.blastingLength = this.blastingInfo.blasting_length;
+                } else {
+                    this.blastingLength = this.finish_point - this.start_point;
+                    this.blastingInfo.blasting_length = this.blasting_length;
+                }
+                return this.blastingLength.toFixed(1) + 'm';
+            }
+        },
+        getBlastingDate() {
+            if (!!this.blastingInfo){
+                if (this.blastingInfo.blasting_time != null) {
+                    this.blastDate = this.blastingInfo.blasting_time.split(' ')[0];
+                } else {
+                    this.blastDate = this.blastingInfo.blasting_time;
+                }
+                if (this.blastDate !== null && this.blastTime != null) {
+                    this.total_blasting_time = this.blastDate + " " + this.blastTime;
+                } else {
+                    this.total_blasting_time = null;
+                }
+            } else {
+                this.blastDate = "";
+            }
+            return this.blastDate;
+        },
+        getBlastingTime() {
+            if (!!this.blastingInfo){
+                if (!!this.blastingInfo) {
+                    this.blastTime = this.blastingInfo.blasting_time.split(' ')[1];
+                    this.blastTime = this.blastTime.substring(0,5);
+                } else {
+                    this.blastTime = this.blastingInfo.blasting_time;
+                }
+                if (this.blastDate !== null && this.blastTime != null) {
+                    this.total_blasting_time = this.blastDate + " " + this.blastTime;
+                } else {
+                    this.total_blasting_time = null;
+                }
+            } else {
+                this.blastTime = "";
+            }
+            return this.blastTime;
+        },
+        getStartPoint() {
+            if (!!this.blastingInfo) {
+                this.start_point = this.blastingInfo.start_point;
+            } else {
+                this.start_point = "Not entered";
+            }
+            return this.start_point;
+        },
+        getFinishPoint() {
+            if (!!this.blastingInfo) {
+                this.finish_point = this.blastingInfo.finish_point;
+            } else {
+                this.finish_point = "Not entered";
+            }
+            return this.finish_point;
+        },
+        getExplosiveBulk() {
+            if (!!this.chargingInfo) {
+                this.explosive_bulk = this.chargingInfo.explosive_bulk;
+            }
+            return this.explosive_bulk + ' kg';
+        },
+        getExplosiveCartridge() {
+            if (!!this.chargingInfo) {
+                this.explosive_cartridge = this.chargingInfo.explosive_cartridge;
+            }
+            return this.explosive_cartridge + ' kg';
+        },
+        getDetonator() {
+            if (!!this.chargingInfo) {
+                this.detonator = this.chargingInfo.detonator;
+            }
+            return this.detonator + ' kg';
+        },
+        getDrillingDepth() {
+            if (!!this.chargingInfo) {
+                this.drilling_depth = this.chargingInfo.drilling_depth;
+            }
+            return this.drilling_depth.toFixed(1) + 'm';
+        },
+        getTeam() {
+            if (!!this.chargingInfo) {
+                this.team_id = this.chargingInfo.team_id;
+            }
+            if(!!this.team_id == 0){
+                return "Not Selected Team";
+            } else {
+                let teamId = this.team_id,
+                    teamInfo = this.$store.getters.getTeam(teamId);
+                if (teamInfo) {
+                    return teamInfo.name;
+                } else {
+                    return "Not Selected Team";
+                }
+            }
+        },
+        getTeamNos() {
+            if (!!this.chargingInfo) {
+                this.team_nos= this.chargingInfo.team_nos;
+            }
+            return this.team_nos + ' Nos';
+        },
     },
     created() {
     }

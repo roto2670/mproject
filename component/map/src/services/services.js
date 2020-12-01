@@ -542,6 +542,42 @@ export const getWorkList = (successCallback, failCallback) => {
     });
 }
 
+export const getChargingList = (successCallback, failCallback) => {
+    axios({
+        url: `${ window.CONSTANTS.URL.CONSOLE }/work/charging/get/list`,
+        method: 'GET',
+        headers: {
+            'Content-Type': 'application/json'
+        }
+    }).then(response => {
+        if(response.data) {
+            successCallback(response.data);
+        } else {
+            failCallback(error);
+        }
+    }).catch(error => {
+        failCallback(error);
+    });
+}
+
+export const getBlastingList = (successCallback, failCallback) => {
+    axios({
+        url: `${ window.CONSTANTS.URL.CONSOLE }/work/blasting/get/list`,
+        method: 'GET',
+        headers: {
+            'Content-Type': 'application/json'
+        }
+    }).then(response => {
+        if(response.data) {
+            successCallback(response.data);
+        } else {
+            failCallback(error);
+        }
+    }).catch(error => {
+        failCallback(error);
+    });
+}
+
 export const getWorkListByBlast = (data, successCallback, failCallback) => {
     axios({
         url: `${ window.CONSTANTS.URL.CONSOLE }/work/work/get/list/blast`,

@@ -190,6 +190,12 @@ export class SocketClient {
                 case window.CONSTANTS.EVENT_TYPE.UPDATE_ACTIVITY_LIST:
                     this._subscribeHandlers.updateActivityList(data);
                 break;
+                case window.CONSTANTS.EVENT_TYPE.UPDATE_CHARGING_LIST:
+                    this._subscribeHandlers.updateChargingList(data);
+                break;
+                case window.CONSTANTS.EVENT_TYPE.UPDATE_BLASTING_LIST:
+                    this._subscribeHandlers.updateBlastingList(data);
+                break;
 //                case window.CONSTANTS.EVENT_TYPE.UPDATED:
 //                    this._subscribeHandlers.updated(data);
 //                break;

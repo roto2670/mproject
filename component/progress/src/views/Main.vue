@@ -23,14 +23,14 @@
             @select-edit-cancel-button="handleEditExDataClear"
             @select-ok-button="handleTunnelInfoOkButton"
             @select-close-button="handleTunnelInfoCloseButton"
-            @select-add-blast-button="handleAddBlast"
+            @select-add-blast-button="handleClickAddBlast"
             @select-remove-tunnel-button="handleRemoveTunnel"></TunnelInfo>
         <AddBlast :type="getCurrentType()" :tunnelId="currentTunnelId"
             :lastBlastId="lastBlastId" :finishedBlastData="finishedBlastData"
             @change-blasting-length="_handleChangeLengthBlast"
             @select-ok-button="handleAddBlastOkButton"
             @select-cancel-button="handleAddBlastCancelButton"></AddBlast>
-        <BlastInfo :type="getCurrentType()" :id="currentBlastId"
+        <BlastInfo ref="blastInfoView" :type="getCurrentType()" :id="currentBlastId"
             :workIdList="getWorkList()"
             :supportingIdList="getSupportingList()"
             :idleIdList="getIdleList()"
@@ -56,6 +56,8 @@
             @select-cancel-button="handleWorkInfoCancelButton"
             @select-ok-button="handleWorkInfoOkButton"
             @select-close-button="handleWorkInfoCloseButton"
+            @select-charging-detail-ok-button="handleChargingDetailOkButton"
+            @select-blasting-detail-ok-button="handleBlastingDetailOkButton"
             @pause-add-status="handlePauseAddStatus"
             @select-remove-work-button="handleWorkRemoveButton"
             @finish-clicked="handleFinishClicked"></WorkInfo>
@@ -165,7 +167,8 @@ export default {
             },
             tunnelOpacity: 0.6,
             isShowLegend: false,
-            blockingStatus: false
+            blockingStatus: false,
+            joinData: null
         }
     },
     methods: {
@@ -230,6 +233,8 @@ export default {
                     this._getTeamList();
                     this._getEquipmentInfoList();
                     this._getActivityList();
+                    this._getChargingList();
+                    this._getBlastingList();
                     this._getBasePointList();
                     this.blastLayer = new maptalks.VectorLayer('vector').addTo(this.map);
                     this.blastLayer.setZIndex(2);
@@ -287,6 +292,20 @@ export default {
                 this.$store.commit('addTeamList', teamList);
             }, (error) => {
                 console.log("Failed to get team list.", error);
+            });
+        },
+        _getChargingList() {
+            this.services.getChargingList(chargingList => {
+                this.$store.commit('addChargingList', chargingList);
+            }, (error) => {
+                console.log("Failed to get chargingList list.", error);
+            });
+        },
+        _getBlastingList() {
+            this.services.getBlastingList(blastingList => {
+                this.$store.commit('addBlastingList', blastingList);
+            }, (error) => {
+                console.log("Failed to get blasting list.", error);
             });
         },
         _getEquipmentInfoList() {
@@ -398,7 +417,9 @@ export default {
                         2: []   // Idel Time
                     }
                 }
-                this._drawBlast(blast, false);
+                if (!!blast.left_x_loc && !!blast.right_x_loc && !!blast.y_loc){
+                    this._drawBlast(blast, false);
+                }
                 this.$store.commit('addBlastInfo', blast.blast_info);
                 this.blastIDList.push(blast.id);
                 this._getWorkList(blast.work_list, blast);
@@ -922,7 +943,6 @@ export default {
         },
         handleEditBlastCancel() {
             this.extraLayers.removeGeometry(this.currentMarker)
-            this.currentMarker.remove();
             let currentMarkId = this.currentMarker.getId();
             if (currentMarkId in this.blastMarkers) {
                 let typ = window.CONSTANTS.TUNNEL_TYPE.BLAST,
@@ -964,6 +984,7 @@ export default {
                 });
             }
             this.setCurrentMarker(this.hidingMarker);
+            this.hidingMarker = null;
         },
         handleEditBlast(tunnelData, selectBlastID) {
             this.handleClearSelectItemWithoutClear();
@@ -986,7 +1007,6 @@ export default {
                 arrowPl = "vertex-last",
                 blastHeight = tunnelData.height,
                 markerSetting = [[position[0], position[1]], [position[0] + blastWidth, position[1]]];
-            console.log(position)
             if (tunnelData.direction == window.CONSTANTS.DIRECTION.WEST ||
                 tunnelData.direction == window.CONSTANTS.DIRECTION.EAST_SIDE_WEST ||
                 tunnelData.direction == window.CONSTANTS.DIRECTION.WEST_SIDE_WEST) {
@@ -1179,6 +1199,9 @@ export default {
         },
         _handleBlastClickEvent(marker) {
             marker.on('click', (e) => {
+                if (this.hidingMarker != null) {
+                    this.$refs.blastInfoView.handleCancelButton();
+                }
                 this.handleClearSelectItem();
                 let _marker = this.blastMarkers[marker.getId()];
                 if (_marker != null) {
@@ -1284,6 +1307,43 @@ export default {
             this.handleClearSelectItem();
             this._handleAddBlast(tunnelId, tunnelType);
         },
+        handleClickAddBlast(tunnelId, tunnelType) {
+            this.handleClearSelectItem();
+            let lastBlastId = this.blastIdWithTunnel[tunnelId][0],
+                lastBlastData = this.$store.getters.getBlast(lastBlastId),
+                chargingAct = null,
+                blastingAct = null,
+                chargingData = null,
+                blastingData = null,
+                blasting_date = null,
+                blasting_time = null;
+            if (lastBlastData && lastBlastData.work_list.length > 0) {
+                chargingAct = lastBlastData.work_list.find(x => x.typ == window.CONSTANTS.ACTIVITY.CHARGING);
+                blastingAct = lastBlastData.work_list.find(x => x.typ == window.CONSTANTS.ACTIVITY.BLASTING);
+            }
+            if (!!chargingAct) {
+                chargingData = this.$store.getters.getCharging(chargingAct.id);
+            }
+            if (!!blastingAct) {
+                blastingData = this.$store.getters.getBlasting(blastingAct.id);
+            }
+            if(!!chargingData && !!blastingData) {
+                this.joinData = {...chargingData, ...blastingData};
+                delete this.joinData.id;
+                delete this.joinData.work_id;
+                this.joinData.blasting_date = this.joinData.blasting_time.split(' ')[0];
+                this.joinData.blasting_time = this.joinData.blasting_time.split(' ')[1];
+                this._handleAddBlast(tunnelId, tunnelType);
+            } else {
+                if (!!!lastBlastData) {
+                    this._handleAddBlast(tunnelId, tunnelType);
+                } else if (!!lastBlastData) {
+                    if (!!!chargingData || !!!blastingData) {
+                        this.sweetbox.fire("There is no charging, blasting data. Please enter data first.");
+                    }
+                }
+            }
+        },
         _handleChangeLengthBlast(tunnelId, lastBlastId, blastLength) {
             const tunnelData = this.$store.getters.getTunnel(tunnelId),
                   direction = tunnelData.direction,
@@ -1372,6 +1432,9 @@ export default {
                 }
                 this.handleAddBlastOkButton(tunnelId, data)
             }
+            if (!!this.joinData) {
+                this.handleAddBlastOkButton(tunnelId, this.joinData);
+            }
         },
         handleAddBlastOkButton(tunnelId, value) {
             const data = {'blast': {},
@@ -1406,6 +1469,7 @@ export default {
                 console.log("success to add blast.")
                 this.currentMarker.remove();
                 this.handleClearSelectItem();
+                this._startWork(blastId, timeStamp);
             }, (error) => {
                 this.currentMarker.remove();
                 this.blastIdWithTunnel[tunnelId] = this._.without(this.blastIdWithTunnel[tunnelId], data.blast.id);
@@ -1413,7 +1477,7 @@ export default {
                 console.log("fail to add blast. Error : ", error)
             });
             this.finishedBlastData = null;
-            this._startWork(blastId, timeStamp);
+            this.joinData = null;
         },
         handleAddBlastCancelButton() {
             this.finishedBlastData = null;
@@ -1685,6 +1749,20 @@ export default {
                         markerOpacity: 1
                 });
                 this.clearAll();
+            });
+        },
+        handleChargingDetailOkButton(value) {
+            this.services.setChargingDetail(value, (resData) => {
+                console.log("success to add charging.");
+            }, (error) => {
+                console.log("fail to add charging. Error : ", error);
+            });
+        },
+        handleBlastingDetailOkButton(value) {
+            this.services.setBlastingDetail(value, (resData) => {
+                console.log("success to add blasting.");
+            }, (error) => {
+                console.log("fail to add blasting. Error : ", error);
             });
         },
         handleWorkRemoveButton(data) {
@@ -2002,6 +2080,12 @@ export default {
                 updateActivityList: (data) => {
                     this._handleUpdateActivityList(data);
                 },
+                updateChargingList: (data) => {
+                    this._handleUpdateChargingList(data);
+                },
+                updateBlastingList: (data) => {
+                    this._handleUpdateBlastingList(data);
+                },
             });
         },
         _handleUpdateBasePointList(data) {
@@ -2162,7 +2246,6 @@ export default {
                     }
                 } else if (data.kind === 'update') {
                     this.$store.commit('updateWork', item);
-                    this.$refs.workInfoView.refreshPauseList();
                 }
             });
         },
@@ -2230,6 +2313,30 @@ export default {
                     this.$store.commit('removeTeam', item);
                 } else if (data.kind === 'update') {
                     this.$store.commit('updateTeam', item);
+                }
+            });
+        },
+        _handleUpdateChargingList(data){
+            const list = data.v;
+            this._.forEach(list, item => {
+                if (data.kind === 'add') {
+                    this.$store.commit('addCharging', item);
+                } else if (data.kind === 'remove') {
+                    this.$store.commit('removeCharging', item);
+                } else if (data.kind === 'update') {
+                    this.$store.commit('updateCharging', item);
+                }
+            });
+        },
+        _handleUpdateBlastingList(data){
+            const list = data.v;
+            this._.forEach(list, item => {
+                if (data.kind === 'add') {
+                    this.$store.commit('addBlasting', item);
+                } else if (data.kind === 'remove') {
+                    this.$store.commit('removeBlasting', item);
+                } else if (data.kind === 'update') {
+                    this.$store.commit('updateBlasting', item);
                 }
             });
         },

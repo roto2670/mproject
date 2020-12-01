@@ -36,7 +36,9 @@ window.CONSTANTS = {
         UPDATE_WORK_EQUIPMENT_LIST: 'update_work_equipment_list',
         UPDATE_MESSAGE_LIST: 'update_message_list',
         UPDATE_TEAM_LIST: 'update_team_list',
-        UPDATE_ACTIVITY_LIST: 'update_activity_list'
+        UPDATE_ACTIVITY_LIST: 'update_activity_list',
+        UPDATE_CHARGING_LIST: 'update_charging_list',
+        UPDATE_BLASTING_LIST: 'update_blasting_list',
     },
     REQUEST_TYPE: {
         SUBSCRIBE: "subscribe",
@@ -133,6 +135,10 @@ window.CONSTANTS = {
     BLAST_STATE: {
         IN_PROGRESS: 1,
         FINISH: 2,
+    },
+    ACTIVITY: {
+        CHARGING: 113,
+        BLASTING: 114,
     },
     EQUIPMENT_INFO: {
         "1": "JUMBO DRILL(2B)",
