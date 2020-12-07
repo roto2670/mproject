@@ -154,14 +154,14 @@
                     'selected': '#dddddd',
                     '0': '#a0a0ff',
                     '1': '#00aabb',
-                    '3': '#5e5e5e',
+                    '3': '#ffffff',
                     '4': '#0000ff',
                     '100': '#01b050',
                     '101': '#9f5900',
                     '102': '#7031a0',
-                    '1000': '#01b050',
-                    '1001': '#9f5900',
-                    '1002': '#7031a0',
+                    '1000': '#5e5e5e',
+                    '1001': '#5e5e5e',
+                    '1002': '#5e5e5e',
                     'main' : '#ff0a01',
                     'supporting' : '#0f02ff',
                     'idle' : '#feff00'
@@ -3980,7 +3980,7 @@
                         arrowPlacement: arrowPl,
                         symbol: {
                             'lineColor': this.colorMap[tunnel.category],
-                            'lineWidth': {stops: [[4, 18], [5, 36], [6, 72], [7, 144]]},
+                            'lineWidth': {stops: [[4, height], [5, height * 2], [6, height * 4], [7, height * 8]]},
                             'lineOpacity': this.tunnelOpacity,
                             'textPlacement': 'line',
                             'textSize': {stops: [[4, 10], [5, 20], [6, 40], [7, 80]]},
@@ -4084,6 +4084,7 @@
                 let typ = window.CONSTANTS.TUNNEL_TYPE.BLAST,
                     markerSetting = [[leftXLoc, blast.y_loc], [leftXLoc + blastWidth, blast.y_loc]],
                     arrowPl = "vertex-last";
+                    opacity = 1;
                 if (blast.state === window.CONSTANTS.BLAST_STATE.FINISH) {
                     if (tunnelData.category == window.CONSTANTS.TUNNEL_CATEGORY.TH) {
                         typ = window.CONSTANTS.TUNNEL_TYPE.FINISH_TH;
@@ -4109,7 +4110,9 @@
                     arrowPl = "vertex-first";
                     markerSetting = [[rightXLoc - blastWidth, blast.y_loc], [rightXLoc, blast.y_loc]];
                 }
-
+                if (typ == 3) {
+                    opacity = 0.5;
+                }
                 let _marker = new maptalks.LineString(
                 markerSetting,
                 {
@@ -4118,7 +4121,8 @@
                     arrowPlacement: arrowPl,
                     symbol: {
                         'lineColor': this.colorMap[typ],
-                        'lineWidth': {stops: [[4, 18], [5, 36], [6, 72], [7, 144]]},
+                        'lineWidth': {stops: [[4, blastHeight], [5, blastHeight * 2], [6, blastHeight * 4], [7, blastHeight * 8]]},
+                        'lineOpacity': opacity,
                         'lineOpacity': 1,
                         'textPlacement': 'line',
                         'textSize': {stops: [[4, 10], [5, 20], [6, 40], [7, 80]]},
@@ -4272,6 +4276,11 @@
                             markerLineWidth: 1,
                             markerFill: this.colorMap[window.CONSTANTS.TUNNEL_TYPE.BASEPOINT],
                             markerFillOpacity: 1
+                        });
+                    } else if (this.currentMarker.markerType == window.CONSTANTS.TUNNEL_TYPE.BLAST) {
+                        this.currentMarker.updateSymbol({
+                            lineColor: this.colorMap[this.currentMarker.markerType],
+                            lineOpacity: 0.5,
                         });
                     } else {
                         this.currentMarker.updateSymbol({

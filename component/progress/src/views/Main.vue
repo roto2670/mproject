@@ -146,14 +146,14 @@ export default {
                 'selected': '#dddddd',
                 '0': '#a0a0ff',
                 '1': '#00aabb',
-                '3': '#5e5e5e',
+                '3': '#ffffff',
                 '4': '#0000ff',
                 '100': '#01b050',
                 '101': '#9f5900',
                 '102': '#7031a0',
-                '1000': '#01b050',
-                '1001': '#9f5900',
-                '1002': '#7031a0',
+                '1000': '#5e5e5e',
+                '1001': '#5e5e5e',
+                '1002': '#5e5e5e',
                 // OLD
                 // '100': '#00aabb',
                 // '101': '#0070c0',
@@ -499,7 +499,7 @@ export default {
                     arrowPlacement: arrowPl,
                     symbol: {
                         'lineColor': this.colorMap[tunnel.category],
-                        'lineWidth': {stops: [[4, 18], [5, 36], [6, 72], [7, 144]]},
+                        'lineWidth': {stops: [[4, height], [5, height * 2], [6, height * 4], [7, height * 8]]},
                         'lineOpacity': this.tunnelOpacity,
                         'textPlacement': 'line',
                         'textSize': {stops: [[4, 10], [5, 20], [6, 40], [7, 80]]},
@@ -526,7 +526,7 @@ export default {
                     arrowPlacement: arrowPl,
                     symbol: {
                         'lineColor': this.colorMap[tunnel.category],
-                        'lineWidth': {stops: [[4, 8], [5, 16], [6, 32], [7, 64]]},
+                        'lineWidth': {stops: [[4, 7], [5, 14], [6, 28], [7, 56]]},
                         'lineOpacity': 1,
                         'textName': tunnel.tunnel_id,
                         'textPlacement': 'line',
@@ -680,7 +680,8 @@ export default {
             let currentMarkId = this.currentMarker.getId();
             if (currentMarkId in this.blastMarkers) {
                 let typ = window.CONSTANTS.TUNNEL_TYPE.BLAST,
-                    blast = this.$store.getters.getBlast(currentMarkId);
+                    blast = this.$store.getters.getBlast(currentMarkId),
+                    opacity = 1;
                 if (!!blast) {
                     let tunnelData = this.$store.getters.getTunnel(blast.tunnel_id);
                     if (blast.state === window.CONSTANTS.BLAST_STATE.FINISH) {
@@ -702,9 +703,12 @@ export default {
                             }
                         }
                     }
+                    if (this.currentMarker.markerType == window.CONSTANTS.TUNNEL_TYPE.BLAST) {
+                        opacity = 0.5;
+                    }
                     this.blastMarkers[blast.id].updateSymbol({
                         lineColor: this.colorMap[typ],
-                        lineOpacity: 1
+                        lineOpacity: opacity
                     });
                 }
             } else {
@@ -758,6 +762,11 @@ export default {
                         markerLineWidth: 1,
                         markerFill: this.colorMap[window.CONSTANTS.TUNNEL_TYPE.BASEPOINT],
                         markerFillOpacity: 1
+                    });
+                } else if (this.currentMarker.markerType == window.CONSTANTS.TUNNEL_TYPE.BLAST) {
+                    this.currentMarker.updateSymbol({
+                        lineColor: this.colorMap[this.currentMarker.markerType],
+                        lineOpacity: 0.5,
                     });
                 } else {
                     this.currentMarker.updateSymbol({
@@ -925,7 +934,7 @@ export default {
                     arrowPlacement: "vertex-last",
                     symbol: {
                         'lineColor':  this.colorMap[window.CONSTANTS.TUNNEL_TYPE.CAVERN],
-                        'lineWidth': {stops: [[4, 18], [5, 36], [6, 72], [7, 144]]},
+                        'lineWidth': {stops: [[4, height], [5, height * 2], [6, height * 4], [7, height * 8]]},
                         'lineOpacity': 1,
                         'textPlacement': 'line',
                         'textSize': {stops: [[4, 10], [5, 20], [6, 40], [7, 80]]},
@@ -1022,7 +1031,7 @@ export default {
                 arrowPlacement: arrowPl,
                 symbol: {
                     'lineColor': this.colorMap['3'],
-                    'lineWidth': {stops: [[4, 18], [5, 36], [6, 72], [7, 144]]},
+                    'lineWidth': {stops: [[4, blastHeight], [5, blastHeight * 2], [6, blastHeight * 4], [7, blastHeight * 8]]},
                     'lineOpacity': 1,
                     'textPlacement': 'line',
                     'textSize': {stops: [[4, 10], [5, 20], [6, 40], [7, 80]]},
@@ -1074,7 +1083,7 @@ export default {
                     arrowPlacement: "vertex-last",
                     symbol: {
                         'lineColor':  this.colorMap[window.CONSTANTS.TUNNEL_TYPE.CAVERN],
-                        'lineWidth': {stops: [[4, 18], [5, 36], [6, 72], [7, 144]]},
+                        'lineWidth': {stops: [[4, height], [5, height * 2], [6, height * 4], [7, height * 8]]},
                         'lineOpacity': 1,
                         'textPlacement': 'line',
                         'textSize': {stops: [[4, 10], [5, 20], [6, 40], [7, 80]]},
@@ -1403,7 +1412,7 @@ export default {
                 arrowPlacement: arrowPl,
                 symbol: {
                     'lineColor': this.colorMap['3'],
-                    'lineWidth': {stops: [[4, 18], [5, 36], [6, 72], [7, 144]]},
+                    'lineWidth': {stops: [[4, blastHeight], [5, blastHeight * 2], [6, blastHeight * 4], [7, blastHeight * 8]]},
                     'lineOpacity': 1,
                     'textPlacement': 'line',
                     'textSize': {stops: [[4, 10], [5, 20], [6, 40], [7, 80]]},
@@ -1520,7 +1529,8 @@ export default {
                   blastHeight = blast.height;
             let typ = window.CONSTANTS.TUNNEL_TYPE.BLAST,
                 markerSetting = [[leftXLoc, yLoc], [leftXLoc + blastWidth, yLoc]],
-                arrowPl = "vertex-last";
+                arrowPl = "vertex-last",
+                opacity = 1;
             if (blast.state === window.CONSTANTS.BLAST_STATE.FINISH) {
                 if (tunnelData.category == window.CONSTANTS.TUNNEL_CATEGORY.TH) {
                     typ = window.CONSTANTS.TUNNEL_TYPE.FINISH_TH;
@@ -1547,6 +1557,9 @@ export default {
                 arrowPl = "vertex-first";
                 markerSetting = [[rightXLoc - blastWidth, yLoc], [rightXLoc, yLoc]];
             }
+            if (typ == 3) {
+                opacity = 0.5;
+            }
             let _marker = new maptalks.LineString(
             markerSetting,
             {
@@ -1555,8 +1568,8 @@ export default {
                 arrowPlacement: arrowPl,
                 symbol: {
                     'lineColor': this.colorMap[typ],
-                    'lineWidth': {stops: [[4, 18], [5, 36], [6, 72], [7, 144]]},
-                    'lineOpacity': 1,
+                    'lineWidth': {stops: [[4, blastHeight], [5, blastHeight * 2], [6, blastHeight * 4], [7, blastHeight * 8]]},
+                    'lineOpacity': opacity,
                     'textPlacement': 'line',
                     'textSize': {stops: [[4, 10], [5, 20], [6, 40], [7, 80]]},
                     'textDy': {stops: [[4, 2], [5, 4], [6, 8], [7, 16]]},
