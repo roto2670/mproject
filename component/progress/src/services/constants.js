@@ -53,12 +53,12 @@ window.CONSTANTS = {
         CAVERN_ROW: {
             //WIDTH: 140,
             WIDTH: 0.778,
-            HEIGHT: 18,
-            LOCATION_LENGTH: 0.0709
+            HEIGHT: 15,
+            LOCATION_LENGTH: 0.0696
         },
         BASEPOINT: {
             WIDTH: 8,
-            HEIGHT:18
+            HEIGHT:15
         },
         BLAST: {
             // WIDTH: 50
