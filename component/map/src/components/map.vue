@@ -151,22 +151,22 @@
                 blastLayer: null,
                 workLayer: null,
                 colorMap: {
-                    'selected': '#dddddd',
+                    'selected': '#c2c2c2',
                     '0': '#a0a0ff',
                     '1': '#00aabb',
-                    '3': '#ffffff',
+                    '3': '#5e5e5e',
                     '4': '#0000ff',
-                    '100': '#01b050',
+                    '100': '#219656',
                     '101': '#9f5900',
                     '102': '#7031a0',
-                    '1000': '#5e5e5e',
-                    '1001': '#5e5e5e',
-                    '1002': '#5e5e5e',
+                    '1000': '#219656',
+                    '1001': '#9f5900',
+                    '1002': '#7031a0',
                     'main' : '#ff0a01',
                     'supporting' : '#0f02ff',
                     'idle' : '#feff00'
                 },
-                tunnelOpacity: 0.6
+                tunnelOpacity: 0.4
             }
         },
         components: {
@@ -4007,7 +4007,7 @@
                         arrowPlacement: arrowPl,
                         symbol: {
                             'lineColor': this.colorMap[tunnel.category],
-                            'lineWidth': {stops: [[4, 8], [5, 16], [6, 32], [7, 64]]},
+                            'lineWidth': {stops: [[4, 5], [5, 10], [6, 20], [7, 40]]},
                             'lineOpacity': 1,
                             'textName': tunnel.tunnel_id,
                             'textPlacement': 'line',
@@ -4084,7 +4084,6 @@
                 let typ = window.CONSTANTS.TUNNEL_TYPE.BLAST,
                     markerSetting = [[leftXLoc, blast.y_loc], [leftXLoc + blastWidth, blast.y_loc]],
                     arrowPl = "vertex-last";
-                    opacity = 1;
                 if (blast.state === window.CONSTANTS.BLAST_STATE.FINISH) {
                     if (tunnelData.category == window.CONSTANTS.TUNNEL_CATEGORY.TH) {
                         typ = window.CONSTANTS.TUNNEL_TYPE.FINISH_TH;
@@ -4102,6 +4101,14 @@
                         } else {
                             typ = "idle";
                         }
+                    } else if (blast.work_list.length == 0) {
+                        if (tunnelData.category == window.CONSTANTS.TUNNEL_CATEGORY.TH) {
+                            typ = window.CONSTANTS.TUNNEL_TYPE.FINISH_TH;
+                        } else if (tunnelData.category == window.CONSTANTS.TUNNEL_CATEGORY.B1) {
+                            typ = window.CONSTANTS.TUNNEL_TYPE.FINISH_B1;
+                        } else {
+                            typ = window.CONSTANTS.TUNNEL_TYPE.FINISH_B2;
+                        }
                     }
                 }
                 if (tunnelData.direction == window.CONSTANTS.DIRECTION.WEST ||
@@ -4109,9 +4116,6 @@
                 tunnelData.direction == window.CONSTANTS.DIRECTION.WEST_SIDE_WEST) {
                     arrowPl = "vertex-first";
                     markerSetting = [[rightXLoc - blastWidth, blast.y_loc], [rightXLoc, blast.y_loc]];
-                }
-                if (typ == 3) {
-                    opacity = 0.5;
                 }
                 let _marker = new maptalks.LineString(
                 markerSetting,
@@ -4122,7 +4126,6 @@
                     symbol: {
                         'lineColor': this.colorMap[typ],
                         'lineWidth': {stops: [[4, blastHeight], [5, blastHeight * 2], [6, blastHeight * 4], [7, blastHeight * 8]]},
-                        'lineOpacity': opacity,
                         'lineOpacity': 1,
                         'textPlacement': 'line',
                         'textSize': {stops: [[4, 10], [5, 20], [6, 40], [7, 80]]},
@@ -4276,11 +4279,6 @@
                             markerLineWidth: 1,
                             markerFill: this.colorMap[window.CONSTANTS.TUNNEL_TYPE.BASEPOINT],
                             markerFillOpacity: 1
-                        });
-                    } else if (this.currentMarker.markerType == window.CONSTANTS.TUNNEL_TYPE.BLAST) {
-                        this.currentMarker.updateSymbol({
-                            lineColor: this.colorMap[this.currentMarker.markerType],
-                            lineOpacity: 0.5,
                         });
                     } else {
                         this.currentMarker.updateSymbol({
